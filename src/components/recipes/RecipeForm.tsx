@@ -49,14 +49,12 @@ interface RecipeFormProps {
   recipe?: Recipe | null;
 }
 
-const YIELD_UNITS = [
-  'unidades',
-  'fatias',
-  'porções',
-  'cupcakes',
-  'brigadeiros',
-  'biscoitos',
-  'pães',
+const MEASUREMENT_UNITS = [
+  { value: 'kg', label: 'Quilogramas (kg)' },
+  { value: 'g', label: 'Gramas (g)' },
+  { value: 'L', label: 'Litros (L)' },
+  { value: 'ml', label: 'Mililitros (ml)' },
+  { value: 'un', label: 'Unidades (un)' },
 ];
 
 export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
@@ -80,7 +78,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
       name: '',
       category_id: '',
       yield_quantity: 1,
-      yield_unit: 'unidades',
+      yield_unit: 'un',
       prep_time_minutes: 30,
       oven_time_minutes: null,
       instructions: null,
@@ -129,7 +127,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
         name: '',
         category_id: '',
         yield_quantity: 1,
-        yield_unit: 'unidades',
+        yield_unit: 'un',
         prep_time_minutes: 30,
         oven_time_minutes: null,
         instructions: null,
@@ -267,9 +265,9 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                 <Input
                   id="yield_quantity"
                   type="number"
-                  step="1"
-                  min="1"
-                  placeholder="12"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="1"
                   {...register('yield_quantity', { valueAsNumber: true })}
                   className="flex-1"
                 />
@@ -281,9 +279,9 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {YIELD_UNITS.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
+                    {MEASUREMENT_UNITS.map((unit) => (
+                      <SelectItem key={unit.value} value={unit.value}>
+                        {unit.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
