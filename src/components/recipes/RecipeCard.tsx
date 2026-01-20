@@ -151,7 +151,7 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
             <div className="flex items-center gap-1.5 text-accent">
               <TrendingUp className="h-4 w-4" />
               <span className="font-bold">
-                {formatCurrency(costBreakdown.costPerUnit)}/un
+                {formatCurrency(costBreakdown.costPerUnit)}/{recipe.yield_unit}
               </span>
             </div>
           </div>
