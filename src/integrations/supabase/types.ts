@@ -162,6 +162,170 @@ export type Database = {
         }
         Relationships: []
       }
+      recipe_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      recipe_ingredients: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_id: string
+          quantity: number
+          recipe_id: string
+          unit: Database["public"]["Enums"]["measurement_unit"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          quantity: number
+          recipe_id: string
+          unit: Database["public"]["Enums"]["measurement_unit"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          quantity?: number
+          recipe_id?: string
+          unit?: Database["public"]["Enums"]["measurement_unit"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          additional_costs: number | null
+          category_id: string
+          created_at: string
+          id: string
+          instructions: string | null
+          name: string
+          notes: string | null
+          oven_time_minutes: number | null
+          prep_time_minutes: number
+          safety_margin_percent: number | null
+          updated_at: string
+          user_id: string
+          yield_quantity: number
+          yield_unit: string
+        }
+        Insert: {
+          additional_costs?: number | null
+          category_id: string
+          created_at?: string
+          id?: string
+          instructions?: string | null
+          name: string
+          notes?: string | null
+          oven_time_minutes?: number | null
+          prep_time_minutes: number
+          safety_margin_percent?: number | null
+          updated_at?: string
+          user_id: string
+          yield_quantity: number
+          yield_unit?: string
+        }
+        Update: {
+          additional_costs?: number | null
+          category_id?: string
+          created_at?: string
+          id?: string
+          instructions?: string | null
+          name?: string
+          notes?: string | null
+          oven_time_minutes?: number | null
+          prep_time_minutes?: number
+          safety_margin_percent?: number | null
+          updated_at?: string
+          user_id?: string
+          yield_quantity?: number
+          yield_unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          default_safety_margin: number | null
+          energy_cost_per_hour: number | null
+          gas_cost_per_hour: number | null
+          id: string
+          include_energy_cost: boolean | null
+          include_gas_cost: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_safety_margin?: number | null
+          energy_cost_per_hour?: number | null
+          gas_cost_per_hour?: number | null
+          id?: string
+          include_energy_cost?: boolean | null
+          include_gas_cost?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_safety_margin?: number | null
+          energy_cost_per_hour?: number | null
+          gas_cost_per_hour?: number | null
+          id?: string
+          include_energy_cost?: boolean | null
+          include_gas_cost?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
