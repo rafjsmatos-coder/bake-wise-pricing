@@ -357,7 +357,9 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                     step="1"
                     min="0"
                     placeholder="45"
-                    {...register('oven_time_minutes', { valueAsNumber: true })}
+                    {...register('oven_time_minutes', { 
+                      setValueAs: (v) => v === '' || v === null || v === undefined ? null : Number(v)
+                    })}
                   />
                   <span className="text-sm text-muted-foreground">min</span>
                 </div>
@@ -375,7 +377,9 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                     step="0.1"
                     min="0"
                     placeholder={`${settings?.default_safety_margin ?? 15}`}
-                    {...register('safety_margin_percent', { valueAsNumber: true })}
+                    {...register('safety_margin_percent', { 
+                      setValueAs: (v) => v === '' || v === null || v === undefined ? null : Number(v)
+                    })}
                   />
                   <p className="text-xs text-muted-foreground">
                     Deixe vazio para usar o padrão ({settings?.default_safety_margin ?? 15}%)
