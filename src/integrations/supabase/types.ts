@@ -299,6 +299,8 @@ export type Database = {
           id: string
           include_energy_cost: boolean | null
           include_gas_cost: boolean | null
+          include_labor_cost: boolean | null
+          labor_cost_per_hour: number | null
           updated_at: string
           user_id: string
         }
@@ -310,6 +312,8 @@ export type Database = {
           id?: string
           include_energy_cost?: boolean | null
           include_gas_cost?: boolean | null
+          include_labor_cost?: boolean | null
+          labor_cost_per_hour?: number | null
           updated_at?: string
           user_id: string
         }
@@ -321,6 +325,8 @@ export type Database = {
           id?: string
           include_energy_cost?: boolean | null
           include_gas_cost?: boolean | null
+          include_labor_cost?: boolean | null
+          labor_cost_per_hour?: number | null
           updated_at?: string
           user_id?: string
         }

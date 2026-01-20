@@ -14,9 +14,14 @@ export interface RecipeCostBreakdown {
   safetyMarginAmount: number;
   safetyMarginPercent: number;
   additionalCosts: number;
+  gasCost: number;
+  energyCost: number;
+  laborCost: number;
   totalCost: number;
   costPerUnit: number;
   yieldQuantity: number;
+  prepTimeMinutes: number;
+  ovenTimeMinutes: number;
   ingredients: RecipeIngredientCost[];
 }
 
@@ -33,6 +38,15 @@ export interface RecipeIngredientInput {
   ingredient_id: string;
   quantity: number;
   unit: MeasurementUnit;
+}
+
+export interface TimeBasedCostSettings {
+  includeGasCost: boolean;
+  gasCostPerHour: number;
+  includeEnergyCost: boolean;
+  energyCostPerHour: number;
+  includeLaborCost: boolean;
+  laborCostPerHour: number;
 }
 
 /**
@@ -67,6 +81,25 @@ export function calculateIngredientCost(
 }
 
 /**
+ * Calculates time-based costs (gas, energy, labor)
+ */
+export function calculateTimeBasedCosts(
+  prepTimeMinutes: number,
+  ovenTimeMinutes: number,
+  settings: TimeBasedCostSettings
+): { gasCost: number; energyCost: number; laborCost: number } {
+  const ovenHours = (ovenTimeMinutes || 0) / 60;
+  const prepHours = (prepTimeMinutes || 0) / 60;
+  const totalHours = ovenHours + prepHours;
+
+  const gasCost = settings.includeGasCost ? ovenHours * settings.gasCostPerHour : 0;
+  const energyCost = settings.includeEnergyCost ? prepHours * settings.energyCostPerHour : 0;
+  const laborCost = settings.includeLaborCost ? totalHours * settings.laborCostPerHour : 0;
+
+  return { gasCost, energyCost, laborCost };
+}
+
+/**
  * Calculates the complete cost breakdown for a recipe
  */
 export function calculateRecipeCost(
@@ -74,7 +107,10 @@ export function calculateRecipeCost(
   ingredientsData: IngredientData[],
   yieldQuantity: number,
   safetyMarginPercent: number = 15,
-  additionalCosts: number = 0
+  additionalCosts: number = 0,
+  prepTimeMinutes: number = 0,
+  ovenTimeMinutes: number = 0,
+  timeSettings?: TimeBasedCostSettings
 ): RecipeCostBreakdown {
   const ingredientCosts: RecipeIngredientCost[] = [];
   let totalIngredientsCost = 0;
@@ -104,8 +140,24 @@ export function calculateRecipeCost(
     totalIngredientsCost += cost;
   }
 
+  // Calculate time-based costs
+  const defaultTimeSettings: TimeBasedCostSettings = {
+    includeGasCost: false,
+    gasCostPerHour: 0,
+    includeEnergyCost: false,
+    energyCostPerHour: 0,
+    includeLaborCost: false,
+    laborCostPerHour: 0,
+  };
+  const effectiveTimeSettings = timeSettings || defaultTimeSettings;
+  const { gasCost, energyCost, laborCost } = calculateTimeBasedCosts(
+    prepTimeMinutes,
+    ovenTimeMinutes,
+    effectiveTimeSettings
+  );
+
   const safetyMarginAmount = totalIngredientsCost * (safetyMarginPercent / 100);
-  const totalCost = totalIngredientsCost + safetyMarginAmount + additionalCosts;
+  const totalCost = totalIngredientsCost + safetyMarginAmount + additionalCosts + gasCost + energyCost + laborCost;
   const costPerUnit = yieldQuantity > 0 ? totalCost / yieldQuantity : 0;
 
   return {
@@ -113,9 +165,14 @@ export function calculateRecipeCost(
     safetyMarginAmount,
     safetyMarginPercent,
     additionalCosts,
+    gasCost,
+    energyCost,
+    laborCost,
     totalCost,
     costPerUnit,
     yieldQuantity,
+    prepTimeMinutes,
+    ovenTimeMinutes,
     ingredients: ingredientCosts,
   };
 }
@@ -128,6 +185,18 @@ export function formatCostBreakdown(breakdown: RecipeCostBreakdown): string {
     `Custo dos ingredientes: R$ ${breakdown.ingredientsCost.toFixed(2)}`,
     `Margem de segurança (${breakdown.safetyMarginPercent}%): R$ ${breakdown.safetyMarginAmount.toFixed(2)}`,
   ];
+
+  if (breakdown.gasCost > 0) {
+    lines.push(`Custo de gás: R$ ${breakdown.gasCost.toFixed(2)}`);
+  }
+
+  if (breakdown.energyCost > 0) {
+    lines.push(`Custo de energia: R$ ${breakdown.energyCost.toFixed(2)}`);
+  }
+
+  if (breakdown.laborCost > 0) {
+    lines.push(`Custo de mão de obra: R$ ${breakdown.laborCost.toFixed(2)}`);
+  }
 
   if (breakdown.additionalCosts > 0) {
     lines.push(`Custos adicionais: R$ ${breakdown.additionalCosts.toFixed(2)}`);

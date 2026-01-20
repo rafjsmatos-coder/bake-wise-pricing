@@ -11,7 +11,7 @@ import { type Recipe } from '@/hooks/useRecipes';
 import { useIngredients } from '@/hooks/useIngredients';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { CostBreakdown } from './CostBreakdown';
-import { calculateRecipeCost, type IngredientData } from '@/lib/recipe-cost-calculator';
+import { calculateRecipeCost, type IngredientData, type TimeBasedCostSettings } from '@/lib/recipe-cost-calculator';
 import { UNITS } from '@/lib/unit-conversion';
 import { 
   Clock, 
@@ -56,12 +56,24 @@ export function RecipeDetails({ recipe, open, onOpenChange, onEdit, onDuplicate 
     const safetyMargin = recipe.safety_margin_percent ?? settings?.default_safety_margin ?? 15;
     const additionalCosts = Number(recipe.additional_costs) || 0;
 
+    const timeSettings: TimeBasedCostSettings = {
+      includeGasCost: settings?.include_gas_cost || false,
+      gasCostPerHour: Number(settings?.gas_cost_per_hour) || 0,
+      includeEnergyCost: settings?.include_energy_cost || false,
+      energyCostPerHour: Number(settings?.energy_cost_per_hour) || 0,
+      includeLaborCost: settings?.include_labor_cost || false,
+      laborCostPerHour: Number(settings?.labor_cost_per_hour) || 0,
+    };
+
     return calculateRecipeCost(
       recipeIngredients,
       ingredientsData,
       Number(recipe.yield_quantity),
       safetyMargin,
-      additionalCosts
+      additionalCosts,
+      Number(recipe.prep_time_minutes) || 0,
+      Number(recipe.oven_time_minutes) || 0,
+      timeSettings
     );
   }, [recipe, ingredients, settings]);
 
