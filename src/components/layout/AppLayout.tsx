@@ -8,14 +8,19 @@ import {
   LogOut, 
   Menu, 
   X,
-  ChefHat
+  ChefHat,
+  BookOpen,
+  FolderOpen,
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+export type PageType = 'ingredients' | 'categories' | 'recipes' | 'recipe-categories' | 'settings';
+
 interface AppLayoutProps {
   children: ReactNode;
-  currentPage: 'ingredients' | 'categories';
-  onPageChange: (page: 'ingredients' | 'categories') => void;
+  currentPage: PageType;
+  onPageChange: (page: PageType) => void;
 }
 
 export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProps) {
@@ -23,8 +28,11 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = [
+    { id: 'recipes' as const, label: 'Receitas', icon: BookOpen },
+    { id: 'recipe-categories' as const, label: 'Categorias de Receitas', icon: FolderOpen },
     { id: 'ingredients' as const, label: 'Ingredientes', icon: Package },
-    { id: 'categories' as const, label: 'Categorias', icon: Tags },
+    { id: 'categories' as const, label: 'Categorias de Ingredientes', icon: Tags },
+    { id: 'settings' as const, label: 'Configurações', icon: Settings },
   ];
 
   return (
