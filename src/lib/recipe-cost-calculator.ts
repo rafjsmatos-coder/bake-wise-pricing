@@ -90,11 +90,13 @@ export function calculateTimeBasedCosts(
 ): { gasCost: number; energyCost: number; laborCost: number } {
   const ovenHours = (ovenTimeMinutes || 0) / 60;
   const prepHours = (prepTimeMinutes || 0) / 60;
-  const totalHours = ovenHours + prepHours;
 
+  // Gás: calculado sobre tempo de forno (custo indireto - equipamento)
   const gasCost = settings.includeGasCost ? ovenHours * settings.gasCostPerHour : 0;
+  // Energia: calculado sobre tempo de preparo (equipamentos elétricos em uso)
   const energyCost = settings.includeEnergyCost ? prepHours * settings.energyCostPerHour : 0;
-  const laborCost = settings.includeLaborCost ? totalHours * settings.laborCostPerHour : 0;
+  // Mão de obra: calculado apenas sobre tempo de preparo (trabalho ativo)
+  const laborCost = settings.includeLaborCost ? prepHours * settings.laborCostPerHour : 0;
 
   return { gasCost, energyCost, laborCost };
 }

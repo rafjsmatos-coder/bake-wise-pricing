@@ -76,7 +76,7 @@ export function CostBreakdown({ breakdown, compact = false }: CostBreakdownProps
           <div className="flex justify-between items-center py-2 border-b border-border">
             <div className="flex items-center gap-2 text-muted-foreground">
               <User className="h-4 w-4 text-blue-500" />
-              <span>Mão de obra ({breakdown.prepTimeMinutes + breakdown.ovenTimeMinutes} min total)</span>
+              <span>Mão de obra ({breakdown.prepTimeMinutes} min preparo)</span>
             </div>
             <span className="font-medium">+ {formatCurrency(breakdown.laborCost)}</span>
           </div>
