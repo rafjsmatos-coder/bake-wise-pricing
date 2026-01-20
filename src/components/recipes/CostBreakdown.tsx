@@ -1,6 +1,6 @@
 import { formatCurrency } from '@/lib/unit-conversion';
 import { type RecipeCostBreakdown } from '@/lib/recipe-cost-calculator';
-import { Calculator, TrendingUp, Package, DollarSign, Percent } from 'lucide-react';
+import { Calculator, TrendingUp, Package, DollarSign, Percent, Flame, Zap, User } from 'lucide-react';
 
 interface CostBreakdownProps {
   breakdown: RecipeCostBreakdown;
@@ -48,6 +48,39 @@ export function CostBreakdown({ breakdown, compact = false }: CostBreakdownProps
           </div>
           <span className="font-medium">+ {formatCurrency(breakdown.safetyMarginAmount)}</span>
         </div>
+
+        {/* Custo de Gás */}
+        {breakdown.gasCost > 0 && (
+          <div className="flex justify-between items-center py-2 border-b border-border">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Flame className="h-4 w-4 text-orange-500" />
+              <span>Custo de gás ({breakdown.ovenTimeMinutes} min forno)</span>
+            </div>
+            <span className="font-medium">+ {formatCurrency(breakdown.gasCost)}</span>
+          </div>
+        )}
+
+        {/* Custo de Energia */}
+        {breakdown.energyCost > 0 && (
+          <div className="flex justify-between items-center py-2 border-b border-border">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Zap className="h-4 w-4 text-yellow-500" />
+              <span>Custo de energia ({breakdown.prepTimeMinutes} min preparo)</span>
+            </div>
+            <span className="font-medium">+ {formatCurrency(breakdown.energyCost)}</span>
+          </div>
+        )}
+
+        {/* Custo de Mão de Obra */}
+        {breakdown.laborCost > 0 && (
+          <div className="flex justify-between items-center py-2 border-b border-border">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <User className="h-4 w-4 text-blue-500" />
+              <span>Mão de obra ({breakdown.prepTimeMinutes + breakdown.ovenTimeMinutes} min total)</span>
+            </div>
+            <span className="font-medium">+ {formatCurrency(breakdown.laborCost)}</span>
+          </div>
+        )}
 
         {/* Custos adicionais */}
         {breakdown.additionalCosts > 0 && (

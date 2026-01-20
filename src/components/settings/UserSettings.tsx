@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useUserSettings } from '@/hooks/useUserSettings';
-import { Loader2, Settings, Percent, Flame, Zap, Save } from 'lucide-react';
+import { Loader2, Settings, Percent, Flame, Zap, Save, User } from 'lucide-react';
 
 const settingsSchema = z.object({
   default_safety_margin: z.number().min(0).max(100),
@@ -15,6 +15,8 @@ const settingsSchema = z.object({
   gas_cost_per_hour: z.number().min(0),
   include_energy_cost: z.boolean(),
   energy_cost_per_hour: z.number().min(0),
+  include_labor_cost: z.boolean(),
+  labor_cost_per_hour: z.number().min(0),
 });
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -37,6 +39,8 @@ export function UserSettings() {
       gas_cost_per_hour: 0,
       include_energy_cost: false,
       energy_cost_per_hour: 0,
+      include_labor_cost: false,
+      labor_cost_per_hour: 0,
     },
   });
 
@@ -48,12 +52,15 @@ export function UserSettings() {
         gas_cost_per_hour: Number(settings.gas_cost_per_hour) || 0,
         include_energy_cost: settings.include_energy_cost || false,
         energy_cost_per_hour: Number(settings.energy_cost_per_hour) || 0,
+        include_labor_cost: settings.include_labor_cost || false,
+        labor_cost_per_hour: Number(settings.labor_cost_per_hour) || 0,
       });
     }
   }, [settings, reset]);
 
   const includeGasCost = watch('include_gas_cost');
   const includeEnergyCost = watch('include_energy_cost');
+  const includeLaborCost = watch('include_labor_cost');
 
   const onSubmit = async (data: SettingsFormData) => {
     await updateSettings.mutateAsync(data);
@@ -194,6 +201,49 @@ export function UserSettings() {
               )}
               <p className="text-xs text-muted-foreground">
                 Considere o consumo médio de batedeira, geladeira, etc.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Labor Cost */}
+        <div className="p-6 bg-card border border-border rounded-lg space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                <User className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <h2 className="font-semibold">Custo de Mão de Obra</h2>
+                <p className="text-sm text-muted-foreground">
+                  Adicionar custo de mão de obra ao cálculo
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={includeLaborCost}
+              onCheckedChange={(checked) => setValue('include_labor_cost', checked, { shouldDirty: true })}
+            />
+          </div>
+
+          {includeLaborCost && (
+            <div className="space-y-2 animate-fade-in">
+              <Label htmlFor="labor_cost_per_hour">Custo por hora (R$)</Label>
+              <Input
+                id="labor_cost_per_hour"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                {...register('labor_cost_per_hour', { valueAsNumber: true })}
+              />
+              {errors.labor_cost_per_hour && (
+                <p className="text-sm text-destructive">
+                  {errors.labor_cost_per_hour.message}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                O custo será calculado com base no tempo total (preparo + forno)
               </p>
             </div>
           )}
