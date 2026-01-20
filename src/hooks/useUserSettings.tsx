@@ -72,6 +72,8 @@ export function useUserSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings', user?.id] });
+      // Invalidate recipes to trigger cost recalculation with updated settings
+      queryClient.invalidateQueries({ queryKey: ['recipes'] });
       toast({
         title: 'Configurações salvas',
         description: 'Suas configurações foram atualizadas com sucesso.',

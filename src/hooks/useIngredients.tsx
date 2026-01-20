@@ -128,6 +128,8 @@ export function useIngredients() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
+      // Invalidate recipes to trigger cost recalculation with updated prices
+      queryClient.invalidateQueries({ queryKey: ['recipes'] });
       toast({
         title: 'Ingrediente atualizado',
         description: 'O ingrediente foi atualizado com sucesso.',
