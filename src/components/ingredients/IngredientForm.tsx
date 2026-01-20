@@ -60,8 +60,8 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
     resolver: zodResolver(ingredientSchema),
     defaultValues: {
       name: '',
-      purchase_price: 0,
-      package_quantity: 0,
+      purchase_price: undefined as unknown as number,
+      package_quantity: undefined as unknown as number,
       unit: 'kg',
       category_id: null,
       brand: null,
@@ -90,8 +90,8 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
     } else {
       reset({
         name: '',
-        purchase_price: 0,
-        package_quantity: 0,
+        purchase_price: undefined as unknown as number,
+        package_quantity: undefined as unknown as number,
         unit: 'kg',
         category_id: null,
         brand: null,

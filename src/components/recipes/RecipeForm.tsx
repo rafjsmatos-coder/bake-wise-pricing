@@ -25,7 +25,7 @@ import { useUserSettings } from '@/hooks/useUserSettings';
 import { useIngredients } from '@/hooks/useIngredients';
 import { IngredientSelector, type RecipeIngredientItem } from './IngredientSelector';
 import { CostBreakdown } from './CostBreakdown';
-import { calculateRecipeCost, type IngredientData } from '@/lib/recipe-cost-calculator';
+import { calculateRecipeCost, calculateIngredientCost, type IngredientData } from '@/lib/recipe-cost-calculator';
 import { Loader2, Clock, Flame, Settings2 } from 'lucide-react';
 
 const recipeSchema = z.object({
@@ -77,9 +77,9 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
     defaultValues: {
       name: '',
       category_id: '',
-      yield_quantity: 1,
+      yield_quantity: undefined as unknown as number,
       yield_unit: 'un',
-      prep_time_minutes: 30,
+      prep_time_minutes: undefined as unknown as number,
       oven_time_minutes: null,
       instructions: null,
       safety_margin_percent: null,
@@ -103,12 +103,19 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
         notes: recipe.notes,
       });
 
-      // Load recipe ingredients
+      // Load recipe ingredients with proper unit conversion
       if (recipe.recipe_ingredients) {
         const loadedIngredients: RecipeIngredientItem[] = recipe.recipe_ingredients.map(ri => {
           const ingredient = ingredients.find(i => i.id === ri.ingredient_id);
+          // Use calculateIngredientCost for proper unit conversion
           const cost = ingredient ? 
-            Number(ri.quantity) * Number(ingredient.purchase_price) / Number(ingredient.package_quantity) : 0;
+            calculateIngredientCost(
+              Number(ri.quantity),
+              ri.unit,
+              Number(ingredient.purchase_price),
+              Number(ingredient.package_quantity),
+              ingredient.unit
+            ) : 0;
           
           return {
             ingredient_id: ri.ingredient_id,
@@ -126,9 +133,9 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
       reset({
         name: '',
         category_id: '',
-        yield_quantity: 1,
+        yield_quantity: undefined as unknown as number,
         yield_unit: 'un',
-        prep_time_minutes: 30,
+        prep_time_minutes: undefined as unknown as number,
         oven_time_minutes: null,
         instructions: null,
         safety_margin_percent: null,
