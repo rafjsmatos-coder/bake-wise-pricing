@@ -243,7 +243,7 @@ export function UserSettings() {
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
-                O custo será calculado com base no tempo total (preparo + forno)
+                O custo será calculado com base no tempo de preparo (trabalho ativo)
               </p>
             </div>
           )}
