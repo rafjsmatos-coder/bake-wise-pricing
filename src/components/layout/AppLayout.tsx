@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type PageType = 'ingredients' | 'categories' | 'recipes' | 'recipe-categories' | 'decorations' | 'decoration-categories' | 'settings';
+export type PageType = 'ingredients' | 'categories' | 'recipes' | 'recipe-categories' | 'decorations' | 'decoration-categories' | 'packaging' | 'packaging-categories' | 'settings';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -34,6 +34,8 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
     { id: 'categories' as const, label: 'Categorias de Ingredientes', icon: Tags },
     { id: 'decorations' as const, label: 'Decorações', icon: Cake },
     { id: 'decoration-categories' as const, label: 'Categorias de Decorações', icon: FolderOpen },
+    { id: 'packaging' as const, label: 'Embalagens', icon: Package },
+    { id: 'packaging-categories' as const, label: 'Categorias de Embalagens', icon: FolderOpen },
     { id: 'settings' as const, label: 'Configurações', icon: Settings },
   ];
 
