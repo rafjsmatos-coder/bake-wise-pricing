@@ -6,6 +6,8 @@ import { RecipesList } from '@/components/recipes/RecipesList';
 import { RecipeCategoriesList } from '@/components/recipe-categories/RecipeCategoriesList';
 import { DecorationsList } from '@/components/decorations/DecorationsList';
 import { DecorationCategoriesList } from '@/components/decoration-categories/DecorationCategoriesList';
+import { PackagingList } from '@/components/packaging/PackagingList';
+import { PackagingCategoriesList } from '@/components/packaging-categories/PackagingCategoriesList';
 import { UserSettings } from '@/components/settings/UserSettings';
 
 export function Dashboard() {
@@ -19,6 +21,8 @@ export function Dashboard() {
       {currentPage === 'categories' && <CategoriesList />}
       {currentPage === 'decorations' && <DecorationsList />}
       {currentPage === 'decoration-categories' && <DecorationCategoriesList />}
+      {currentPage === 'packaging' && <PackagingList />}
+      {currentPage === 'packaging-categories' && <PackagingCategoriesList />}
       {currentPage === 'settings' && <UserSettings />}
     </AppLayout>
   );

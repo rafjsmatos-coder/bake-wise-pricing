@@ -221,6 +221,95 @@ export type Database = {
           },
         ]
       }
+      packaging: {
+        Row: {
+          brand: string | null
+          category_id: string | null
+          cost_per_unit: number | null
+          created_at: string
+          dimensions: string | null
+          id: string
+          min_stock_alert: number | null
+          name: string
+          package_quantity: number
+          purchase_price: number
+          stock_quantity: number | null
+          supplier: string | null
+          unit: Database["public"]["Enums"]["measurement_unit"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand?: string | null
+          category_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          dimensions?: string | null
+          id?: string
+          min_stock_alert?: number | null
+          name: string
+          package_quantity: number
+          purchase_price: number
+          stock_quantity?: number | null
+          supplier?: string | null
+          unit: Database["public"]["Enums"]["measurement_unit"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand?: string | null
+          category_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          dimensions?: string | null
+          id?: string
+          min_stock_alert?: number | null
+          name?: string
+          package_quantity?: number
+          purchase_price?: number
+          stock_quantity?: number | null
+          supplier?: string | null
+          unit?: Database["public"]["Enums"]["measurement_unit"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packaging_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "packaging_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      packaging_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           business_name: string | null
