@@ -11,7 +11,7 @@ import { type Recipe } from '@/hooks/useRecipes';
 import { useIngredients } from '@/hooks/useIngredients';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { calculateRecipeCost, type IngredientData, type TimeBasedCostSettings } from '@/lib/recipe-cost-calculator';
-import { formatCurrency } from '@/lib/unit-conversion';
+import { formatCurrency, type MeasurementUnit } from '@/lib/unit-conversion';
 import { 
   MoreVertical, 
   Edit, 
@@ -70,6 +70,7 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
       recipeIngredients,
       ingredientsData,
       Number(recipe.yield_quantity),
+      (recipe.yield_unit as MeasurementUnit) || 'un',
       safetyMargin,
       additionalCosts,
       Number(recipe.prep_time_minutes) || 0,

@@ -26,6 +26,7 @@ import { useIngredients } from '@/hooks/useIngredients';
 import { IngredientSelector, type RecipeIngredientItem } from './IngredientSelector';
 import { CostBreakdown } from './CostBreakdown';
 import { calculateRecipeCost, calculateIngredientCost, type IngredientData } from '@/lib/recipe-cost-calculator';
+import { type MeasurementUnit } from '@/lib/unit-conversion';
 import { Loader2, Clock, Flame, Settings2 } from 'lucide-react';
 
 const recipeSchema = z.object({
@@ -148,6 +149,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
   }, [recipe, reset, open, ingredients]);
 
   const watchYieldQuantity = watch('yield_quantity');
+  const watchYieldUnit = watch('yield_unit');
   const watchSafetyMargin = watch('safety_margin_percent');
   const watchAdditionalCosts = watch('additional_costs');
 
@@ -176,10 +178,11 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
       recipeIngredients,
       ingredientsData,
       watchYieldQuantity || 1,
+      (watchYieldUnit as MeasurementUnit) || 'un',
       safetyMargin,
       additionalCosts
     );
-  }, [selectedIngredients, ingredients, watchYieldQuantity, watchSafetyMargin, watchAdditionalCosts, settings]);
+  }, [selectedIngredients, ingredients, watchYieldQuantity, watchYieldUnit, watchSafetyMargin, watchAdditionalCosts, settings]);
 
   const onSubmit = async (data: RecipeFormData) => {
     if (selectedIngredients.length === 0) {
