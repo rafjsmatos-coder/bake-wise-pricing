@@ -20,6 +20,7 @@ export interface RecipeCostBreakdown {
   totalCost: number;
   costPerUnit: number;
   yieldQuantity: number;
+  yieldUnit: MeasurementUnit;
   prepTimeMinutes: number;
   ovenTimeMinutes: number;
   ingredients: RecipeIngredientCost[];
@@ -108,6 +109,7 @@ export function calculateRecipeCost(
   recipeIngredients: RecipeIngredientInput[],
   ingredientsData: IngredientData[],
   yieldQuantity: number,
+  yieldUnit: MeasurementUnit = 'un',
   safetyMarginPercent: number = 15,
   additionalCosts: number = 0,
   prepTimeMinutes: number = 0,
@@ -173,6 +175,7 @@ export function calculateRecipeCost(
     totalCost,
     costPerUnit,
     yieldQuantity,
+    yieldUnit,
     prepTimeMinutes,
     ovenTimeMinutes,
     ingredients: ingredientCosts,

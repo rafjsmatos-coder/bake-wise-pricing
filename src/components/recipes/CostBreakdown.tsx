@@ -1,4 +1,4 @@
-import { formatCurrency } from '@/lib/unit-conversion';
+import { formatCurrency, getUnitLabel } from '@/lib/unit-conversion';
 import { type RecipeCostBreakdown } from '@/lib/recipe-cost-calculator';
 import { Calculator, TrendingUp, Package, DollarSign, Percent, Flame, Zap, User } from 'lucide-react';
 
@@ -104,9 +104,9 @@ export function CostBreakdown({ breakdown, compact = false }: CostBreakdownProps
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-accent" />
             <div>
-              <span className="font-semibold text-accent">Custo por unidade</span>
+              <span className="font-semibold text-accent">Custo por {getUnitLabel(breakdown.yieldUnit, 1)}</span>
               <p className="text-xs text-muted-foreground">
-                Rendimento: {breakdown.yieldQuantity} unidades
+                Rendimento: {breakdown.yieldQuantity} {getUnitLabel(breakdown.yieldUnit, breakdown.yieldQuantity)}
               </p>
             </div>
           </div>

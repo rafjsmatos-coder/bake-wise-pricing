@@ -12,7 +12,7 @@ import { useIngredients } from '@/hooks/useIngredients';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { CostBreakdown } from './CostBreakdown';
 import { calculateRecipeCost, type IngredientData, type TimeBasedCostSettings } from '@/lib/recipe-cost-calculator';
-import { UNITS } from '@/lib/unit-conversion';
+import { UNITS, type MeasurementUnit } from '@/lib/unit-conversion';
 import { 
   Clock, 
   Flame, 
@@ -69,6 +69,7 @@ export function RecipeDetails({ recipe, open, onOpenChange, onEdit, onDuplicate 
       recipeIngredients,
       ingredientsData,
       Number(recipe.yield_quantity),
+      (recipe.yield_unit as MeasurementUnit) || 'un',
       safetyMargin,
       additionalCosts,
       Number(recipe.prep_time_minutes) || 0,
