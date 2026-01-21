@@ -4,21 +4,45 @@ import { Button } from '@/components/ui/button';
 import { 
   Cake, 
   Package, 
-  Tags, 
   LogOut, 
   Menu, 
   X,
   ChefHat,
   BookOpen,
-  FolderOpen,
   Settings,
   ShoppingBag,
   Box,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  LayoutDashboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
-export type PageType = 'ingredients' | 'categories' | 'recipes' | 'recipe-categories' | 'decorations' | 'decoration-categories' | 'packaging' | 'packaging-categories' | 'products' | 'product-categories' | 'settings';
+export type PageType = 
+  | 'dashboard'
+  | 'ingredients' 
+  | 'categories' 
+  | 'recipes' 
+  | 'recipe-categories' 
+  | 'decorations' 
+  | 'decoration-categories' 
+  | 'packaging' 
+  | 'packaging-categories' 
+  | 'products' 
+  | 'product-categories' 
+  | 'settings';
+
+interface NavItem {
+  id: PageType;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children?: { id: PageType; label: string }[];
+}
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -30,19 +54,59 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
   const { user, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const navItems = [
-    { id: 'products' as const, label: 'Produtos', icon: ShoppingBag },
-    { id: 'product-categories' as const, label: 'Categorias de Produtos', icon: FolderOpen },
-    { id: 'recipes' as const, label: 'Receitas', icon: BookOpen },
-    { id: 'recipe-categories' as const, label: 'Categorias de Receitas', icon: FolderOpen },
-    { id: 'ingredients' as const, label: 'Ingredientes', icon: Package },
-    { id: 'categories' as const, label: 'Categorias de Ingredientes', icon: Tags },
-    { id: 'decorations' as const, label: 'Decorações', icon: Sparkles },
-    { id: 'decoration-categories' as const, label: 'Categorias de Decorações', icon: FolderOpen },
-    { id: 'packaging' as const, label: 'Embalagens', icon: Box },
-    { id: 'packaging-categories' as const, label: 'Categorias de Embalagens', icon: FolderOpen },
-    { id: 'settings' as const, label: 'Configurações', icon: Settings },
+  const navItems: NavItem[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { 
+      id: 'products', 
+      label: 'Produtos', 
+      icon: ShoppingBag,
+      children: [
+        { id: 'product-categories', label: 'Categorias' }
+      ]
+    },
+    { 
+      id: 'recipes', 
+      label: 'Receitas', 
+      icon: BookOpen,
+      children: [
+        { id: 'recipe-categories', label: 'Categorias' }
+      ]
+    },
+    { 
+      id: 'ingredients', 
+      label: 'Ingredientes', 
+      icon: Package,
+      children: [
+        { id: 'categories', label: 'Categorias' }
+      ]
+    },
+    { 
+      id: 'decorations', 
+      label: 'Decorações', 
+      icon: Sparkles,
+      children: [
+        { id: 'decoration-categories', label: 'Categorias' }
+      ]
+    },
+    { 
+      id: 'packaging', 
+      label: 'Embalagens', 
+      icon: Box,
+      children: [
+        { id: 'packaging-categories', label: 'Categorias' }
+      ]
+    },
+    { id: 'settings', label: 'Configurações', icon: Settings },
   ];
+
+  const isChildActive = (item: NavItem) => {
+    return item.children?.some(child => child.id === currentPage) || false;
+  };
+
+  const handleNavClick = (page: PageType) => {
+    onPageChange(page);
+    setSidebarOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,25 +148,87 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onPageChange(item.id);
-                  setSidebarOpen(false);
-                }}
-                className={cn(
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left',
-                  currentPage === item.id
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                <span className="font-medium">{item.label}</span>
-              </button>
-            ))}
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+            {navItems.map((item) => {
+              const isActive = currentPage === item.id;
+              const hasActiveChild = isChildActive(item);
+              const hasChildren = item.children && item.children.length > 0;
+
+              if (hasChildren) {
+                return (
+                  <Collapsible 
+                    key={item.id} 
+                    defaultOpen={isActive || hasActiveChild}
+                  >
+                    <div className="space-y-1">
+                      {/* Parent button */}
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => handleNavClick(item.id)}
+                          className={cn(
+                            'flex-1 flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-left',
+                            isActive
+                              ? 'bg-accent text-accent-foreground'
+                              : hasActiveChild
+                                ? 'text-foreground'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          )}
+                        >
+                          <item.icon className="h-5 w-5" />
+                          <span className="font-medium">{item.label}</span>
+                        </button>
+                        <CollapsibleTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 shrink-0"
+                          >
+                            <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                          </Button>
+                        </CollapsibleTrigger>
+                      </div>
+
+                      {/* Children */}
+                      <CollapsibleContent>
+                        <div className="ml-6 pl-4 border-l border-border space-y-1">
+                          {item.children.map((child) => (
+                            <button
+                              key={child.id}
+                              onClick={() => handleNavClick(child.id)}
+                              className={cn(
+                                'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left text-sm',
+                                currentPage === child.id
+                                  ? 'bg-accent text-accent-foreground'
+                                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                              )}
+                            >
+                              <span>{child.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+                );
+              }
+
+              // Simple item without children
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavClick(item.id)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-left',
+                    isActive
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              );
+            })}
           </nav>
 
           {/* User Section */}
