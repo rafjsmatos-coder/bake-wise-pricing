@@ -18,12 +18,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useCategories } from '@/hooks/useCategories';
-import { useIngredients, type Ingredient, type CreateIngredientData } from '@/hooks/useIngredients';
+import { useDecorationCategories } from '@/hooks/useDecorationCategories';
+import { useDecorations, type Decoration, type CreateDecorationData } from '@/hooks/useDecorations';
 import { UNITS, type MeasurementUnit, getCostPerUnit, formatCurrency } from '@/lib/unit-conversion';
-import { Loader2, Calculator } from 'lucide-react';
+import { Loader2, Calculator, ChevronDown, ChevronUp } from 'lucide-react';
 
-const ingredientSchema = z.object({
+const decorationSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100),
   purchase_price: z.number().positive('Preço deve ser maior que zero'),
   package_quantity: z.number().positive('Quantidade deve ser maior que zero'),
@@ -31,22 +31,21 @@ const ingredientSchema = z.object({
   category_id: z.string().optional().nullable(),
   brand: z.string().max(100).optional().nullable(),
   supplier: z.string().max(100).optional().nullable(),
-  expiry_date: z.string().optional().nullable(),
   stock_quantity: z.number().optional().nullable(),
   min_stock_alert: z.number().optional().nullable(),
 });
 
-type IngredientFormData = z.infer<typeof ingredientSchema>;
+type DecorationFormData = z.infer<typeof decorationSchema>;
 
-interface IngredientFormProps {
+interface DecorationFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  ingredient?: Ingredient | null;
+  decoration?: Decoration | null;
 }
 
-export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFormProps) {
-  const { categories } = useCategories();
-  const { createIngredient, updateIngredient } = useIngredients();
+export function DecorationForm({ open, onOpenChange, decoration }: DecorationFormProps) {
+  const { categories } = useDecorationCategories();
+  const { createDecoration, updateDecoration } = useDecorations();
   const [showOptional, setShowOptional] = useState(false);
 
   const {
@@ -56,53 +55,50 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<IngredientFormData>({
-    resolver: zodResolver(ingredientSchema),
+  } = useForm<DecorationFormData>({
+    resolver: zodResolver(decorationSchema),
     defaultValues: {
       name: '',
       purchase_price: undefined as unknown as number,
       package_quantity: undefined as unknown as number,
-      unit: 'kg',
+      unit: 'un',
       category_id: null,
       brand: null,
       supplier: null,
-      expiry_date: null,
       stock_quantity: null,
       min_stock_alert: null,
     },
   });
 
   useEffect(() => {
-    if (ingredient) {
+    if (decoration) {
       reset({
-        name: ingredient.name,
-        purchase_price: Number(ingredient.purchase_price),
-        package_quantity: Number(ingredient.package_quantity),
-        unit: ingredient.unit,
-        category_id: ingredient.category_id,
-        brand: ingredient.brand,
-        supplier: ingredient.supplier,
-        expiry_date: ingredient.expiry_date,
-        stock_quantity: ingredient.stock_quantity ? Number(ingredient.stock_quantity) : null,
-        min_stock_alert: ingredient.min_stock_alert ? Number(ingredient.min_stock_alert) : null,
+        name: decoration.name,
+        purchase_price: Number(decoration.purchase_price),
+        package_quantity: Number(decoration.package_quantity),
+        unit: decoration.unit,
+        category_id: decoration.category_id,
+        brand: decoration.brand,
+        supplier: decoration.supplier,
+        stock_quantity: decoration.stock_quantity ? Number(decoration.stock_quantity) : null,
+        min_stock_alert: decoration.min_stock_alert ? Number(decoration.min_stock_alert) : null,
       });
-      setShowOptional(!!ingredient.brand || !!ingredient.supplier || !!ingredient.expiry_date || !!ingredient.stock_quantity);
+      setShowOptional(!!decoration.brand || !!decoration.supplier || !!decoration.stock_quantity);
     } else {
       reset({
         name: '',
         purchase_price: undefined as unknown as number,
         package_quantity: undefined as unknown as number,
-        unit: 'kg',
+        unit: 'un',
         category_id: null,
         brand: null,
         supplier: null,
-        expiry_date: null,
         stock_quantity: null,
         min_stock_alert: null,
       });
       setShowOptional(false);
     }
-  }, [ingredient, reset, open]);
+  }, [decoration, reset, open]);
 
   const watchPrice = watch('purchase_price');
   const watchQuantity = watch('package_quantity');
@@ -112,8 +108,8 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
     ? getCostPerUnit(watchPrice, watchQuantity, watchUnit)
     : null;
 
-  const onSubmit = async (data: IngredientFormData) => {
-    const submitData: CreateIngredientData = {
+  const onSubmit = async (data: DecorationFormData) => {
+    const submitData: CreateDecorationData = {
       name: data.name.trim(),
       purchase_price: data.purchase_price,
       package_quantity: data.package_quantity,
@@ -121,15 +117,14 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
       category_id: data.category_id || null,
       brand: data.brand?.trim() || null,
       supplier: data.supplier?.trim() || null,
-      expiry_date: data.expiry_date || null,
       stock_quantity: data.stock_quantity ?? null,
       min_stock_alert: data.min_stock_alert ?? null,
     };
 
-    if (ingredient) {
-      await updateIngredient.mutateAsync({ id: ingredient.id, data: submitData });
+    if (decoration) {
+      await updateDecoration.mutateAsync({ id: decoration.id, data: submitData });
     } else {
-      await createIngredient.mutateAsync(submitData);
+      await createDecoration.mutateAsync(submitData);
     }
     onOpenChange(false);
   };
@@ -139,7 +134,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {ingredient ? 'Editar Ingrediente' : 'Novo Ingrediente'}
+            {decoration ? 'Editar Decoração' : 'Nova Decoração'}
           </DialogTitle>
         </DialogHeader>
 
@@ -149,7 +144,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
             <Label htmlFor="name">Nome *</Label>
             <Input
               id="name"
-              placeholder="Ex: Farinha de Trigo"
+              placeholder="Ex: Fita de Cetim Rosa"
               {...register('name')}
             />
             {errors.name && (
@@ -222,14 +217,14 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sem categoria</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: cat.color }}
+                          style={{ backgroundColor: category.color || '#6366f1' }}
                         />
-                        {cat.name}
+                        {category.name}
                       </div>
                     </SelectItem>
                   ))}
@@ -238,44 +233,45 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
             </div>
           </div>
 
-          {/* Cost Preview */}
+          {/* Preview do custo */}
           {costInfo && (
-            <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
-              <div className="flex items-center gap-2 text-accent">
-                <Calculator className="h-4 w-4" />
-                <span className="text-sm font-medium">Custo por unidade:</span>
-                <span className="font-bold">{costInfo.formatted}</span>
+            <div className="bg-accent/10 rounded-lg p-3 flex items-center gap-3">
+              <Calculator className="h-5 w-5 text-accent" />
+              <div>
+                <p className="text-sm font-medium">Custo por unidade</p>
+                <p className="text-lg font-bold text-accent">{costInfo.formatted}</p>
               </div>
             </div>
           )}
 
-          {/* Optional Fields Toggle */}
+          {/* Toggle campos opcionais */}
           <Button
             type="button"
             variant="ghost"
-            className="w-full text-muted-foreground"
+            className="w-full justify-between"
             onClick={() => setShowOptional(!showOptional)}
           >
-            {showOptional ? 'Ocultar campos opcionais' : 'Mostrar campos opcionais'}
+            <span>Campos opcionais</span>
+            {showOptional ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
 
+          {/* Campos opcionais */}
           {showOptional && (
-            <div className="space-y-4 animate-fade-in">
+            <div className="space-y-4 pt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="brand">Marca</Label>
                   <Input
                     id="brand"
-                    placeholder="Ex: Dona Benta"
+                    placeholder="Ex: Fitas São José"
                     {...register('brand')}
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="supplier">Fornecedor</Label>
                   <Input
                     id="supplier"
-                    placeholder="Ex: Mercado X"
+                    placeholder="Ex: Atacado das Fitas"
                     {...register('supplier')}
                   />
                 </div>
@@ -283,69 +279,38 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="expiry_date">Data de Validade</Label>
-                  <Input
-                    id="expiry_date"
-                    type="date"
-                    {...register('expiry_date')}
-                  />
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="stock_quantity">Estoque Atual</Label>
                   <Input
                     id="stock_quantity"
                     type="number"
-                    step="0.001"
+                    step="0.01"
                     min="0"
                     placeholder="0"
                     {...register('stock_quantity', { valueAsNumber: true })}
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="min_stock_alert">Alerta de Estoque Mínimo</Label>
-                <Input
-                  id="min_stock_alert"
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  placeholder="0"
-                  {...register('min_stock_alert', { valueAsNumber: true })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Você será alertado quando o estoque ficar abaixo deste valor
-                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="min_stock_alert">Alerta de Estoque Mínimo</Label>
+                  <Input
+                    id="min_stock_alert"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0"
+                    {...register('min_stock_alert', { valueAsNumber: true })}
+                  />
+                </div>
               </div>
             </div>
           )}
 
-          {/* Submit */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-            >
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : ingredient ? (
-                'Atualizar'
-              ) : (
-                'Adicionar'
-              )}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {decoration ? 'Atualizar' : 'Adicionar'}
             </Button>
           </div>
         </form>
