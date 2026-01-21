@@ -8,13 +8,17 @@ import { DecorationsList } from '@/components/decorations/DecorationsList';
 import { DecorationCategoriesList } from '@/components/decoration-categories/DecorationCategoriesList';
 import { PackagingList } from '@/components/packaging/PackagingList';
 import { PackagingCategoriesList } from '@/components/packaging-categories/PackagingCategoriesList';
+import { ProductsList } from '@/components/products/ProductsList';
+import { ProductCategoriesList } from '@/components/product-categories/ProductCategoriesList';
 import { UserSettings } from '@/components/settings/UserSettings';
 
 export function Dashboard() {
-  const [currentPage, setCurrentPage] = useState<PageType>('recipes');
+  const [currentPage, setCurrentPage] = useState<PageType>('products');
 
   return (
     <AppLayout currentPage={currentPage} onPageChange={setCurrentPage}>
+      {currentPage === 'products' && <ProductsList />}
+      {currentPage === 'product-categories' && <ProductCategoriesList />}
       {currentPage === 'recipes' && <RecipesList />}
       {currentPage === 'recipe-categories' && <RecipeCategoriesList />}
       {currentPage === 'ingredients' && <IngredientsList />}

@@ -310,6 +310,242 @@ export type Database = {
         }
         Relationships: []
       }
+      product_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      product_decorations: {
+        Row: {
+          created_at: string
+          decoration_id: string
+          id: string
+          product_id: string
+          quantity: number
+          unit: Database["public"]["Enums"]["measurement_unit"]
+        }
+        Insert: {
+          created_at?: string
+          decoration_id: string
+          id?: string
+          product_id: string
+          quantity: number
+          unit: Database["public"]["Enums"]["measurement_unit"]
+        }
+        Update: {
+          created_at?: string
+          decoration_id?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          unit?: Database["public"]["Enums"]["measurement_unit"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_decorations_decoration_id_fkey"
+            columns: ["decoration_id"]
+            isOneToOne: false
+            referencedRelation: "decorations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_decorations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_ingredients: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_id: string
+          product_id: string
+          quantity: number
+          unit: Database["public"]["Enums"]["measurement_unit"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          product_id: string
+          quantity: number
+          unit: Database["public"]["Enums"]["measurement_unit"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          product_id?: string
+          quantity?: number
+          unit?: Database["public"]["Enums"]["measurement_unit"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_ingredients_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_packaging: {
+        Row: {
+          created_at: string
+          id: string
+          packaging_id: string
+          product_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          packaging_id: string
+          product_id: string
+          quantity?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          packaging_id?: string
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_packaging_packaging_id_fkey"
+            columns: ["packaging_id"]
+            isOneToOne: false
+            referencedRelation: "packaging"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_packaging_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_recipes: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+          recipe_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity?: number
+          recipe_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          recipe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_recipes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_recipes_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          additional_costs: number | null
+          category_id: string | null
+          created_at: string
+          decoration_time_minutes: number | null
+          id: string
+          name: string
+          notes: string | null
+          profit_margin_percent: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          additional_costs?: number | null
+          category_id?: string | null
+          created_at?: string
+          decoration_time_minutes?: number | null
+          id?: string
+          name: string
+          notes?: string | null
+          profit_margin_percent?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          additional_costs?: number | null
+          category_id?: string | null
+          created_at?: string
+          decoration_time_minutes?: number | null
+          id?: string
+          name?: string
+          notes?: string | null
+          profit_margin_percent?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           business_name: string | null

@@ -11,11 +11,14 @@ import {
   ChefHat,
   BookOpen,
   FolderOpen,
-  Settings
+  Settings,
+  ShoppingBag,
+  Box,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type PageType = 'ingredients' | 'categories' | 'recipes' | 'recipe-categories' | 'decorations' | 'decoration-categories' | 'packaging' | 'packaging-categories' | 'settings';
+export type PageType = 'ingredients' | 'categories' | 'recipes' | 'recipe-categories' | 'decorations' | 'decoration-categories' | 'packaging' | 'packaging-categories' | 'products' | 'product-categories' | 'settings';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -28,13 +31,15 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = [
+    { id: 'products' as const, label: 'Produtos', icon: ShoppingBag },
+    { id: 'product-categories' as const, label: 'Categorias de Produtos', icon: FolderOpen },
     { id: 'recipes' as const, label: 'Receitas', icon: BookOpen },
     { id: 'recipe-categories' as const, label: 'Categorias de Receitas', icon: FolderOpen },
     { id: 'ingredients' as const, label: 'Ingredientes', icon: Package },
     { id: 'categories' as const, label: 'Categorias de Ingredientes', icon: Tags },
-    { id: 'decorations' as const, label: 'Decorações', icon: Cake },
+    { id: 'decorations' as const, label: 'Decorações', icon: Sparkles },
     { id: 'decoration-categories' as const, label: 'Categorias de Decorações', icon: FolderOpen },
-    { id: 'packaging' as const, label: 'Embalagens', icon: Package },
+    { id: 'packaging' as const, label: 'Embalagens', icon: Box },
     { id: 'packaging-categories' as const, label: 'Categorias de Embalagens', icon: FolderOpen },
     { id: 'settings' as const, label: 'Configurações', icon: Settings },
   ];
