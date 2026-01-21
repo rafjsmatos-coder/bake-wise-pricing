@@ -41,6 +41,92 @@ export type Database = {
         }
         Relationships: []
       }
+      decoration_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      decorations: {
+        Row: {
+          brand: string | null
+          category_id: string | null
+          cost_per_unit: number | null
+          created_at: string
+          id: string
+          min_stock_alert: number | null
+          name: string
+          package_quantity: number
+          purchase_price: number
+          stock_quantity: number | null
+          supplier: string | null
+          unit: Database["public"]["Enums"]["measurement_unit"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand?: string | null
+          category_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          id?: string
+          min_stock_alert?: number | null
+          name: string
+          package_quantity: number
+          purchase_price: number
+          stock_quantity?: number | null
+          supplier?: string | null
+          unit: Database["public"]["Enums"]["measurement_unit"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand?: string | null
+          category_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          id?: string
+          min_stock_alert?: number | null
+          name?: string
+          package_quantity?: number
+          purchase_price?: number
+          stock_quantity?: number | null
+          supplier?: string | null
+          unit?: Database["public"]["Enums"]["measurement_unit"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decorations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "decoration_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredient_price_history: {
         Row: {
           id: string
@@ -340,7 +426,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      measurement_unit: "kg" | "g" | "L" | "ml" | "un"
+      measurement_unit: "kg" | "g" | "L" | "ml" | "un" | "m" | "cm"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -468,7 +554,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      measurement_unit: ["kg", "g", "L", "ml", "un"],
+      measurement_unit: ["kg", "g", "L", "ml", "un", "m", "cm"],
     },
   },
 } as const

@@ -1,13 +1,13 @@
 // Unit conversion utilities for the pricing system
 
-export type MeasurementUnit = 'kg' | 'g' | 'L' | 'ml' | 'un';
+export type MeasurementUnit = 'kg' | 'g' | 'L' | 'ml' | 'un' | 'm' | 'cm';
 
 export interface UnitInfo {
   label: string;
   labelPlural: string;
   baseUnit: MeasurementUnit | null;
   conversionFactor: number;
-  type: 'weight' | 'volume' | 'unit';
+  type: 'weight' | 'volume' | 'unit' | 'length';
 }
 
 export const UNITS: Record<MeasurementUnit, UnitInfo> = {
@@ -45,6 +45,20 @@ export const UNITS: Record<MeasurementUnit, UnitInfo> = {
     baseUnit: null,
     conversionFactor: 1,
     type: 'unit',
+  },
+  m: {
+    label: 'metro',
+    labelPlural: 'metros',
+    baseUnit: 'cm',
+    conversionFactor: 100,
+    type: 'length',
+  },
+  cm: {
+    label: 'centímetro',
+    labelPlural: 'centímetros',
+    baseUnit: null,
+    conversionFactor: 1,
+    type: 'length',
   },
 };
 

@@ -56,6 +56,8 @@ const MEASUREMENT_UNITS = [
   { value: 'L', label: 'Litros (L)' },
   { value: 'ml', label: 'Mililitros (ml)' },
   { value: 'un', label: 'Unidades (un)' },
+  { value: 'm', label: 'Metros (m)' },
+  { value: 'cm', label: 'Centímetros (cm)' },
 ];
 
 export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
