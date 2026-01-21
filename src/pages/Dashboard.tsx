@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AppLayout, PageType } from '@/components/layout/AppLayout';
+import { DashboardHome } from '@/components/dashboard/DashboardHome';
 import { IngredientsList } from '@/components/ingredients/IngredientsList';
 import { CategoriesList } from '@/components/categories/CategoriesList';
 import { RecipesList } from '@/components/recipes/RecipesList';
@@ -13,10 +14,11 @@ import { ProductCategoriesList } from '@/components/product-categories/ProductCa
 import { UserSettings } from '@/components/settings/UserSettings';
 
 export function Dashboard() {
-  const [currentPage, setCurrentPage] = useState<PageType>('products');
+  const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
 
   return (
     <AppLayout currentPage={currentPage} onPageChange={setCurrentPage}>
+      {currentPage === 'dashboard' && <DashboardHome onNavigate={(page) => setCurrentPage(page as PageType)} />}
       {currentPage === 'products' && <ProductsList />}
       {currentPage === 'product-categories' && <ProductCategoriesList />}
       {currentPage === 'recipes' && <RecipesList />}
