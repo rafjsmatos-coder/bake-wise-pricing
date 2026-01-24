@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,28 +26,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2 } from 'lucide-react';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { useProductCategories } from '@/hooks/useProductCategories';
-import { useRecipes } from '@/hooks/useRecipes';
-import { useIngredients } from '@/hooks/useIngredients';
-import { useDecorations } from '@/hooks/useDecorations';
-import { usePackaging } from '@/hooks/usePackaging';
-import { SearchableCombobox } from '@/components/ui/searchable-combobox';
-import type { Database } from '@/integrations/supabase/types';
-
-type MeasurementUnit = Database['public']['Enums']['measurement_unit'];
-
-const UNITS = [
-  { value: 'un', label: 'Unidade(s)' },
-  { value: 'kg', label: 'Quilograma(s)' },
-  { value: 'g', label: 'Grama(s)' },
-  { value: 'L', label: 'Litro(s)' },
-  { value: 'ml', label: 'Mililitro(s)' },
-  { value: 'm', label: 'Metro(s)' },
-  { value: 'cm', label: 'Centímetro(s)' },
-] as const;
+import { RecipeSelector, type SelectedRecipe } from './selectors/RecipeSelector';
+import { IngredientSelector, type SelectedIngredient } from './selectors/IngredientSelector';
+import { DecorationSelector, type SelectedDecoration } from './selectors/DecorationSelector';
+import { PackagingSelector, type SelectedPackaging } from './selectors/PackagingSelector';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -66,42 +50,9 @@ interface ProductFormProps {
   product?: Product | null;
 }
 
-interface SelectedRecipe {
-  recipe_id: string;
-  quantity: number | null;
-  unit: string;
-  name: string;
-  yield_quantity: number;
-  yield_unit: string;
-}
-
-interface SelectedIngredient {
-  ingredient_id: string;
-  quantity: number | null;
-  unit: MeasurementUnit;
-  name: string;
-}
-
-interface SelectedDecoration {
-  decoration_id: string;
-  quantity: number | null;
-  unit: MeasurementUnit;
-  name: string;
-}
-
-interface SelectedPackaging {
-  packaging_id: string;
-  quantity: number | null;
-  name: string;
-}
-
 export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
   const { createProduct, updateProduct } = useProducts();
   const { categories } = useProductCategories();
-  const { recipes } = useRecipes();
-  const { ingredients } = useIngredients();
-  const { decorations } = useDecorations();
-  const { packagingItems } = usePackaging();
 
   const [selectedRecipes, setSelectedRecipes] = useState<SelectedRecipe[]>([]);
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
@@ -190,10 +141,10 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
         profit_margin_percent: data.profit_margin_percent ?? 30,
         additional_costs: data.additional_costs ?? 0,
         notes: data.notes || null,
-        recipes: selectedRecipes.map(r => ({ recipe_id: r.recipe_id, quantity: r.quantity ?? 0, unit: r.unit })),
-        ingredients: selectedIngredients.map(i => ({ ingredient_id: i.ingredient_id, quantity: i.quantity ?? 0, unit: i.unit })),
-        decorations: selectedDecorations.map(d => ({ decoration_id: d.decoration_id, quantity: d.quantity ?? 0, unit: d.unit })),
-        packaging: selectedPackaging.map(p => ({ packaging_id: p.packaging_id, quantity: p.quantity ?? 1 })),
+        recipes: selectedRecipes.map(r => ({ recipe_id: r.recipe_id, quantity: r.quantity, unit: r.unit })),
+        ingredients: selectedIngredients.map(i => ({ ingredient_id: i.ingredient_id, quantity: i.quantity, unit: i.unit })),
+        decorations: selectedDecorations.map(d => ({ decoration_id: d.decoration_id, quantity: d.quantity, unit: d.unit })),
+        packaging: selectedPackaging.map(p => ({ packaging_id: p.packaging_id, quantity: p.quantity })),
       };
 
       if (product) {
@@ -204,55 +155,6 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
       onOpenChange(false);
     } catch (error) {
       console.error('Erro ao salvar produto:', error);
-    }
-  };
-
-  const addRecipe = (recipeId: string) => {
-    const recipe = recipes.find(r => r.id === recipeId);
-    if (recipe && !selectedRecipes.find(r => r.recipe_id === recipeId)) {
-      setSelectedRecipes([...selectedRecipes, { 
-        recipe_id: recipeId, 
-        quantity: null,
-        unit: recipe.yield_unit,
-        name: recipe.name,
-        yield_quantity: recipe.yield_quantity,
-        yield_unit: recipe.yield_unit,
-      }]);
-    }
-  };
-
-  const addIngredient = (ingredientId: string) => {
-    const ingredient = ingredients.find(i => i.id === ingredientId);
-    if (ingredient && !selectedIngredients.find(i => i.ingredient_id === ingredientId)) {
-      setSelectedIngredients([...selectedIngredients, { 
-        ingredient_id: ingredientId, 
-        quantity: null, 
-        unit: ingredient.unit,
-        name: ingredient.name 
-      }]);
-    }
-  };
-
-  const addDecoration = (decorationId: string) => {
-    const decoration = decorations.find(d => d.id === decorationId);
-    if (decoration && !selectedDecorations.find(d => d.decoration_id === decorationId)) {
-      setSelectedDecorations([...selectedDecorations, { 
-        decoration_id: decorationId, 
-        quantity: null, 
-        unit: decoration.unit,
-        name: decoration.name 
-      }]);
-    }
-  };
-
-  const addPackaging = (packagingId: string) => {
-    const pkg = packagingItems.find(p => p.id === packagingId);
-    if (pkg && !selectedPackaging.find(p => p.packaging_id === packagingId)) {
-      setSelectedPackaging([...selectedPackaging, { 
-        packaging_id: packagingId, 
-        quantity: null, 
-        name: pkg.name 
-      }]);
     }
   };
 
@@ -276,7 +178,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                   <FormItem className="col-span-1 sm:col-span-2">
                     <FormLabel>Nome do Produto *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Bolo de Chocolate Decorado" {...field} />
+                      <Input placeholder="Ex: Bolo de Chocolate Decorado" className="min-h-[44px]" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -329,322 +231,29 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
               />
             </div>
 
-            {/* Recipes */}
-            <Card>
-              <CardHeader className="py-3 px-3 sm:px-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <CardTitle className="text-base">Receitas</CardTitle>
-                  <SearchableCombobox
-                    items={recipes.map(r => ({
-                      id: r.id,
-                      name: r.name,
-                      description: `Rende: ${r.yield_quantity} ${r.yield_unit}`,
-                    }))}
-                    selectedIds={selectedRecipes.map(r => r.recipe_id)}
-                    onSelect={addRecipe}
-                    placeholder="Adicionar receita"
-                    searchPlaceholder="Buscar receita..."
-                    emptyMessage="Nenhuma receita encontrada"
-                    title="Adicionar Receita"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="py-2 px-3 sm:px-6">
-                {selectedRecipes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhuma receita adicionada</p>
-                ) : (
-                  <div className="space-y-3">
-                    {selectedRecipes.map((r, idx) => {
-                      // Get compatible units based on recipe yield unit type
-                      const yieldUnitInfo = UNITS.find(u => u.value === r.yield_unit);
-                      const compatibleUnits = yieldUnitInfo 
-                        ? UNITS.filter(u => {
-                            // Same unit type compatibility
-                            if (r.yield_unit === 'un') return u.value === 'un';
-                            if (['kg', 'g'].includes(r.yield_unit)) return ['kg', 'g'].includes(u.value);
-                            if (['L', 'ml'].includes(r.yield_unit)) return ['L', 'ml'].includes(u.value);
-                            if (['m', 'cm'].includes(r.yield_unit)) return ['m', 'cm'].includes(u.value);
-                            return u.value === r.yield_unit;
-                          })
-                        : UNITS;
+            {/* Recipe Selector */}
+            <RecipeSelector
+              selectedRecipes={selectedRecipes}
+              onRecipesChange={setSelectedRecipes}
+            />
 
-                      return (
-                        <div key={r.recipe_id} className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1">
-                              <span className="text-sm font-medium">{r.name}</span>
-                              <p className="text-xs text-muted-foreground">
-                                Rende: {r.yield_quantity} {r.yield_unit}
-                              </p>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="min-h-[44px] min-w-[44px] shrink-0"
-                              onClick={() => setSelectedRecipes(selectedRecipes.filter((_, i) => i !== idx))}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm text-muted-foreground">Usar:</span>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              className="w-24 min-h-[44px]"
-                              placeholder={String(r.yield_quantity)}
-                              value={r.quantity ?? ''}
-                              autoComplete="off"
-                              onChange={(e) => {
-                                const updated = [...selectedRecipes];
-                                updated[idx].quantity = e.target.value === '' ? null : parseFloat(e.target.value);
-                                setSelectedRecipes(updated);
-                              }}
-                            />
-                            <Select
-                              value={r.unit}
-                              onValueChange={(value) => {
-                                const updated = [...selectedRecipes];
-                                updated[idx].unit = value;
-                                setSelectedRecipes(updated);
-                              }}
-                            >
-                              <SelectTrigger className="w-[120px] min-h-[44px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="max-h-[40vh]">
-                                {compatibleUnits.map((unit) => (
-                                  <SelectItem key={unit.value} value={unit.value} className="py-3">
-                                    {unit.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Ingredient Selector */}
+            <IngredientSelector
+              selectedIngredients={selectedIngredients}
+              onIngredientsChange={setSelectedIngredients}
+            />
 
-            {/* Ingredients */}
-            <Card>
-              <CardHeader className="py-3 px-3 sm:px-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <CardTitle className="text-base">Ingredientes Avulsos</CardTitle>
-                  <SearchableCombobox
-                    items={ingredients.map(i => ({
-                      id: i.id,
-                      name: i.name,
-                      description: i.categories?.name || undefined,
-                    }))}
-                    selectedIds={selectedIngredients.map(i => i.ingredient_id)}
-                    onSelect={addIngredient}
-                    placeholder="Adicionar ingrediente"
-                    searchPlaceholder="Buscar ingrediente..."
-                    emptyMessage="Nenhum ingrediente encontrado"
-                    title="Adicionar Ingrediente"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="py-2 px-3 sm:px-6">
-                {selectedIngredients.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum ingrediente adicionado</p>
-                ) : (
-                  <div className="space-y-3">
-                    {selectedIngredients.map((i, idx) => (
-                      <div key={i.ingredient_id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                        <span className="flex-1 text-sm font-medium">{i.name}</span>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            className="w-20 min-h-[44px]"
-                            placeholder="Qtd"
-                            value={i.quantity ?? ''}
-                            autoComplete="off"
-                            onChange={(e) => {
-                              const updated = [...selectedIngredients];
-                              updated[idx].quantity = e.target.value === '' ? null : parseFloat(e.target.value);
-                              setSelectedIngredients(updated);
-                            }}
-                          />
-                          <Select
-                            value={i.unit}
-                            onValueChange={(value) => {
-                              const updated = [...selectedIngredients];
-                              updated[idx].unit = value as MeasurementUnit;
-                              setSelectedIngredients(updated);
-                            }}
-                          >
-                            <SelectTrigger className="w-[100px] min-h-[44px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[40vh]">
-                              {UNITS.map((unit) => (
-                                <SelectItem key={unit.value} value={unit.value} className="py-3">
-                                  {unit.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="min-h-[44px] min-w-[44px]"
-                            onClick={() => setSelectedIngredients(selectedIngredients.filter((_, idx2) => idx2 !== idx))}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Decoration Selector */}
+            <DecorationSelector
+              selectedDecorations={selectedDecorations}
+              onDecorationsChange={setSelectedDecorations}
+            />
 
-            {/* Decorations */}
-            <Card>
-              <CardHeader className="py-3 px-3 sm:px-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <CardTitle className="text-base">Decorações</CardTitle>
-                  <SearchableCombobox
-                    items={decorations.map(d => ({
-                      id: d.id,
-                      name: d.name,
-                      description: d.decoration_categories?.name || undefined,
-                    }))}
-                    selectedIds={selectedDecorations.map(d => d.decoration_id)}
-                    onSelect={addDecoration}
-                    placeholder="Adicionar decoração"
-                    searchPlaceholder="Buscar decoração..."
-                    emptyMessage="Nenhuma decoração encontrada"
-                    title="Adicionar Decoração"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="py-2 px-3 sm:px-6">
-                {selectedDecorations.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhuma decoração adicionada</p>
-                ) : (
-                  <div className="space-y-3">
-                    {selectedDecorations.map((d, idx) => (
-                      <div key={d.decoration_id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                        <span className="flex-1 text-sm font-medium">{d.name}</span>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            className="w-20 min-h-[44px]"
-                            placeholder="Qtd"
-                            value={d.quantity ?? ''}
-                            autoComplete="off"
-                            onChange={(e) => {
-                              const updated = [...selectedDecorations];
-                              updated[idx].quantity = e.target.value === '' ? null : parseFloat(e.target.value);
-                              setSelectedDecorations(updated);
-                            }}
-                          />
-                          <Select
-                            value={d.unit}
-                            onValueChange={(value) => {
-                              const updated = [...selectedDecorations];
-                              updated[idx].unit = value as MeasurementUnit;
-                              setSelectedDecorations(updated);
-                            }}
-                          >
-                            <SelectTrigger className="w-[100px] min-h-[44px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[40vh]">
-                              {UNITS.map((unit) => (
-                                <SelectItem key={unit.value} value={unit.value} className="py-3">
-                                  {unit.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="min-h-[44px] min-w-[44px]"
-                            onClick={() => setSelectedDecorations(selectedDecorations.filter((_, idx2) => idx2 !== idx))}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Packaging */}
-            <Card>
-              <CardHeader className="py-3 px-3 sm:px-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <CardTitle className="text-base">Embalagens</CardTitle>
-                  <SearchableCombobox
-                    items={packagingItems.map(p => ({
-                      id: p.id,
-                      name: p.name,
-                      description: p.dimensions || p.category?.name || undefined,
-                    }))}
-                    selectedIds={selectedPackaging.map(p => p.packaging_id)}
-                    onSelect={addPackaging}
-                    placeholder="Adicionar embalagem"
-                    searchPlaceholder="Buscar embalagem..."
-                    emptyMessage="Nenhuma embalagem encontrada"
-                    title="Adicionar Embalagem"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="py-2 px-3 sm:px-6">
-                {selectedPackaging.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhuma embalagem adicionada</p>
-                ) : (
-                  <div className="space-y-3">
-                    {selectedPackaging.map((p, idx) => (
-                      <div key={p.packaging_id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                        <span className="flex-1 text-sm font-medium">{p.name}</span>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            step="1"
-                            className="w-20 min-h-[44px]"
-                            placeholder="Qtd"
-                            value={p.quantity ?? ''}
-                            autoComplete="off"
-                            onChange={(e) => {
-                              const updated = [...selectedPackaging];
-                              updated[idx].quantity = e.target.value === '' ? null : parseFloat(e.target.value);
-                              setSelectedPackaging(updated);
-                            }}
-                          />
-                          <span className="text-sm text-muted-foreground">un</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="min-h-[44px] min-w-[44px]"
-                            onClick={() => setSelectedPackaging(selectedPackaging.filter((_, idx2) => idx2 !== idx))}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Packaging Selector */}
+            <PackagingSelector
+              selectedPackaging={selectedPackaging}
+              onPackagingChange={setSelectedPackaging}
+            />
 
             {/* Additional fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
