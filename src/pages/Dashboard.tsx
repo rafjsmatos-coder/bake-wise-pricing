@@ -12,6 +12,7 @@ import { PackagingCategoriesList } from '@/components/packaging-categories/Packa
 import { ProductsList } from '@/components/products/ProductsList';
 import { ProductCategoriesList } from '@/components/product-categories/ProductCategoriesList';
 import { UserSettings } from '@/components/settings/UserSettings';
+import { ProfileSettings } from '@/components/settings/ProfileSettings';
 
 export function Dashboard() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
@@ -30,6 +31,7 @@ export function Dashboard() {
       {currentPage === 'packaging' && <PackagingList />}
       {currentPage === 'packaging-categories' && <PackagingCategoriesList />}
       {currentPage === 'settings' && <UserSettings />}
+      {currentPage === 'profile' && <ProfileSettings />}
     </AppLayout>
   );
 }

@@ -1,20 +1,22 @@
 import { ReactNode, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Cake, 
   Package, 
   LogOut, 
   Menu, 
   X,
-  ChefHat,
   BookOpen,
   Settings,
   ShoppingBag,
   Box,
   Sparkles,
   ChevronDown,
-  LayoutDashboard
+  LayoutDashboard,
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -35,7 +37,8 @@ export type PageType =
   | 'packaging-categories' 
   | 'products' 
   | 'product-categories' 
-  | 'settings';
+  | 'settings'
+  | 'profile';
 
 interface NavItem {
   id: PageType;
@@ -52,7 +55,20 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProps) {
   const { user, signOut } = useAuth();
+  const { profile } = useProfile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return user?.email?.slice(0, 2).toUpperCase() || 'U';
+  };
 
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -97,6 +113,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
       ]
     },
     { id: 'settings', label: 'Configurações', icon: Settings },
+    { id: 'profile', label: 'Meu Perfil', icon: User },
   ];
 
   const isChildActive = (item: NavItem) => {
@@ -233,19 +250,25 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
 
           {/* User Section */}
           <div className="p-4 border-t border-border">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <ChefHat className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
+            <button
+              onClick={() => handleNavClick('profile')}
+              className="w-full flex items-center gap-3 mb-3 p-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0 text-left">
                 <p className="text-sm font-medium truncate">
-                  {user?.user_metadata?.full_name || 'Confeiteiro'}
+                  {profile?.full_name || user?.user_metadata?.full_name || 'Confeiteiro'}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {user?.email}
+                  {profile?.business_name || user?.email}
                 </p>
               </div>
-            </div>
+            </button>
             <Button
               variant="outline"
               className="w-full"
