@@ -5,10 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Cake, Loader2 } from 'lucide-react';
+import { Cake, Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export function AuthForm() {
+interface AuthFormProps {
+  onBack?: () => void;
+}
+
+export function AuthForm({ onBack }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
@@ -77,6 +81,17 @@ export function AuthForm() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md animate-fade-in">
         <CardHeader className="text-center space-y-4">
+          {onBack && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onBack}
+              className="absolute top-4 left-4 gap-1"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar
+            </Button>
+          )}
           <div className="mx-auto w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center">
             <Cake className="w-8 h-8 text-accent" />
           </div>
