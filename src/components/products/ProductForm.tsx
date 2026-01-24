@@ -68,7 +68,10 @@ interface ProductFormProps {
 interface SelectedRecipe {
   recipe_id: string;
   quantity: number;
+  unit: string;
   name: string;
+  yield_quantity: number;
+  yield_unit: string;
 }
 
 interface SelectedIngredient {
@@ -132,7 +135,10 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
         product.product_recipes?.map(pr => ({
           recipe_id: pr.recipe_id,
           quantity: pr.quantity,
+          unit: pr.unit || pr.recipe?.yield_unit || 'un',
           name: pr.recipe?.name || '',
+          yield_quantity: pr.recipe?.yield_quantity || 1,
+          yield_unit: pr.recipe?.yield_unit || 'un',
         })) || []
       );
       setSelectedIngredients(
@@ -183,7 +189,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
         profit_margin_percent: data.profit_margin_percent ?? 30,
         additional_costs: data.additional_costs ?? 0,
         notes: data.notes || null,
-        recipes: selectedRecipes.map(r => ({ recipe_id: r.recipe_id, quantity: r.quantity })),
+        recipes: selectedRecipes.map(r => ({ recipe_id: r.recipe_id, quantity: r.quantity, unit: r.unit })),
         ingredients: selectedIngredients.map(i => ({ ingredient_id: i.ingredient_id, quantity: i.quantity, unit: i.unit })),
         decorations: selectedDecorations.map(d => ({ decoration_id: d.decoration_id, quantity: d.quantity, unit: d.unit })),
         packaging: selectedPackaging.map(p => ({ packaging_id: p.packaging_id, quantity: p.quantity })),
@@ -203,7 +209,14 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
   const addRecipe = (recipeId: string) => {
     const recipe = recipes.find(r => r.id === recipeId);
     if (recipe && !selectedRecipes.find(r => r.recipe_id === recipeId)) {
-      setSelectedRecipes([...selectedRecipes, { recipe_id: recipeId, quantity: 1, name: recipe.name }]);
+      setSelectedRecipes([...selectedRecipes, { 
+        recipe_id: recipeId, 
+        quantity: recipe.yield_quantity, 
+        unit: recipe.yield_unit,
+        name: recipe.name,
+        yield_quantity: recipe.yield_quantity,
+        yield_unit: recipe.yield_unit,
+      }]);
     }
   };
 
@@ -339,34 +352,75 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                   <p className="text-sm text-muted-foreground">Nenhuma receita adicionada</p>
                 ) : (
                   <div className="space-y-3">
-                    {selectedRecipes.map((r, idx) => (
-                      <div key={r.recipe_id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                        <span className="flex-1 text-sm font-medium">{r.name}</span>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            step="0.1"
-                            className="w-20 min-h-[44px]"
-                            value={r.quantity}
-                            onChange={(e) => {
-                              const updated = [...selectedRecipes];
-                              updated[idx].quantity = parseFloat(e.target.value) || 1;
-                              setSelectedRecipes(updated);
-                            }}
-                          />
-                          <span className="text-sm text-muted-foreground">x</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="min-h-[44px] min-w-[44px]"
-                            onClick={() => setSelectedRecipes(selectedRecipes.filter((_, i) => i !== idx))}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                    {selectedRecipes.map((r, idx) => {
+                      // Get compatible units based on recipe yield unit type
+                      const yieldUnitInfo = UNITS.find(u => u.value === r.yield_unit);
+                      const compatibleUnits = yieldUnitInfo 
+                        ? UNITS.filter(u => {
+                            // Same unit type compatibility
+                            if (r.yield_unit === 'un') return u.value === 'un';
+                            if (['kg', 'g'].includes(r.yield_unit)) return ['kg', 'g'].includes(u.value);
+                            if (['L', 'ml'].includes(r.yield_unit)) return ['L', 'ml'].includes(u.value);
+                            if (['m', 'cm'].includes(r.yield_unit)) return ['m', 'cm'].includes(u.value);
+                            return u.value === r.yield_unit;
+                          })
+                        : UNITS;
+
+                      return (
+                        <div key={r.recipe_id} className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <span className="text-sm font-medium">{r.name}</span>
+                              <p className="text-xs text-muted-foreground">
+                                Rende: {r.yield_quantity} {r.yield_unit}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="min-h-[44px] min-w-[44px] shrink-0"
+                              onClick={() => setSelectedRecipes(selectedRecipes.filter((_, i) => i !== idx))}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm text-muted-foreground">Usar:</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="w-24 min-h-[44px]"
+                              value={r.quantity}
+                              onChange={(e) => {
+                                const updated = [...selectedRecipes];
+                                updated[idx].quantity = parseFloat(e.target.value) || 0;
+                                setSelectedRecipes(updated);
+                              }}
+                            />
+                            <Select
+                              value={r.unit}
+                              onValueChange={(value) => {
+                                const updated = [...selectedRecipes];
+                                updated[idx].unit = value;
+                                setSelectedRecipes(updated);
+                              }}
+                            >
+                              <SelectTrigger className="w-[120px] min-h-[44px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-[40vh]">
+                                {compatibleUnits.map((unit) => (
+                                  <SelectItem key={unit.value} value={unit.value} className="py-3">
+                                    {unit.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
