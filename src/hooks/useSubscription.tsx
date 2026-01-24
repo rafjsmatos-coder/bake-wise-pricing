@@ -31,8 +31,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const checkSubscription = useCallback(async () => {
-    if (!session?.access_token) {
-      setSubscription({ subscribed: false, status: 'loading' });
+    if (!session?.access_token || !user) {
+      setSubscription({ subscribed: false, status: 'expired' });
       setIsLoading(false);
       return;
     }
@@ -51,6 +51,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // Handle error in response body (graceful failure)
+      if (data?.error) {
+        console.log('Subscription check returned error:', data.error);
+        setSubscription({ subscribed: false, status: 'expired' });
+        return;
+      }
+
       setSubscription({
         subscribed: data.subscribed,
         status: data.status,
@@ -65,7 +72,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.access_token]);
+  }, [session?.access_token, user]);
 
   const createCheckout = async (): Promise<string | null> => {
     if (!session?.access_token) {
