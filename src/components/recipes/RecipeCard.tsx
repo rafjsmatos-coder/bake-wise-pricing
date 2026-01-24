@@ -82,9 +82,9 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
   const ingredientCount = recipe.recipe_ingredients?.length || 0;
 
   return (
-    <div className="group bg-card border border-border rounded-lg p-4 hover:shadow-md hover:border-accent/30 transition-all">
+    <div className="group bg-card border border-border rounded-lg p-4 hover:shadow-md hover:border-accent/30 transition-all overflow-hidden">
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-foreground truncate group-hover:text-accent transition-colors">
             {recipe.name}
@@ -92,7 +92,7 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
           {recipe.recipe_categories && (
             <Badge
               variant="secondary"
-              className="mt-1"
+              className="mt-1 max-w-[120px] truncate"
               style={{
                 backgroundColor: `${recipe.recipe_categories.color}20`,
                 color: recipe.recipe_categories.color,

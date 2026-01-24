@@ -87,14 +87,14 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <div className="w-14 h-14 bg-accent/10 rounded-xl flex items-center justify-center">
-          <Cake className="h-7 w-7 text-accent" />
+        <div className="w-12 sm:w-14 h-12 sm:h-14 bg-accent/10 rounded-xl flex items-center justify-center shrink-0">
+          <Cake className="h-6 sm:h-7 w-6 sm:w-7 text-accent" />
         </div>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">Dashboard</h1>
           <p className="text-muted-foreground">Visão geral do seu negócio</p>
         </div>
       </div>

@@ -91,16 +91,16 @@ export function DecorationsList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Decorações</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold truncate">Decorações</h1>
           <p className="text-muted-foreground">
             {decorations.length} decorações cadastradas
           </p>
         </div>
-        <Button onClick={() => { setEditingDecoration(null); setFormOpen(true); }}>
+        <Button onClick={() => { setEditingDecoration(null); setFormOpen(true); }} className="w-full sm:w-auto shrink-0">
           <Plus className="h-4 w-4 mr-2" />
           Nova Decoração
         </Button>
@@ -114,11 +114,11 @@ export function DecorationsList() {
             placeholder="Buscar decorações..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 min-h-[44px]"
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-48">
+          <SelectTrigger className="w-full sm:w-48 min-h-[44px]">
             <SelectValue placeholder="Filtrar por categoria" />
           </SelectTrigger>
           <SelectContent>

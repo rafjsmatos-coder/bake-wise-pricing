@@ -168,7 +168,7 @@ export function IngredientSelector({
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
-                  className="w-full justify-between"
+                  className="w-full justify-between min-h-[44px]"
                 >
                   {selectedIngredient ? (
                     <span className="truncate">{selectedIngredient.name}</span>
@@ -178,7 +178,7 @@ export function IngredientSelector({
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0">
+              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[300px] max-w-[300px] p-0">
                 <Command>
                   <CommandInput placeholder="Buscar ingrediente..." />
                   <CommandList>
@@ -223,19 +223,19 @@ export function IngredientSelector({
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               disabled={!selectedIngredient}
-              className="flex-1"
+              className="flex-1 min-h-[44px]"
             />
             <Select
               value={unit}
               onValueChange={(value: MeasurementUnit) => setUnit(value)}
               disabled={!selectedIngredient}
             >
-              <SelectTrigger className="w-20">
+              <SelectTrigger className="w-20 min-h-[44px]">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[40vh]">
                 {compatibleUnits.map((u) => (
-                  <SelectItem key={u} value={u}>
+                  <SelectItem key={u} value={u} className="py-3">
                     {u}
                   </SelectItem>
                 ))}
@@ -248,7 +248,7 @@ export function IngredientSelector({
             type="button"
             onClick={handleAddIngredient}
             disabled={!selectedIngredient || !quantity || Number(quantity) <= 0}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto min-h-[44px]"
           >
             <Plus className="h-4 w-4 mr-2" />
             Adicionar
@@ -272,9 +272,9 @@ export function IngredientSelector({
             return (
               <div
                 key={item.ingredient_id}
-                className="flex items-center gap-3 p-3 border border-border rounded-lg bg-card"
+                className="flex flex-wrap items-center gap-2 p-3 border border-border rounded-lg bg-card"
               >
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 w-full sm:w-auto">
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="font-medium truncate">
@@ -283,47 +283,45 @@ export function IngredientSelector({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                   <Input
                     type="number"
                     step="0.001"
                     min="0"
                     value={item.quantity}
                     onChange={(e) => handleUpdateQuantity(item.ingredient_id, Number(e.target.value))}
-                    className="w-20"
+                    className="w-16 sm:w-20 min-h-[44px]"
                   />
                   <Select
                     value={item.unit}
                     onValueChange={(value: MeasurementUnit) => handleUpdateUnit(item.ingredient_id, value)}
                   >
-                    <SelectTrigger className="w-16">
+                    <SelectTrigger className="w-16 min-h-[44px]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[40vh]">
                       {itemCompatibleUnits.map((u) => (
-                        <SelectItem key={u} value={u}>
+                        <SelectItem key={u} value={u} className="py-3">
                           {u}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <div className="text-right min-w-[70px] sm:min-w-[80px]">
+                    <span className="font-medium text-accent text-sm sm:text-base">
+                      {formatCurrency(item.cost)}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveIngredient(item.ingredient_id)}
+                    className="shrink-0 text-muted-foreground hover:text-destructive min-h-[44px] min-w-[44px]"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-
-                <div className="text-right min-w-[80px]">
-                  <span className="font-medium text-accent">
-                    {formatCurrency(item.cost)}
-                  </span>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveIngredient(item.ingredient_id)}
-                  className="shrink-0 text-muted-foreground hover:text-destructive"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
             );
           })}
