@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,13 +27,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useIngredients } from '@/hooks/useIngredients';
 import { useDecorations } from '@/hooks/useDecorations';
 import { usePackaging } from '@/hooks/usePackaging';
+import { SearchableCombobox } from '@/components/ui/searchable-combobox';
 import type { Database } from '@/integrations/supabase/types';
 
 type MeasurementUnit = Database['public']['Enums']['measurement_unit'];
@@ -333,18 +334,19 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
               <CardHeader className="py-3 px-3 sm:px-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <CardTitle className="text-base">Receitas</CardTitle>
-                  <Select onValueChange={addRecipe}>
-                    <SelectTrigger className="w-full sm:w-[200px] min-h-[44px]">
-                      <SelectValue placeholder="Adicionar receita" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[40vh]">
-                      {recipes.filter(r => !selectedRecipes.find(sr => sr.recipe_id === r.id)).map((recipe) => (
-                        <SelectItem key={recipe.id} value={recipe.id} className="py-3">
-                          {recipe.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableCombobox
+                    items={recipes.map(r => ({
+                      id: r.id,
+                      name: r.name,
+                      description: `Rende: ${r.yield_quantity} ${r.yield_unit}`,
+                    }))}
+                    selectedIds={selectedRecipes.map(r => r.recipe_id)}
+                    onSelect={addRecipe}
+                    placeholder="Adicionar receita"
+                    searchPlaceholder="Buscar receita..."
+                    emptyMessage="Nenhuma receita encontrada"
+                    title="Adicionar Receita"
+                  />
                 </div>
               </CardHeader>
               <CardContent className="py-2 px-3 sm:px-6">
@@ -431,18 +433,19 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
               <CardHeader className="py-3 px-3 sm:px-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <CardTitle className="text-base">Ingredientes Avulsos</CardTitle>
-                  <Select onValueChange={addIngredient}>
-                    <SelectTrigger className="w-full sm:w-[200px] min-h-[44px]">
-                      <SelectValue placeholder="Adicionar ingrediente" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[40vh]">
-                      {ingredients.filter(i => !selectedIngredients.find(si => si.ingredient_id === i.id)).map((ing) => (
-                        <SelectItem key={ing.id} value={ing.id} className="py-3">
-                          {ing.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableCombobox
+                    items={ingredients.map(i => ({
+                      id: i.id,
+                      name: i.name,
+                      description: i.categories?.name || undefined,
+                    }))}
+                    selectedIds={selectedIngredients.map(i => i.ingredient_id)}
+                    onSelect={addIngredient}
+                    placeholder="Adicionar ingrediente"
+                    searchPlaceholder="Buscar ingrediente..."
+                    emptyMessage="Nenhum ingrediente encontrado"
+                    title="Adicionar Ingrediente"
+                  />
                 </div>
               </CardHeader>
               <CardContent className="py-2 px-3 sm:px-6">
@@ -506,18 +509,19 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
               <CardHeader className="py-3 px-3 sm:px-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <CardTitle className="text-base">Decorações</CardTitle>
-                  <Select onValueChange={addDecoration}>
-                    <SelectTrigger className="w-full sm:w-[200px] min-h-[44px]">
-                      <SelectValue placeholder="Adicionar decoração" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[40vh]">
-                      {decorations.filter(d => !selectedDecorations.find(sd => sd.decoration_id === d.id)).map((dec) => (
-                        <SelectItem key={dec.id} value={dec.id} className="py-3">
-                          {dec.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableCombobox
+                    items={decorations.map(d => ({
+                      id: d.id,
+                      name: d.name,
+                      description: d.decoration_categories?.name || undefined,
+                    }))}
+                    selectedIds={selectedDecorations.map(d => d.decoration_id)}
+                    onSelect={addDecoration}
+                    placeholder="Adicionar decoração"
+                    searchPlaceholder="Buscar decoração..."
+                    emptyMessage="Nenhuma decoração encontrada"
+                    title="Adicionar Decoração"
+                  />
                 </div>
               </CardHeader>
               <CardContent className="py-2 px-3 sm:px-6">
@@ -581,18 +585,19 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
               <CardHeader className="py-3 px-3 sm:px-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <CardTitle className="text-base">Embalagens</CardTitle>
-                  <Select onValueChange={addPackaging}>
-                    <SelectTrigger className="w-full sm:w-[200px] min-h-[44px]">
-                      <SelectValue placeholder="Adicionar embalagem" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[40vh]">
-                      {packagingItems.filter(p => !selectedPackaging.find(sp => sp.packaging_id === p.id)).map((pkg) => (
-                        <SelectItem key={pkg.id} value={pkg.id} className="py-3">
-                          {pkg.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableCombobox
+                    items={packagingItems.map(p => ({
+                      id: p.id,
+                      name: p.name,
+                      description: p.dimensions || p.category?.name || undefined,
+                    }))}
+                    selectedIds={selectedPackaging.map(p => p.packaging_id)}
+                    onSelect={addPackaging}
+                    placeholder="Adicionar embalagem"
+                    searchPlaceholder="Buscar embalagem..."
+                    emptyMessage="Nenhuma embalagem encontrada"
+                    title="Adicionar Embalagem"
+                  />
                 </div>
               </CardHeader>
               <CardContent className="py-2 px-3 sm:px-6">
