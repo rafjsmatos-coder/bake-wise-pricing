@@ -14,8 +14,7 @@ import {
   Box,
   Sparkles,
   ChevronDown,
-  LayoutDashboard,
-  Wrench
+  LayoutDashboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -36,8 +35,6 @@ export type PageType =
   | 'packaging-categories' 
   | 'products' 
   | 'product-categories' 
-  | 'production-materials'
-  | 'production-material-categories'
   | 'settings';
 
 interface NavItem {
@@ -97,14 +94,6 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
       icon: Box,
       children: [
         { id: 'packaging-categories', label: 'Categorias' }
-      ]
-    },
-    { 
-      id: 'production-materials', 
-      label: 'Materiais de Produção', 
-      icon: Wrench,
-      children: [
-        { id: 'production-material-categories', label: 'Categorias' }
       ]
     },
     { id: 'settings', label: 'Configurações', icon: Settings },

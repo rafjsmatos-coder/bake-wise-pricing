@@ -17,6 +17,7 @@ interface ProductDetailsProps {
   product: Product | null;
   recipeCosts: Record<string, number>;
   laborCostPerHour: number;
+  indirectOperationalCostPercent?: number;
 }
 
 export function ProductDetails({ 
@@ -24,7 +25,8 @@ export function ProductDetails({
   onOpenChange, 
   product, 
   recipeCosts, 
-  laborCostPerHour 
+  laborCostPerHour,
+  indirectOperationalCostPercent = 5,
 }: ProductDetailsProps) {
   if (!product) return null;
 
@@ -32,6 +34,7 @@ export function ProductDetails({
     product,
     recipeCosts,
     laborCostPerHour,
+    indirectOperationalCostPercent,
   });
 
   return (

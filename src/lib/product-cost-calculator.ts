@@ -14,6 +14,9 @@ export interface ProductCostBreakdown {
   packagingCost: number;
   laborCost: number;
   additionalCosts: number;
+  subtotal: number;
+  indirectOperationalCost: number;
+  indirectOperationalCostPercent: number;
   totalProductionCost: number;
   profitMarginPercent: number;
   profitAmount: number;
@@ -24,12 +27,14 @@ interface CalculateProductCostParams {
   product: Product;
   recipeCosts: Record<string, number>; // recipe_id -> total cost
   laborCostPerHour: number;
+  indirectOperationalCostPercent?: number;
 }
 
 export function calculateProductCost({
   product,
   recipeCosts,
   laborCostPerHour,
+  indirectOperationalCostPercent = 5,
 }: CalculateProductCostParams): ProductCostBreakdown {
   // Calculate recipes cost
   let recipesCost = 0;
@@ -83,14 +88,20 @@ export function calculateProductCost({
   // Additional costs
   const additionalCosts = product.additional_costs || 0;
 
-  // Total production cost
-  const totalProductionCost = 
+  // Calculate subtotal (before indirect operational cost)
+  const subtotal = 
     recipesCost + 
     ingredientsCost + 
     decorationsCost + 
     packagingCost + 
     laborCost + 
     additionalCosts;
+
+  // Calculate indirect operational cost
+  const indirectOperationalCost = subtotal * (indirectOperationalCostPercent / 100);
+
+  // Total production cost
+  const totalProductionCost = subtotal + indirectOperationalCost;
 
   // Profit calculation
   const profitMarginPercent = product.profit_margin_percent || 30;
@@ -104,6 +115,9 @@ export function calculateProductCost({
     packagingCost,
     laborCost,
     additionalCosts,
+    subtotal,
+    indirectOperationalCost,
+    indirectOperationalCostPercent,
     totalProductionCost,
     profitMarginPercent,
     profitAmount,

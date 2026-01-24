@@ -3,7 +3,6 @@ import { useRecipes } from '@/hooks/useRecipes';
 import { useIngredients } from '@/hooks/useIngredients';
 import { useDecorations } from '@/hooks/useDecorations';
 import { usePackaging } from '@/hooks/usePackaging';
-import { useProductionMaterials } from '@/hooks/useProductionMaterials';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -14,8 +13,7 @@ import {
   Box,
   Plus,
   Loader2,
-  Cake,
-  Wrench
+  Cake
 } from 'lucide-react';
 
 interface DashboardHomeProps {
@@ -28,9 +26,8 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
   const { ingredients, isLoading: loadingIngredients } = useIngredients();
   const { decorations, isLoading: loadingDecorations } = useDecorations();
   const { packagingItems, isLoading: loadingPackaging } = usePackaging();
-  const { materials, isLoading: loadingMaterials } = useProductionMaterials();
 
-  const isLoading = loadingProducts || loadingRecipes || loadingIngredients || loadingDecorations || loadingPackaging || loadingMaterials;
+  const isLoading = loadingProducts || loadingRecipes || loadingIngredients || loadingDecorations || loadingPackaging;
 
   const summaryCards = [
     { 
@@ -72,14 +69,6 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
       page: 'packaging'
-    },
-    { 
-      title: 'Materiais', 
-      count: materials?.length || 0, 
-      icon: Wrench, 
-      color: 'text-amber-500',
-      bgColor: 'bg-amber-500/10',
-      page: 'production-materials'
     },
   ];
 
@@ -174,7 +163,7 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
             <CardTitle className="text-lg">Configurações</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Configure custos de mão de obra, energia e gás nas <strong>Configurações</strong> para cálculos mais precisos.</p>
+            <p>Configure custos de mão de obra, energia, gás e custo operacional nas <strong>Configurações</strong> para cálculos mais precisos.</p>
             <Button 
               variant="secondary" 
               size="sm" 

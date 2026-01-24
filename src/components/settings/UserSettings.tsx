@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useUserSettings } from '@/hooks/useUserSettings';
-import { Loader2, Settings, Percent, Flame, Zap, Save, User } from 'lucide-react';
+import { Loader2, Percent, Flame, Zap, Save, User, HardHat } from 'lucide-react';
 
 const settingsSchema = z.object({
   default_safety_margin: z.number().min(0).max(100),
@@ -17,6 +17,7 @@ const settingsSchema = z.object({
   energy_cost_per_hour: z.number().min(0),
   include_labor_cost: z.boolean(),
   labor_cost_per_hour: z.number().min(0),
+  indirect_operational_cost_percent: z.number().min(0).max(100),
 });
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -41,6 +42,7 @@ export function UserSettings() {
       energy_cost_per_hour: 0,
       include_labor_cost: false,
       labor_cost_per_hour: 0,
+      indirect_operational_cost_percent: 5,
     },
   });
 
@@ -54,6 +56,7 @@ export function UserSettings() {
         energy_cost_per_hour: Number(settings.energy_cost_per_hour) || 0,
         include_labor_cost: settings.include_labor_cost || false,
         labor_cost_per_hour: Number(settings.labor_cost_per_hour) || 0,
+        indirect_operational_cost_percent: Number(settings.indirect_operational_cost_percent) || 5,
       });
     }
   }, [settings, reset]);
@@ -80,7 +83,7 @@ export function UserSettings() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
         <p className="text-muted-foreground">
-          Personalize os valores padrão para suas receitas
+          Personalize os valores padrão para suas receitas e produtos
         </p>
       </div>
 
@@ -247,6 +250,41 @@ export function UserSettings() {
               </p>
             </div>
           )}
+        </div>
+
+        {/* Indirect Operational Cost */}
+        <div className="p-6 bg-card border border-border rounded-lg space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center">
+              <HardHat className="h-5 w-5 text-amber-500" />
+            </div>
+            <div>
+              <h2 className="font-semibold">Custo Operacional Indireto</h2>
+              <p className="text-sm text-muted-foreground">
+                Percentual para cobrir EPIs, limpeza e consumíveis
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="indirect_operational_cost_percent">Percentual (%)</Label>
+            <Input
+              id="indirect_operational_cost_percent"
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              {...register('indirect_operational_cost_percent', { valueAsNumber: true })}
+            />
+            {errors.indirect_operational_cost_percent && (
+              <p className="text-sm text-destructive">
+                {errors.indirect_operational_cost_percent.message}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Inclui luvas, toucas, sacos de confeitar, materiais de limpeza e outros consumíveis gerais
+            </p>
+          </div>
         </div>
 
         {/* Submit */}
