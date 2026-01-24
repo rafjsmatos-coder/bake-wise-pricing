@@ -65,13 +65,22 @@ export function ProductDetails({
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-medium">Receitas</h3>
               </div>
-              <div className="space-y-1">
-                {product.product_recipes.map((pr) => (
-                  <div key={pr.id} className="flex justify-between text-sm">
-                    <span>{pr.recipe?.name}</span>
-                    <span className="text-muted-foreground">{pr.quantity}x</span>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                {product.product_recipes.map((pr) => {
+                  const recipe = pr.recipe;
+                  const usedUnit = pr.unit || recipe?.yield_unit || 'un';
+                  const yieldQuantity = recipe?.yield_quantity || 1;
+                  const yieldUnit = recipe?.yield_unit || 'un';
+                  
+                  return (
+                    <div key={pr.id} className="flex flex-col text-sm p-2 bg-muted/30 rounded-md">
+                      <span className="font-medium">{recipe?.name}</span>
+                      <span className="text-muted-foreground">
+                        Usando: {pr.quantity} {usedUnit} (de {yieldQuantity} {yieldUnit})
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

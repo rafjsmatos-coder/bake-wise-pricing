@@ -36,12 +36,25 @@ export function calculateProductCost({
   laborCostPerHour,
   indirectOperationalCostPercent = 5,
 }: CalculateProductCostParams): ProductCostBreakdown {
-  // Calculate recipes cost
+  // Calculate recipes cost with proportional calculation
   let recipesCost = 0;
   if (product.product_recipes) {
     for (const pr of product.product_recipes) {
       const recipeTotalCost = recipeCosts[pr.recipe_id] || 0;
-      recipesCost += recipeTotalCost * pr.quantity;
+      const recipe = pr.recipe;
+      
+      if (recipe && recipe.yield_quantity > 0) {
+        // Convert both to base units for proper comparison
+        const requestedInBase = convertToBaseUnit(pr.quantity, pr.unit as any || recipe.yield_unit);
+        const yieldInBase = convertToBaseUnit(recipe.yield_quantity, recipe.yield_unit as any);
+        
+        // Calculate proportion of recipe used
+        const proportion = yieldInBase > 0 ? requestedInBase / yieldInBase : 1;
+        recipesCost += recipeTotalCost * proportion;
+      } else {
+        // Fallback: use quantity as multiplier
+        recipesCost += recipeTotalCost * pr.quantity;
+      }
     }
   }
 

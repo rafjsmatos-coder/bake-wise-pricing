@@ -10,6 +10,7 @@ export interface ProductRecipe {
   id: string;
   recipe_id: string;
   quantity: number;
+  unit: string;
   recipe?: {
     id: string;
     name: string;
@@ -85,7 +86,7 @@ export interface ProductFormData {
   profit_margin_percent?: number | null;
   additional_costs?: number | null;
   notes?: string | null;
-  recipes?: { recipe_id: string; quantity: number }[];
+  recipes?: { recipe_id: string; quantity: number; unit: string }[];
   ingredients?: { ingredient_id: string; quantity: number; unit: MeasurementUnit }[];
   decorations?: { decoration_id: string; quantity: number; unit: MeasurementUnit }[];
   packaging?: { packaging_id: string; quantity: number }[];
@@ -105,7 +106,7 @@ export function useProducts() {
         .select(`
           *,
           category:product_categories(id, name, color),
-          product_recipes(id, recipe_id, quantity, recipe:recipes(id, name, yield_quantity, yield_unit)),
+          product_recipes(id, recipe_id, quantity, unit, recipe:recipes(id, name, yield_quantity, yield_unit)),
           product_ingredients(id, ingredient_id, quantity, unit, ingredient:ingredients(id, name, cost_per_unit, unit)),
           product_decorations(id, decoration_id, quantity, unit, decoration:decorations(id, name, cost_per_unit, unit)),
           product_packaging(id, packaging_id, quantity, packaging:packaging(id, name, cost_per_unit, unit))
@@ -148,6 +149,7 @@ export function useProducts() {
             product_id: product.id,
             recipe_id: r.recipe_id,
             quantity: r.quantity,
+            unit: r.unit,
           })));
         if (error) throw error;
       }
@@ -233,6 +235,7 @@ export function useProducts() {
             product_id: id,
             recipe_id: r.recipe_id,
             quantity: r.quantity,
+            unit: r.unit,
           })));
         if (error) throw error;
       }
