@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { FieldLabel } from '@/components/ui/field-label';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -229,7 +229,12 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Nome */}
           <div className="space-y-2">
-            <Label htmlFor="name">Nome da Receita *</Label>
+            <FieldLabel 
+              htmlFor="name" 
+              label="Nome da Receita" 
+              required 
+              help="O nome da receita como você quer que apareça no sistema"
+            />
             <Input
               id="name"
               placeholder="Ex: Bolo de Chocolate"
@@ -243,7 +248,11 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
 
           {/* Categoria */}
           <div className="space-y-2">
-            <Label>Categoria *</Label>
+            <FieldLabel 
+              label="Categoria" 
+              required 
+              help="Agrupe receitas similares (ex: Bolos, Tortas, Salgados)"
+            />
             <Select
               value={watch('category_id')}
               onValueChange={(value) => setValue('category_id', value)}
@@ -273,7 +282,12 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
           {/* Rendimento e Tempo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="yield_quantity">Rendimento *</Label>
+              <FieldLabel 
+                htmlFor="yield_quantity" 
+                label="Rendimento" 
+                required 
+                help="Quantas unidades, gramas ou litros esta receita produz"
+              />
               <div className="flex gap-2">
                 <Input
                   id="yield_quantity"
@@ -306,7 +320,12 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="prep_time_minutes">Tempo de Preparo *</Label>
+              <FieldLabel 
+                htmlFor="prep_time_minutes" 
+                label="Tempo de Preparo" 
+                required 
+                help="Tempo que você leva para preparar a receita, sem contar o tempo de forno"
+              />
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <Input
@@ -355,7 +374,11 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
             <div className="space-y-4 animate-fade-in">
               {/* Tempo de Forno */}
               <div className="space-y-2">
-                <Label htmlFor="oven_time_minutes">Tempo de Forno (informativo)</Label>
+                <FieldLabel 
+                  htmlFor="oven_time_minutes" 
+                  label="Tempo de Forno" 
+                  help="Apenas informativo. Usado para calcular custo de gás se ativado nas configurações"
+                />
                 <div className="flex items-center gap-2">
                   <Flame className="h-4 w-4 text-orange-500" />
                   <Input
@@ -376,9 +399,11 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
               {/* Margem e Custos */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="safety_margin_percent">
-                    Margem de Segurança (%)
-                  </Label>
+                  <FieldLabel 
+                    htmlFor="safety_margin_percent" 
+                    label="Margem de Segurança (%)" 
+                    help="Percentual extra para cobrir desperdícios e variações de peso. Deixe vazio para usar o padrão"
+                  />
                   <Input
                     id="safety_margin_percent"
                     type="number"
@@ -390,13 +415,14 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                       setValueAs: (v) => v === '' || v === null || v === undefined ? null : Number(v)
                     })}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Deixe vazio para usar o padrão ({settings?.default_safety_margin ?? 15}%)
-                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="additional_costs">Custos Adicionais (R$)</Label>
+                  <FieldLabel 
+                    htmlFor="additional_costs" 
+                    label="Custos Adicionais (R$)" 
+                    help="Gás, energia, embalagem específica ou outros custos desta receita"
+                  />
                   <Input
                     id="additional_costs"
                     type="number"
@@ -406,15 +432,16 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                     className="min-h-[44px]"
                     {...register('additional_costs', { valueAsNumber: true })}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Embalagem, energia, etc.
-                  </p>
                 </div>
               </div>
 
               {/* Modo de Preparo */}
               <div className="space-y-2">
-                <Label htmlFor="instructions">Modo de Preparo</Label>
+                <FieldLabel 
+                  htmlFor="instructions" 
+                  label="Modo de Preparo" 
+                  help="Descreva o passo a passo para você não esquecer"
+                />
                 <Textarea
                   id="instructions"
                   placeholder="Descreva o passo a passo da receita..."
@@ -425,7 +452,11 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
 
               {/* Notas */}
               <div className="space-y-2">
-                <Label htmlFor="notes">Observações</Label>
+                <FieldLabel 
+                  htmlFor="notes" 
+                  label="Observações" 
+                  help="Anotações pessoais sobre a receita (dicas, variações, etc.)"
+                />
                 <Textarea
                   id="notes"
                   placeholder="Anotações adicionais..."
