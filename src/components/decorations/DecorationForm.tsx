@@ -131,7 +131,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-[100vw] sm:max-w-lg max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-none sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
             {decoration ? 'Editar Decoração' : 'Nova Decoração'}
@@ -145,6 +145,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
             <Input
               id="name"
               placeholder="Ex: Fita de Cetim Rosa"
+              className="min-h-[44px]"
               {...register('name')}
             />
             {errors.name && (
@@ -153,7 +154,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
           </div>
 
           {/* Preço e Quantidade */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="purchase_price">Preço de Compra (R$) *</Label>
               <Input
@@ -162,6 +163,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
                 step="0.01"
                 min="0"
                 placeholder="0,00"
+                className="min-h-[44px]"
                 {...register('purchase_price', { valueAsNumber: true })}
               />
               {errors.purchase_price && (
@@ -177,6 +179,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
                 step="0.001"
                 min="0"
                 placeholder="0"
+                className="min-h-[44px]"
                 {...register('package_quantity', { valueAsNumber: true })}
               />
               {errors.package_quantity && (
@@ -186,19 +189,19 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
           </div>
 
           {/* Unidade e Categoria */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Unidade *</Label>
               <Select
                 value={watchUnit}
                 onValueChange={(value: MeasurementUnit) => setValue('unit', value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="min-h-[44px]">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[40vh]">
                   {Object.entries(UNITS).map(([key, info]) => (
-                    <SelectItem key={key} value={key}>
+                    <SelectItem key={key} value={key} className="py-3">
                       {key} - {info.label}
                     </SelectItem>
                   ))}
@@ -212,16 +215,16 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
                 value={watch('category_id') || 'none'}
                 onValueChange={(value) => setValue('category_id', value === 'none' ? null : value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="min-h-[44px]">
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem categoria</SelectItem>
+                <SelectContent className="max-h-[40vh]">
+                  <SelectItem value="none" className="py-3">Sem categoria</SelectItem>
                   {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
+                    <SelectItem key={category.id} value={category.id} className="py-3">
                       <div className="flex items-center gap-2">
                         <div
-                          className="w-3 h-3 rounded-full"
+                          className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: category.color || '#6366f1' }}
                         />
                         {category.name}
@@ -248,7 +251,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
           <Button
             type="button"
             variant="ghost"
-            className="w-full justify-between"
+            className="w-full justify-between min-h-[44px]"
             onClick={() => setShowOptional(!showOptional)}
           >
             <span>Campos opcionais</span>
@@ -257,13 +260,14 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
 
           {/* Campos opcionais */}
           {showOptional && (
-            <div className="space-y-4 pt-2">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 pt-2 animate-fade-in">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="brand">Marca</Label>
                   <Input
                     id="brand"
                     placeholder="Ex: Fitas São José"
+                    className="min-h-[44px]"
                     {...register('brand')}
                   />
                 </div>
@@ -272,12 +276,13 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
                   <Input
                     id="supplier"
                     placeholder="Ex: Atacado das Fitas"
+                    className="min-h-[44px]"
                     {...register('supplier')}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="stock_quantity">Estoque Atual</Label>
                   <Input
@@ -286,6 +291,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
                     step="0.01"
                     min="0"
                     placeholder="0"
+                    className="min-h-[44px]"
                     {...register('stock_quantity', { valueAsNumber: true })}
                   />
                 </div>
@@ -297,6 +303,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
                     step="0.01"
                     min="0"
                     placeholder="0"
+                    className="min-h-[44px]"
                     {...register('min_stock_alert', { valueAsNumber: true })}
                   />
                 </div>
@@ -304,11 +311,11 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" className="w-full sm:w-auto min-h-[44px]" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" className="w-full sm:w-auto min-h-[44px]" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {decoration ? 'Atualizar' : 'Adicionar'}
             </Button>

@@ -109,9 +109,9 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
     defaultValues: {
       name: '',
       category_id: '',
-      decoration_time_minutes: 0,
-      profit_margin_percent: 30,
-      additional_costs: 0,
+      decoration_time_minutes: undefined,
+      profit_margin_percent: undefined,
+      additional_costs: undefined,
       notes: '',
     },
   });
@@ -121,9 +121,9 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
       form.reset({
         name: product.name,
         category_id: product.category_id || '',
-        decoration_time_minutes: product.decoration_time_minutes ?? 0,
-        profit_margin_percent: product.profit_margin_percent ?? 30,
-        additional_costs: product.additional_costs ?? 0,
+        decoration_time_minutes: product.decoration_time_minutes ?? undefined,
+        profit_margin_percent: product.profit_margin_percent ?? undefined,
+        additional_costs: product.additional_costs ?? undefined,
         notes: product.notes || '',
       });
 
@@ -162,9 +162,9 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
       form.reset({
         name: '',
         category_id: '',
-        decoration_time_minutes: 0,
-        profit_margin_percent: 30,
-        additional_costs: 0,
+        decoration_time_minutes: undefined,
+        profit_margin_percent: undefined,
+        additional_costs: undefined,
         notes: '',
       });
       setSelectedRecipes([]);
@@ -244,7 +244,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-[100vw] sm:max-w-[700px] max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-none sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
             {product ? 'Editar Produto' : 'Novo Produto'}
@@ -254,12 +254,12 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Basic Info */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem className="col-span-1 sm:col-span-2">
                     <FormLabel>Nome do Produto *</FormLabel>
                     <FormControl>
                       <Input placeholder="Ex: Bolo de Chocolate Decorado" {...field} />
@@ -277,16 +277,16 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                     <FormLabel>Categoria</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="min-h-[44px]">
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="max-h-[40vh]">
                         {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
+                          <SelectItem key={cat.id} value={cat.id} className="py-3">
                             <div className="flex items-center gap-2">
                               <div 
-                                className="w-3 h-3 rounded-full" 
+                                className="w-3 h-3 rounded-full flex-shrink-0" 
                                 style={{ backgroundColor: cat.color || '#6366f1' }}
                               />
                               {cat.name}
@@ -307,7 +307,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                   <FormItem>
                     <FormLabel>Margem de Lucro (%)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="1" placeholder="30" {...field} />
+                      <Input type="number" step="1" placeholder="30" className="min-h-[44px]" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -317,16 +317,16 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
 
             {/* Recipes */}
             <Card>
-              <CardHeader className="py-3">
-                <div className="flex items-center justify-between">
+              <CardHeader className="py-3 px-3 sm:px-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <CardTitle className="text-base">Receitas</CardTitle>
                   <Select onValueChange={addRecipe}>
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-full sm:w-[200px] min-h-[44px]">
                       <SelectValue placeholder="Adicionar receita" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[40vh]">
                       {recipes.filter(r => !selectedRecipes.find(sr => sr.recipe_id === r.id)).map((recipe) => (
-                        <SelectItem key={recipe.id} value={recipe.id}>
+                        <SelectItem key={recipe.id} value={recipe.id} className="py-3">
                           {recipe.name}
                         </SelectItem>
                       ))}
@@ -334,34 +334,37 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                   </Select>
                 </div>
               </CardHeader>
-              <CardContent className="py-2">
+              <CardContent className="py-2 px-3 sm:px-6">
                 {selectedRecipes.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhuma receita adicionada</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {selectedRecipes.map((r, idx) => (
-                      <div key={r.recipe_id} className="flex items-center gap-2">
-                        <span className="flex-1 text-sm">{r.name}</span>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          className="w-20"
-                          value={r.quantity}
-                          onChange={(e) => {
-                            const updated = [...selectedRecipes];
-                            updated[idx].quantity = parseFloat(e.target.value) || 1;
-                            setSelectedRecipes(updated);
-                          }}
-                        />
-                        <span className="text-sm text-muted-foreground">x</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setSelectedRecipes(selectedRecipes.filter((_, i) => i !== idx))}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                      <div key={r.recipe_id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                        <span className="flex-1 text-sm font-medium">{r.name}</span>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            className="w-20 min-h-[44px]"
+                            value={r.quantity}
+                            onChange={(e) => {
+                              const updated = [...selectedRecipes];
+                              updated[idx].quantity = parseFloat(e.target.value) || 1;
+                              setSelectedRecipes(updated);
+                            }}
+                          />
+                          <span className="text-sm text-muted-foreground">x</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="min-h-[44px] min-w-[44px]"
+                            onClick={() => setSelectedRecipes(selectedRecipes.filter((_, i) => i !== idx))}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -371,16 +374,16 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
 
             {/* Ingredients */}
             <Card>
-              <CardHeader className="py-3">
-                <div className="flex items-center justify-between">
+              <CardHeader className="py-3 px-3 sm:px-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <CardTitle className="text-base">Ingredientes Avulsos</CardTitle>
                   <Select onValueChange={addIngredient}>
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-full sm:w-[200px] min-h-[44px]">
                       <SelectValue placeholder="Adicionar ingrediente" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[40vh]">
                       {ingredients.filter(i => !selectedIngredients.find(si => si.ingredient_id === i.id)).map((ing) => (
-                        <SelectItem key={ing.id} value={ing.id}>
+                        <SelectItem key={ing.id} value={ing.id} className="py-3">
                           {ing.name}
                         </SelectItem>
                       ))}
@@ -388,52 +391,55 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                   </Select>
                 </div>
               </CardHeader>
-              <CardContent className="py-2">
+              <CardContent className="py-2 px-3 sm:px-6">
                 {selectedIngredients.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhum ingrediente adicionado</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {selectedIngredients.map((i, idx) => (
-                      <div key={i.ingredient_id} className="flex items-center gap-2">
-                        <span className="flex-1 text-sm">{i.name}</span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          className="w-20"
-                          value={i.quantity}
-                          onChange={(e) => {
-                            const updated = [...selectedIngredients];
-                            updated[idx].quantity = parseFloat(e.target.value) || 0;
-                            setSelectedIngredients(updated);
-                          }}
-                        />
-                        <Select
-                          value={i.unit}
-                          onValueChange={(value) => {
-                            const updated = [...selectedIngredients];
-                            updated[idx].unit = value as MeasurementUnit;
-                            setSelectedIngredients(updated);
-                          }}
-                        >
-                          <SelectTrigger className="w-[100px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {UNITS.map((unit) => (
-                              <SelectItem key={unit.value} value={unit.value}>
-                                {unit.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setSelectedIngredients(selectedIngredients.filter((_, idx2) => idx2 !== idx))}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                      <div key={i.ingredient_id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                        <span className="flex-1 text-sm font-medium">{i.name}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            className="w-20 min-h-[44px]"
+                            value={i.quantity}
+                            onChange={(e) => {
+                              const updated = [...selectedIngredients];
+                              updated[idx].quantity = parseFloat(e.target.value) || 0;
+                              setSelectedIngredients(updated);
+                            }}
+                          />
+                          <Select
+                            value={i.unit}
+                            onValueChange={(value) => {
+                              const updated = [...selectedIngredients];
+                              updated[idx].unit = value as MeasurementUnit;
+                              setSelectedIngredients(updated);
+                            }}
+                          >
+                            <SelectTrigger className="w-[100px] min-h-[44px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[40vh]">
+                              {UNITS.map((unit) => (
+                                <SelectItem key={unit.value} value={unit.value} className="py-3">
+                                  {unit.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="min-h-[44px] min-w-[44px]"
+                            onClick={() => setSelectedIngredients(selectedIngredients.filter((_, idx2) => idx2 !== idx))}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -443,16 +449,16 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
 
             {/* Decorations */}
             <Card>
-              <CardHeader className="py-3">
-                <div className="flex items-center justify-between">
+              <CardHeader className="py-3 px-3 sm:px-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <CardTitle className="text-base">Decorações</CardTitle>
                   <Select onValueChange={addDecoration}>
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-full sm:w-[200px] min-h-[44px]">
                       <SelectValue placeholder="Adicionar decoração" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[40vh]">
                       {decorations.filter(d => !selectedDecorations.find(sd => sd.decoration_id === d.id)).map((dec) => (
-                        <SelectItem key={dec.id} value={dec.id}>
+                        <SelectItem key={dec.id} value={dec.id} className="py-3">
                           {dec.name}
                         </SelectItem>
                       ))}
@@ -460,52 +466,55 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                   </Select>
                 </div>
               </CardHeader>
-              <CardContent className="py-2">
+              <CardContent className="py-2 px-3 sm:px-6">
                 {selectedDecorations.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhuma decoração adicionada</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {selectedDecorations.map((d, idx) => (
-                      <div key={d.decoration_id} className="flex items-center gap-2">
-                        <span className="flex-1 text-sm">{d.name}</span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          className="w-20"
-                          value={d.quantity}
-                          onChange={(e) => {
-                            const updated = [...selectedDecorations];
-                            updated[idx].quantity = parseFloat(e.target.value) || 0;
-                            setSelectedDecorations(updated);
-                          }}
-                        />
-                        <Select
-                          value={d.unit}
-                          onValueChange={(value) => {
-                            const updated = [...selectedDecorations];
-                            updated[idx].unit = value as MeasurementUnit;
-                            setSelectedDecorations(updated);
-                          }}
-                        >
-                          <SelectTrigger className="w-[100px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {UNITS.map((unit) => (
-                              <SelectItem key={unit.value} value={unit.value}>
-                                {unit.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setSelectedDecorations(selectedDecorations.filter((_, idx2) => idx2 !== idx))}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                      <div key={d.decoration_id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                        <span className="flex-1 text-sm font-medium">{d.name}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            className="w-20 min-h-[44px]"
+                            value={d.quantity}
+                            onChange={(e) => {
+                              const updated = [...selectedDecorations];
+                              updated[idx].quantity = parseFloat(e.target.value) || 0;
+                              setSelectedDecorations(updated);
+                            }}
+                          />
+                          <Select
+                            value={d.unit}
+                            onValueChange={(value) => {
+                              const updated = [...selectedDecorations];
+                              updated[idx].unit = value as MeasurementUnit;
+                              setSelectedDecorations(updated);
+                            }}
+                          >
+                            <SelectTrigger className="w-[100px] min-h-[44px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[40vh]">
+                              {UNITS.map((unit) => (
+                                <SelectItem key={unit.value} value={unit.value} className="py-3">
+                                  {unit.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="min-h-[44px] min-w-[44px]"
+                            onClick={() => setSelectedDecorations(selectedDecorations.filter((_, idx2) => idx2 !== idx))}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -515,16 +524,16 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
 
             {/* Packaging */}
             <Card>
-              <CardHeader className="py-3">
-                <div className="flex items-center justify-between">
+              <CardHeader className="py-3 px-3 sm:px-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <CardTitle className="text-base">Embalagens</CardTitle>
                   <Select onValueChange={addPackaging}>
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-full sm:w-[200px] min-h-[44px]">
                       <SelectValue placeholder="Adicionar embalagem" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[40vh]">
                       {packagingItems.filter(p => !selectedPackaging.find(sp => sp.packaging_id === p.id)).map((pkg) => (
-                        <SelectItem key={pkg.id} value={pkg.id}>
+                        <SelectItem key={pkg.id} value={pkg.id} className="py-3">
                           {pkg.name}
                         </SelectItem>
                       ))}
@@ -532,34 +541,37 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                   </Select>
                 </div>
               </CardHeader>
-              <CardContent className="py-2">
+              <CardContent className="py-2 px-3 sm:px-6">
                 {selectedPackaging.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhuma embalagem adicionada</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {selectedPackaging.map((p, idx) => (
-                      <div key={p.packaging_id} className="flex items-center gap-2">
-                        <span className="flex-1 text-sm">{p.name}</span>
-                        <Input
-                          type="number"
-                          step="1"
-                          className="w-20"
-                          value={p.quantity}
-                          onChange={(e) => {
-                            const updated = [...selectedPackaging];
-                            updated[idx].quantity = parseFloat(e.target.value) || 1;
-                            setSelectedPackaging(updated);
-                          }}
-                        />
-                        <span className="text-sm text-muted-foreground">un</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setSelectedPackaging(selectedPackaging.filter((_, idx2) => idx2 !== idx))}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                      <div key={p.packaging_id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                        <span className="flex-1 text-sm font-medium">{p.name}</span>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            step="1"
+                            className="w-20 min-h-[44px]"
+                            value={p.quantity}
+                            onChange={(e) => {
+                              const updated = [...selectedPackaging];
+                              updated[idx].quantity = parseFloat(e.target.value) || 1;
+                              setSelectedPackaging(updated);
+                            }}
+                          />
+                          <span className="text-sm text-muted-foreground">un</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="min-h-[44px] min-w-[44px]"
+                            onClick={() => setSelectedPackaging(selectedPackaging.filter((_, idx2) => idx2 !== idx))}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -568,7 +580,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
             </Card>
 
             {/* Additional fields */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="decoration_time_minutes"
@@ -576,7 +588,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                   <FormItem>
                     <FormLabel>Tempo de Decoração (minutos)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="1" placeholder="0" {...field} />
+                      <Input type="number" step="1" placeholder="Ex: 30" className="min-h-[44px]" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -590,7 +602,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                   <FormItem>
                     <FormLabel>Custos Adicionais (R$)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                      <Input type="number" step="0.01" placeholder="Ex: 5,00" className="min-h-[44px]" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -612,16 +624,18 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
               )}
             />
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
+                className="w-full sm:w-auto min-h-[44px]"
                 onClick={() => onOpenChange(false)}
               >
                 Cancelar
               </Button>
               <Button 
                 type="submit" 
+                className="w-full sm:w-auto min-h-[44px]"
                 disabled={createProduct.isPending || updateProduct.isPending}
               >
                 {product ? 'Salvar' : 'Criar Produto'}
