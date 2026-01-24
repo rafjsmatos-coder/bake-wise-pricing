@@ -70,10 +70,14 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               </Button>
             </div>
 
-            <div className="flex items-center justify-center gap-6 pt-6 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-6 pt-6 text-sm text-muted-foreground flex-wrap">
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-accent" />
                 Sem cartão de crédito
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-accent" />
+                Pague com cartão ou boleto
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-accent" />
