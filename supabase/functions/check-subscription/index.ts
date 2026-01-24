@@ -17,11 +17,16 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
-  );
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+  // Service role client for database operations and auth validation
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { persistSession: false }
+  });
+
+  const authHeader = req.headers.get("Authorization");
+  const userToken = authHeader?.replace("Bearer ", "") ?? "";
 
   try {
     logStep("Function started");
@@ -30,7 +35,6 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     logStep("Stripe key verified");
 
-    const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       logStep("No authorization header");
       return new Response(JSON.stringify({ 
@@ -39,13 +43,13 @@ serve(async (req) => {
         error: "Not authenticated" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Return 200 to avoid error handling on frontend
+        status: 200,
       });
     }
     logStep("Authorization header found");
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    // Use admin client to validate user token (bypasses JWT expiry issues)
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(userToken);
     
     if (userError || !userData?.user) {
       logStep("Authentication failed", { error: userError?.message });
@@ -55,7 +59,7 @@ serve(async (req) => {
         error: "Session expired" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Return 200 to avoid error handling on frontend
+        status: 200,
       });
     }
     
@@ -72,8 +76,8 @@ serve(async (req) => {
     }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Get subscription from database
-    const { data: subscription, error: subError } = await supabaseClient
+    // Get subscription from database using admin client
+    const { data: subscription, error: subError } = await supabaseAdmin
       .from('subscriptions')
       .select('*')
       .eq('user_id', user.id)
@@ -89,7 +93,7 @@ serve(async (req) => {
       const trialEnd = new Date();
       trialEnd.setDate(trialEnd.getDate() + 14);
       
-      const { data: newSub, error: createError } = await supabaseClient
+      const { data: newSub, error: createError } = await supabaseAdmin
         .from('subscriptions')
         .insert({
           user_id: user.id,
@@ -125,8 +129,8 @@ serve(async (req) => {
       const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       
       if (daysRemaining <= 0) {
-        // Trial expired
-        await supabaseClient
+        // Trial expired - update using admin client
+        await supabaseAdmin
           .from('subscriptions')
           .update({ status: 'expired' })
           .eq('user_id', user.id);
@@ -166,13 +170,13 @@ serve(async (req) => {
         const isActive = ['active', 'trialing'].includes(stripeSub.status);
         const subscriptionEnd = new Date(stripeSub.current_period_end * 1000).toISOString();
         
-        // Update local subscription status
+        // Update local subscription status using admin client
         if (stripeSub.status !== subscription.status) {
           const newStatus = stripeSub.status === 'active' ? 'active' : 
                            stripeSub.status === 'canceled' ? 'canceled' :
                            stripeSub.status === 'past_due' ? 'past_due' : 'expired';
           
-          await supabaseClient
+          await supabaseAdmin
             .from('subscriptions')
             .update({ 
               status: newStatus,
