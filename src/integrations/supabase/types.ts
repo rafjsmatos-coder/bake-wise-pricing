@@ -421,45 +421,6 @@ export type Database = {
           },
         ]
       }
-      product_materials: {
-        Row: {
-          created_at: string
-          id: string
-          material_id: string
-          product_id: string
-          quantity: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          material_id: string
-          product_id: string
-          quantity?: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          material_id?: string
-          product_id?: string
-          quantity?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_materials_material_id_fkey"
-            columns: ["material_id"]
-            isOneToOne: false
-            referencedRelation: "production_materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_materials_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       product_packaging: {
         Row: {
           created_at: string
@@ -534,92 +495,6 @@ export type Database = {
             columns: ["recipe_id"]
             isOneToOne: false
             referencedRelation: "recipes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      production_material_categories: {
-        Row: {
-          color: string | null
-          created_at: string
-          id: string
-          name: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          color?: string | null
-          created_at?: string
-          id?: string
-          name: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          color?: string | null
-          created_at?: string
-          id?: string
-          name?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      production_materials: {
-        Row: {
-          brand: string | null
-          category_id: string | null
-          cost_per_unit: number | null
-          created_at: string
-          id: string
-          min_stock_alert: number | null
-          name: string
-          package_quantity: number
-          purchase_price: number
-          stock_quantity: number | null
-          supplier: string | null
-          unit: Database["public"]["Enums"]["measurement_unit"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          brand?: string | null
-          category_id?: string | null
-          cost_per_unit?: number | null
-          created_at?: string
-          id?: string
-          min_stock_alert?: number | null
-          name: string
-          package_quantity: number
-          purchase_price: number
-          stock_quantity?: number | null
-          supplier?: string | null
-          unit: Database["public"]["Enums"]["measurement_unit"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          brand?: string | null
-          category_id?: string | null
-          cost_per_unit?: number | null
-          created_at?: string
-          id?: string
-          min_stock_alert?: number | null
-          name?: string
-          package_quantity?: number
-          purchase_price?: number
-          stock_quantity?: number | null
-          supplier?: string | null
-          unit?: Database["public"]["Enums"]["measurement_unit"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "production_materials_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "production_material_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -836,6 +711,7 @@ export type Database = {
           include_energy_cost: boolean | null
           include_gas_cost: boolean | null
           include_labor_cost: boolean | null
+          indirect_operational_cost_percent: number | null
           labor_cost_per_hour: number | null
           updated_at: string
           user_id: string
@@ -849,6 +725,7 @@ export type Database = {
           include_energy_cost?: boolean | null
           include_gas_cost?: boolean | null
           include_labor_cost?: boolean | null
+          indirect_operational_cost_percent?: number | null
           labor_cost_per_hour?: number | null
           updated_at?: string
           user_id: string
@@ -862,6 +739,7 @@ export type Database = {
           include_energy_cost?: boolean | null
           include_gas_cost?: boolean | null
           include_labor_cost?: boolean | null
+          indirect_operational_cost_percent?: number | null
           labor_cost_per_hour?: number | null
           updated_at?: string
           user_id?: string

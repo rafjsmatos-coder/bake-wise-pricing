@@ -11,8 +11,6 @@ import { PackagingList } from '@/components/packaging/PackagingList';
 import { PackagingCategoriesList } from '@/components/packaging-categories/PackagingCategoriesList';
 import { ProductsList } from '@/components/products/ProductsList';
 import { ProductCategoriesList } from '@/components/product-categories/ProductCategoriesList';
-import { ProductionMaterialsList } from '@/components/production-materials/ProductionMaterialsList';
-import { ProductionMaterialCategoriesList } from '@/components/production-material-categories/ProductionMaterialCategoriesList';
 import { UserSettings } from '@/components/settings/UserSettings';
 
 export function Dashboard() {
@@ -31,8 +29,6 @@ export function Dashboard() {
       {currentPage === 'decoration-categories' && <DecorationCategoriesList />}
       {currentPage === 'packaging' && <PackagingList />}
       {currentPage === 'packaging-categories' && <PackagingCategoriesList />}
-      {currentPage === 'production-materials' && <ProductionMaterialsList />}
-      {currentPage === 'production-material-categories' && <ProductionMaterialCategoriesList />}
       {currentPage === 'settings' && <UserSettings />}
     </AppLayout>
   );

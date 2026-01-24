@@ -13,6 +13,7 @@ export interface UserSettings {
   energy_cost_per_hour: number;
   include_labor_cost: boolean;
   labor_cost_per_hour: number;
+  indirect_operational_cost_percent: number;
   created_at: string;
   updated_at: string;
 }
@@ -25,6 +26,7 @@ export interface UpdateUserSettingsData {
   energy_cost_per_hour?: number;
   include_labor_cost?: boolean;
   labor_cost_per_hour?: number;
+  indirect_operational_cost_percent?: number;
 }
 
 export function useUserSettings() {
@@ -76,8 +78,9 @@ export function useUserSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings', user?.id] });
-      // Invalidate recipes to trigger cost recalculation with updated settings
+      // Invalidate recipes and products to trigger cost recalculation with updated settings
       queryClient.invalidateQueries({ queryKey: ['recipes'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast({
         title: 'Configurações salvas',
         description: 'Suas configurações foram atualizadas com sucesso.',

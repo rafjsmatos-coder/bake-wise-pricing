@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency, ProductCostBreakdown as CostBreakdownType } from '@/lib/product-cost-calculator';
-import { BookOpen, Package, Sparkles, Box, Clock, Plus, TrendingUp } from 'lucide-react';
+import { BookOpen, Package, Sparkles, Box, Clock, Plus, TrendingUp, HardHat } from 'lucide-react';
 
 interface ProductCostBreakdownProps {
   breakdown: CostBreakdownType;
@@ -73,6 +73,31 @@ export function ProductCostBreakdown({ breakdown }: ProductCostBreakdownProps) {
             </p>
           )}
         </div>
+
+        {visibleItems.length > 0 && (
+          <>
+            <Separator />
+
+            {/* Subtotal */}
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span className="font-medium">{formatCurrency(breakdown.subtotal)}</span>
+            </div>
+
+            {/* Indirect Operational Cost */}
+            {breakdown.indirectOperationalCost > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <HardHat className="h-4 w-4" />
+                  <span>Custo Operacional ({breakdown.indirectOperationalCostPercent}%)</span>
+                </div>
+                <span className="font-medium text-amber-600">
+                  + {formatCurrency(breakdown.indirectOperationalCost)}
+                </span>
+              </div>
+            )}
+          </>
+        )}
 
         <Separator />
 

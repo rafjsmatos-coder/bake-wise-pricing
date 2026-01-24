@@ -74,6 +74,7 @@ export function ProductsList() {
         product,
         recipeCosts,
         laborCostPerHour: settings?.labor_cost_per_hour || 0,
+        indirectOperationalCostPercent: settings?.indirect_operational_cost_percent || 5,
       });
       costs[product.id] = {
         production: breakdown.totalProductionCost,
@@ -186,6 +187,7 @@ export function ProductsList() {
         product={viewingProduct}
         recipeCosts={recipeCosts}
         laborCostPerHour={settings?.labor_cost_per_hour || 0}
+        indirectOperationalCostPercent={settings?.indirect_operational_cost_percent || 5}
       />
 
       <AlertDialog open={!!deletingProduct} onOpenChange={() => setDeletingProduct(null)}>
