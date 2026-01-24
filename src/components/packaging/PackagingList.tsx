@@ -58,13 +58,13 @@ export function PackagingList() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Embalagens</h1>
+    <div className="space-y-6 max-w-full overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold truncate">Embalagens</h1>
           <p className="text-muted-foreground">Gerencie suas embalagens e custos</p>
         </div>
-        <Button onClick={() => setFormOpen(true)}>
+        <Button onClick={() => setFormOpen(true)} className="w-full sm:w-auto shrink-0">
           <Plus className="h-4 w-4 mr-2" />
           Nova Embalagem
         </Button>
@@ -74,7 +74,7 @@ export function PackagingList() {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar embalagens..."
-          className="pl-10"
+          className="pl-10 min-h-[44px]"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />

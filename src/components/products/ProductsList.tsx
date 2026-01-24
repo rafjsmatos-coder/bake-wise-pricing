@@ -120,13 +120,13 @@ export function ProductsList() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Produtos</h1>
+    <div className="space-y-6 max-w-full overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold truncate">Produtos</h1>
           <p className="text-muted-foreground">Gerencie seus produtos e precificação</p>
         </div>
-        <Button onClick={() => setFormOpen(true)}>
+        <Button onClick={() => setFormOpen(true)} className="w-full sm:w-auto shrink-0">
           <Plus className="h-4 w-4 mr-2" />
           Novo Produto
         </Button>
@@ -136,7 +136,7 @@ export function ProductsList() {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar produtos..."
-          className="pl-10"
+          className="pl-10 min-h-[44px]"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />

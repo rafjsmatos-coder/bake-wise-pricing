@@ -105,16 +105,16 @@ export function IngredientsList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Ingredientes</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-foreground truncate">Ingredientes</h1>
           <p className="text-muted-foreground">
             {ingredients.length} ingrediente{ingredients.length !== 1 ? 's' : ''} cadastrado{ingredients.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <Button onClick={() => setFormOpen(true)} className="gap-2">
+        <Button onClick={() => setFormOpen(true)} className="gap-2 w-full sm:w-auto shrink-0">
           <Plus className="h-4 w-4" />
           Novo Ingrediente
         </Button>
@@ -128,11 +128,11 @@ export function IngredientsList() {
             placeholder="Buscar ingredientes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+            className="pl-10 min-h-[44px]"
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-48">
+          <SelectTrigger className="w-full sm:w-48 min-h-[44px]">
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
           <SelectContent>

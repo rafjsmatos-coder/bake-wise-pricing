@@ -266,9 +266,9 @@ export function RecipeSelector({
             return (
               <div
                 key={item.recipe_id}
-                className="flex items-center gap-3 p-3 border border-border rounded-lg bg-card"
+                className="flex flex-wrap items-center gap-2 p-3 border border-border rounded-lg bg-card"
               >
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 w-full sm:w-auto">
                   <div className="flex items-center gap-2">
                     <ChefHat className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="font-medium truncate">{item.name}</span>
@@ -278,7 +278,7 @@ export function RecipeSelector({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                   <Input
                     type="number"
                     step="0.01"
@@ -286,13 +286,13 @@ export function RecipeSelector({
                     value={item.quantity}
                     onChange={(e) => handleUpdateQuantity(item.recipe_id, Number(e.target.value))}
                     autoComplete="off"
-                    className="w-20 min-h-[44px]"
+                    className="w-16 sm:w-20 min-h-[44px]"
                   />
                   <Select
                     value={item.unit}
                     onValueChange={(value) => handleUpdateUnit(item.recipe_id, value)}
                   >
-                    <SelectTrigger className="w-20 min-h-[44px]">
+                    <SelectTrigger className="w-16 sm:w-20 min-h-[44px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="max-h-[40vh]">
@@ -303,17 +303,16 @@ export function RecipeSelector({
                       ))}
                     </SelectContent>
                   </Select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveRecipe(item.recipe_id)}
+                    className="shrink-0 text-muted-foreground hover:text-destructive min-h-[44px] min-w-[44px]"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveRecipe(item.recipe_id)}
-                  className="shrink-0 text-muted-foreground hover:text-destructive min-h-[44px] min-w-[44px]"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
             );
           })}

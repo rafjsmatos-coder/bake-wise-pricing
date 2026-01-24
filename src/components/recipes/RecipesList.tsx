@@ -89,16 +89,16 @@ export function RecipesList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Receitas</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-foreground truncate">Receitas</h1>
           <p className="text-muted-foreground">
             Gerencie suas receitas e calcule custos automaticamente
           </p>
         </div>
-        <Button onClick={() => setFormOpen(true)}>
+        <Button onClick={() => setFormOpen(true)} className="w-full sm:w-auto shrink-0">
           <Plus className="h-4 w-4 mr-2" />
           Nova Receita
         </Button>
@@ -112,11 +112,11 @@ export function RecipesList() {
             placeholder="Buscar receitas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 min-h-[44px]"
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-48">
+          <SelectTrigger className="w-full sm:w-48 min-h-[44px]">
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
           <SelectContent>
