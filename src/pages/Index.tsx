@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { AuthForm } from '@/components/auth/AuthForm';
+import { LandingPage } from '@/components/landing/LandingPage';
 import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
 import { Dashboard } from './Dashboard';
 import { Loader2 } from 'lucide-react';
@@ -8,6 +10,7 @@ import { Loader2 } from 'lucide-react';
 const Index = () => {
   const { user, loading } = useAuth();
   const { canAccessApp, isLoading: subscriptionLoading } = useSubscription();
+  const [showAuthForm, setShowAuthForm] = useState(false);
 
   if (loading || (user && subscriptionLoading)) {
     return (
@@ -17,8 +20,12 @@ const Index = () => {
     );
   }
 
+  // Show landing page for non-authenticated users
   if (!user) {
-    return <AuthForm />;
+    if (showAuthForm) {
+      return <AuthForm onBack={() => setShowAuthForm(false)} />;
+    }
+    return <LandingPage onGetStarted={() => setShowAuthForm(true)} />;
   }
 
   if (!canAccessApp) {
