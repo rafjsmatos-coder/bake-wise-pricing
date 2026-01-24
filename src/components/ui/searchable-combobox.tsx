@@ -63,7 +63,7 @@ export function SearchableCombobox({
 
   const CommandContent = () => (
     <Command className="w-full">
-      <CommandInput placeholder={searchPlaceholder} className="h-12" />
+      <CommandInput placeholder={searchPlaceholder} className="h-12" autoComplete="off" />
       <CommandList className="max-h-[300px]">
         <CommandEmpty>{emptyMessage}</CommandEmpty>
         <CommandGroup>
