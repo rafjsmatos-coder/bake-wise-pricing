@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { useProfile, UpdateProfileData } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { Camera, User, Building2, Phone, MapPin, Globe, Instagram, MessageCircle, Facebook, Loader2 } from 'lucide-react';
+import { PasswordChangeForm } from '@/components/auth/PasswordChangeForm';
 import {
   Form,
   FormControl,
@@ -480,6 +481,9 @@ export function ProfileSettings() {
           </div>
         </form>
       </Form>
+
+      {/* Password Change Section */}
+      <PasswordChangeForm />
     </div>
   );
 }
