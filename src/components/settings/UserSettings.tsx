@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { FieldLabel } from '@/components/ui/field-label';
 import { Switch } from '@/components/ui/switch';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { Loader2, Percent, Flame, Zap, Save, User, HardHat } from 'lucide-react';
@@ -103,7 +103,11 @@ export function UserSettings() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="default_safety_margin">Margem padrão (%)</Label>
+            <FieldLabel 
+              htmlFor="default_safety_margin" 
+              label="Margem padrão (%)" 
+              help="Esta margem é aplicada automaticamente em novas receitas para cobrir desperdícios, variações de peso e imprevistos"
+            />
             <Input
               id="default_safety_margin"
               type="number"
@@ -117,9 +121,6 @@ export function UserSettings() {
                 {errors.default_safety_margin.message}
               </p>
             )}
-            <p className="text-xs text-muted-foreground">
-              Cobre desperdícios, variações de peso e imprevistos
-            </p>
           </div>
         </div>
 
@@ -145,7 +146,11 @@ export function UserSettings() {
 
           {includeGasCost && (
             <div className="space-y-2 animate-fade-in">
-              <Label htmlFor="gas_cost_per_hour">Custo por hora (R$)</Label>
+              <FieldLabel 
+                htmlFor="gas_cost_per_hour" 
+                label="Custo por hora (R$)" 
+                help="Divida o valor mensal da sua conta de gás pelas horas que você usa o forno por mês"
+              />
               <Input
                 id="gas_cost_per_hour"
                 type="number"
@@ -159,9 +164,6 @@ export function UserSettings() {
                   {errors.gas_cost_per_hour.message}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                O custo será calculado com base no tempo de forno da receita
-              </p>
             </div>
           )}
         </div>
@@ -188,7 +190,11 @@ export function UserSettings() {
 
           {includeEnergyCost && (
             <div className="space-y-2 animate-fade-in">
-              <Label htmlFor="energy_cost_per_hour">Custo por hora (R$)</Label>
+              <FieldLabel 
+                htmlFor="energy_cost_per_hour" 
+                label="Custo por hora (R$)" 
+                help="Considere o consumo médio de batedeira, geladeira, forno elétrico e outros equipamentos"
+              />
               <Input
                 id="energy_cost_per_hour"
                 type="number"
@@ -202,9 +208,6 @@ export function UserSettings() {
                   {errors.energy_cost_per_hour.message}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                Considere o consumo médio de batedeira, geladeira, etc.
-              </p>
             </div>
           )}
         </div>
@@ -231,7 +234,11 @@ export function UserSettings() {
 
           {includeLaborCost && (
             <div className="space-y-2 animate-fade-in">
-              <Label htmlFor="labor_cost_per_hour">Custo por hora (R$)</Label>
+              <FieldLabel 
+                htmlFor="labor_cost_per_hour" 
+                label="Custo por hora (R$)" 
+                help="Quanto você quer receber por hora de trabalho. Este valor será multiplicado pelo tempo de preparo das receitas"
+              />
               <Input
                 id="labor_cost_per_hour"
                 type="number"
@@ -245,9 +252,6 @@ export function UserSettings() {
                   {errors.labor_cost_per_hour.message}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                O custo será calculado com base no tempo de preparo (trabalho ativo)
-              </p>
             </div>
           )}
         </div>
@@ -267,7 +271,11 @@ export function UserSettings() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="indirect_operational_cost_percent">Percentual (%)</Label>
+            <FieldLabel 
+              htmlFor="indirect_operational_cost_percent" 
+              label="Percentual (%)" 
+              help="Inclui luvas, toucas, sacos de confeitar, materiais de limpeza e outros consumíveis que você usa em todas as produções"
+            />
             <Input
               id="indirect_operational_cost_percent"
               type="number"
@@ -281,9 +289,6 @@ export function UserSettings() {
                 {errors.indirect_operational_cost_percent.message}
               </p>
             )}
-            <p className="text-xs text-muted-foreground">
-              Inclui luvas, toucas, sacos de confeitar, materiais de limpeza e outros consumíveis gerais
-            </p>
           </div>
         </div>
 

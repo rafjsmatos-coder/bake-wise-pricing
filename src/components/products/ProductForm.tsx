@@ -5,12 +5,12 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { FieldLabel } from '@/components/ui/field-label';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '@/components/ui/form';
 import {
@@ -176,7 +176,12 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                 name="name"
                 render={({ field }) => (
                   <FormItem className="col-span-1 sm:col-span-2">
-                    <FormLabel>Nome do Produto *</FormLabel>
+                    <FieldLabel 
+                      htmlFor="name" 
+                      label="Nome do Produto" 
+                      required 
+                      help="O nome que aparecerá para seus clientes"
+                    />
                     <FormControl>
                       <Input placeholder="Ex: Bolo de Chocolate Decorado" className="min-h-[44px]" {...field} />
                     </FormControl>
@@ -190,7 +195,10 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                 name="category_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Categoria</FormLabel>
+                    <FieldLabel 
+                      label="Categoria" 
+                      help="Organize seus produtos em grupos para facilitar a gestão"
+                    />
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger className="min-h-[44px]">
@@ -221,7 +229,11 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                 name="profit_margin_percent"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Margem de Lucro (%)</FormLabel>
+                    <FieldLabel 
+                      htmlFor="profit_margin_percent" 
+                      label="Margem de Lucro (%)" 
+                      help="Percentual que você quer ganhar sobre o custo total do produto"
+                    />
                     <FormControl>
                       <Input type="number" step="1" placeholder="30" className="min-h-[44px]" {...field} value={field.value ?? ''} />
                     </FormControl>
@@ -262,7 +274,11 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                 name="decoration_time_minutes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tempo de Decoração (minutos)</FormLabel>
+                    <FieldLabel 
+                      htmlFor="decoration_time_minutes" 
+                      label="Tempo de Decoração (min)" 
+                      help="Tempo gasto montando e decorando o produto final"
+                    />
                     <FormControl>
                       <Input type="number" step="1" placeholder="Ex: 30" className="min-h-[44px]" {...field} value={field.value ?? ''} />
                     </FormControl>
@@ -276,7 +292,11 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                 name="additional_costs"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Custos Adicionais (R$)</FormLabel>
+                    <FieldLabel 
+                      htmlFor="additional_costs" 
+                      label="Custos Adicionais (R$)" 
+                      help="Outros custos específicos deste produto (entrega, personalização, etc.)"
+                    />
                     <FormControl>
                       <Input type="number" step="0.01" placeholder="Ex: 5,00" className="min-h-[44px]" {...field} value={field.value ?? ''} />
                     </FormControl>
@@ -291,7 +311,11 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Observações</FormLabel>
+                  <FieldLabel 
+                    htmlFor="notes" 
+                    label="Observações" 
+                    help="Anotações pessoais sobre o produto (dicas de montagem, variações, etc.)"
+                  />
                   <FormControl>
                     <Textarea placeholder="Anotações sobre o produto..." {...field} />
                   </FormControl>

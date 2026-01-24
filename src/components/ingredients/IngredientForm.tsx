@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { FieldLabel } from '@/components/ui/field-label';
 import {
   Select,
   SelectContent,
@@ -146,7 +146,12 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Nome */}
           <div className="space-y-2">
-            <Label htmlFor="name">Nome *</Label>
+            <FieldLabel 
+              htmlFor="name" 
+              label="Nome" 
+              required 
+              help="Digite como você costuma chamar este ingrediente no dia a dia"
+            />
             <Input
               id="name"
               placeholder="Ex: Farinha de Trigo"
@@ -161,7 +166,12 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
           {/* Preço e Quantidade */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="purchase_price">Preço de Compra (R$) *</Label>
+              <FieldLabel 
+                htmlFor="purchase_price" 
+                label="Preço de Compra (R$)" 
+                required 
+                help="Valor total que você pagou pela embalagem inteira"
+              />
               <Input
                 id="purchase_price"
                 type="number"
@@ -177,7 +187,12 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="package_quantity">Quantidade *</Label>
+              <FieldLabel 
+                htmlFor="package_quantity" 
+                label="Quantidade" 
+                required 
+                help="Quantos gramas, litros ou unidades vêm na embalagem que você comprou"
+              />
               <Input
                 id="package_quantity"
                 type="number"
@@ -196,7 +211,11 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
           {/* Unidade e Categoria */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Unidade *</Label>
+              <FieldLabel 
+                label="Unidade" 
+                required 
+                help="A unidade de medida da embalagem. Ex: Se comprou 1kg, escolha 'kg'"
+              />
               <Select
                 value={watchUnit}
                 onValueChange={(value: MeasurementUnit) => setValue('unit', value)}
@@ -215,7 +234,10 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
             </div>
 
             <div className="space-y-2">
-              <Label>Categoria</Label>
+              <FieldLabel 
+                label="Categoria" 
+                help="Agrupe ingredientes similares para organizar melhor sua lista"
+              />
               <Select
                 value={watch('category_id') || 'none'}
                 onValueChange={(value) => setValue('category_id', value === 'none' ? null : value)}
@@ -266,7 +288,11 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
             <div className="space-y-4 animate-fade-in">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="brand">Marca</Label>
+                  <FieldLabel 
+                    htmlFor="brand" 
+                    label="Marca" 
+                    help="Ajuda a lembrar qual marca você costuma comprar"
+                  />
                   <Input
                     id="brand"
                     placeholder="Ex: Dona Benta"
@@ -276,7 +302,11 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="supplier">Fornecedor</Label>
+                  <FieldLabel 
+                    htmlFor="supplier" 
+                    label="Fornecedor" 
+                    help="Onde você costuma comprar este ingrediente"
+                  />
                   <Input
                     id="supplier"
                     placeholder="Ex: Mercado X"
@@ -288,7 +318,11 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="expiry_date">Data de Validade</Label>
+                  <FieldLabel 
+                    htmlFor="expiry_date" 
+                    label="Data de Validade" 
+                    help="Para controle do seu estoque"
+                  />
                   <Input
                     id="expiry_date"
                     type="date"
@@ -298,7 +332,11 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="stock_quantity">Estoque Atual</Label>
+                  <FieldLabel 
+                    htmlFor="stock_quantity" 
+                    label="Estoque Atual" 
+                    help="Quantas unidades/embalagens você tem agora"
+                  />
                   <Input
                     id="stock_quantity"
                     type="number"
@@ -312,7 +350,11 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="min_stock_alert">Alerta de Estoque Mínimo</Label>
+                <FieldLabel 
+                  htmlFor="min_stock_alert" 
+                  label="Alerta de Estoque Mínimo" 
+                  help="Você será avisado quando o estoque ficar abaixo deste valor"
+                />
                 <Input
                   id="min_stock_alert"
                   type="number"
@@ -322,9 +364,6 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                   className="min-h-[44px]"
                   {...register('min_stock_alert', { valueAsNumber: true })}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Você será alertado quando o estoque ficar abaixo deste valor
-                </p>
               </div>
             </div>
           )}

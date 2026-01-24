@@ -4,12 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { FieldLabel } from '@/components/ui/field-label';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '@/components/ui/form';
 import {
@@ -165,7 +165,12 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome *</FormLabel>
+                  <FieldLabel 
+                    htmlFor="name" 
+                    label="Nome" 
+                    required 
+                    help="Digite como você costuma chamar esta embalagem"
+                  />
                   <FormControl>
                     <Input placeholder="Ex: Caixa Kraft 15x15cm" className="min-h-[44px]" {...field} />
                   </FormControl>
@@ -180,7 +185,12 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                 name="purchase_price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Preço de Compra (R$) *</FormLabel>
+                    <FieldLabel 
+                      htmlFor="purchase_price" 
+                      label="Preço de Compra (R$)" 
+                      required 
+                      help="Valor total que você pagou pelo pacote de embalagens"
+                    />
                     <FormControl>
                       <Input 
                         type="number" 
@@ -202,7 +212,12 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                   name="package_quantity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Quantidade *</FormLabel>
+                      <FieldLabel 
+                        htmlFor="package_quantity" 
+                        label="Quantidade" 
+                        required 
+                        help="Quantas unidades vêm no pacote"
+                      />
                       <FormControl>
                         <Input 
                           type="number" 
@@ -223,7 +238,11 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                   name="unit"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Unidade *</FormLabel>
+                      <FieldLabel 
+                        label="Unidade" 
+                        required 
+                        help="Tipo de medida (geralmente unidades)"
+                      />
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="min-h-[44px]">
@@ -250,7 +269,10 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
               name="category_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Categoria</FormLabel>
+                  <FieldLabel 
+                    label="Categoria" 
+                    help="Agrupe embalagens similares (ex: Caixas, Sacolas, Potes)"
+                  />
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="min-h-[44px]">
@@ -305,7 +327,11 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                   name="dimensions"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Dimensões</FormLabel>
+                      <FieldLabel 
+                        htmlFor="dimensions" 
+                        label="Dimensões" 
+                        help="Tamanho da embalagem (ex: 15x15x10cm)"
+                      />
                       <FormControl>
                         <Input placeholder="Ex: 15x15x10cm" className="min-h-[44px]" {...field} />
                       </FormControl>
@@ -320,7 +346,11 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                     name="brand"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Marca</FormLabel>
+                        <FieldLabel 
+                          htmlFor="brand" 
+                          label="Marca" 
+                          help="Ajuda a lembrar qual marca você costuma comprar"
+                        />
                         <FormControl>
                           <Input placeholder="Ex: Sulformas" className="min-h-[44px]" {...field} />
                         </FormControl>
@@ -334,7 +364,11 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                     name="supplier"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Fornecedor</FormLabel>
+                        <FieldLabel 
+                          htmlFor="supplier" 
+                          label="Fornecedor" 
+                          help="Onde você costuma comprar esta embalagem"
+                        />
                         <FormControl>
                           <Input placeholder="Ex: Casa das Embalagens" className="min-h-[44px]" {...field} />
                         </FormControl>
@@ -350,7 +384,11 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                     name="stock_quantity"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Estoque Atual</FormLabel>
+                        <FieldLabel 
+                          htmlFor="stock_quantity" 
+                          label="Estoque Atual" 
+                          help="Quantas unidades você tem agora"
+                        />
                         <FormControl>
                           <Input 
                             type="number" 
@@ -371,7 +409,11 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                     name="min_stock_alert"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Alerta de Estoque Mínimo</FormLabel>
+                        <FieldLabel 
+                          htmlFor="min_stock_alert" 
+                          label="Alerta de Estoque Mínimo" 
+                          help="Você será avisado quando o estoque ficar abaixo deste valor"
+                        />
                         <FormControl>
                           <Input 
                             type="number" 
