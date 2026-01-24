@@ -136,7 +136,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-[100vw] sm:max-w-lg max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-none sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
             {ingredient ? 'Editar Ingrediente' : 'Novo Ingrediente'}
@@ -150,6 +150,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
             <Input
               id="name"
               placeholder="Ex: Farinha de Trigo"
+              className="min-h-[44px]"
               {...register('name')}
             />
             {errors.name && (
@@ -158,7 +159,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
           </div>
 
           {/* Preço e Quantidade */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="purchase_price">Preço de Compra (R$) *</Label>
               <Input
@@ -167,6 +168,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                 step="0.01"
                 min="0"
                 placeholder="0,00"
+                className="min-h-[44px]"
                 {...register('purchase_price', { valueAsNumber: true })}
               />
               {errors.purchase_price && (
@@ -182,6 +184,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                 step="0.001"
                 min="0"
                 placeholder="0"
+                className="min-h-[44px]"
                 {...register('package_quantity', { valueAsNumber: true })}
               />
               {errors.package_quantity && (
@@ -191,19 +194,19 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
           </div>
 
           {/* Unidade e Categoria */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Unidade *</Label>
               <Select
                 value={watchUnit}
                 onValueChange={(value: MeasurementUnit) => setValue('unit', value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="min-h-[44px]">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[40vh]">
                   {Object.entries(UNITS).map(([key, info]) => (
-                    <SelectItem key={key} value={key}>
+                    <SelectItem key={key} value={key} className="py-3">
                       {key} - {info.label}
                     </SelectItem>
                   ))}
@@ -217,16 +220,16 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                 value={watch('category_id') || 'none'}
                 onValueChange={(value) => setValue('category_id', value === 'none' ? null : value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="min-h-[44px]">
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem categoria</SelectItem>
+                <SelectContent className="max-h-[40vh]">
+                  <SelectItem value="none" className="py-3">Sem categoria</SelectItem>
                   {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
+                    <SelectItem key={cat.id} value={cat.id} className="py-3">
                       <div className="flex items-center gap-2">
                         <div
-                          className="w-3 h-3 rounded-full"
+                          className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: cat.color }}
                         />
                         {cat.name}
@@ -253,7 +256,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
           <Button
             type="button"
             variant="ghost"
-            className="w-full text-muted-foreground"
+            className="w-full text-muted-foreground min-h-[44px]"
             onClick={() => setShowOptional(!showOptional)}
           >
             {showOptional ? 'Ocultar campos opcionais' : 'Mostrar campos opcionais'}
@@ -261,12 +264,13 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
 
           {showOptional && (
             <div className="space-y-4 animate-fade-in">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="brand">Marca</Label>
                   <Input
                     id="brand"
                     placeholder="Ex: Dona Benta"
+                    className="min-h-[44px]"
                     {...register('brand')}
                   />
                 </div>
@@ -276,17 +280,19 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                   <Input
                     id="supplier"
                     placeholder="Ex: Mercado X"
+                    className="min-h-[44px]"
                     {...register('supplier')}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="expiry_date">Data de Validade</Label>
                   <Input
                     id="expiry_date"
                     type="date"
+                    className="min-h-[44px]"
                     {...register('expiry_date')}
                   />
                 </div>
@@ -299,6 +305,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                     step="0.001"
                     min="0"
                     placeholder="0"
+                    className="min-h-[44px]"
                     {...register('stock_quantity', { valueAsNumber: true })}
                   />
                 </div>
@@ -312,6 +319,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                   step="0.001"
                   min="0"
                   placeholder="0"
+                  className="min-h-[44px]"
                   {...register('min_stock_alert', { valueAsNumber: true })}
                 />
                 <p className="text-xs text-muted-foreground">
@@ -322,18 +330,18 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
           )}
 
           {/* Submit */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
             <Button
               type="button"
               variant="outline"
-              className="flex-1"
+              className="flex-1 min-h-[44px]"
               onClick={() => onOpenChange(false)}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              className="flex-1"
+              className="flex-1 min-h-[44px]"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

@@ -219,7 +219,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-[100vw] sm:max-w-2xl max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-none sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
             {recipe ? 'Editar Receita' : 'Nova Receita'}
@@ -233,6 +233,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
             <Input
               id="name"
               placeholder="Ex: Bolo de Chocolate"
+              className="min-h-[44px]"
               {...register('name')}
             />
             {errors.name && (
@@ -247,15 +248,15 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
               value={watch('category_id')}
               onValueChange={(value) => setValue('category_id', value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="min-h-[44px]">
                 <SelectValue placeholder="Selecione uma categoria..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[40vh]">
                 {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
+                  <SelectItem key={cat.id} value={cat.id} className="py-3">
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-3 h-3 rounded-full"
+                        className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ backgroundColor: cat.color || '#6366f1' }}
                       />
                       {cat.name}
@@ -270,7 +271,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
           </div>
 
           {/* Rendimento e Tempo */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="yield_quantity">Rendimento *</Label>
               <div className="flex gap-2">
@@ -280,19 +281,19 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                   step="0.01"
                   min="0.01"
                   placeholder="1"
+                  className="flex-1 min-h-[44px]"
                   {...register('yield_quantity', { valueAsNumber: true })}
-                  className="flex-1"
                 />
                 <Select
                   value={watch('yield_unit')}
                   onValueChange={(value) => setValue('yield_unit', value)}
                 >
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-32 min-h-[44px]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[40vh]">
                     {MEASUREMENT_UNITS.map((unit) => (
-                      <SelectItem key={unit.value} value={unit.value}>
+                      <SelectItem key={unit.value} value={unit.value} className="py-3">
                         {unit.label}
                       </SelectItem>
                     ))}
@@ -314,6 +315,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                   step="1"
                   min="1"
                   placeholder="30"
+                  className="min-h-[44px]"
                   {...register('prep_time_minutes', { valueAsNumber: true })}
                 />
                 <span className="text-sm text-muted-foreground">min</span>
@@ -342,7 +344,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
           <Button
             type="button"
             variant="ghost"
-            className="w-full text-muted-foreground"
+            className="w-full text-muted-foreground min-h-[44px]"
             onClick={() => setShowOptional(!showOptional)}
           >
             <Settings2 className="h-4 w-4 mr-2" />
@@ -362,6 +364,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                     step="1"
                     min="0"
                     placeholder="45"
+                    className="min-h-[44px]"
                     {...register('oven_time_minutes', { 
                       setValueAs: (v) => v === '' || v === null || v === undefined ? null : Number(v)
                     })}
@@ -371,7 +374,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
               </div>
 
               {/* Margem e Custos */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="safety_margin_percent">
                     Margem de Segurança (%)
@@ -382,6 +385,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                     step="0.1"
                     min="0"
                     placeholder={`${settings?.default_safety_margin ?? 15}`}
+                    className="min-h-[44px]"
                     {...register('safety_margin_percent', { 
                       setValueAs: (v) => v === '' || v === null || v === undefined ? null : Number(v)
                     })}
@@ -399,6 +403,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                     step="0.01"
                     min="0"
                     placeholder="0,00"
+                    className="min-h-[44px]"
                     {...register('additional_costs', { valueAsNumber: true })}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -432,18 +437,18 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
           )}
 
           {/* Submit */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
             <Button
               type="button"
               variant="outline"
-              className="flex-1"
+              className="flex-1 min-h-[44px]"
               onClick={() => onOpenChange(false)}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              className="flex-1"
+              className="flex-1 min-h-[44px]"
               disabled={isSubmitting || selectedIngredients.length === 0}
             >
               {isSubmitting ? (

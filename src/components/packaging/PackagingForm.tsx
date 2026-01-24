@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,7 +27,8 @@ import {
 } from '@/components/ui/select';
 import { usePackaging, Packaging } from '@/hooks/usePackaging';
 import { usePackagingCategories } from '@/hooks/usePackagingCategories';
-import { useEffect } from 'react';
+import { Calculator, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { getCostPerUnit } from '@/lib/unit-conversion';
 
 const UNITS = [
   { value: 'un', label: 'Unidade(s)' },
@@ -44,9 +46,9 @@ const formSchema = z.object({
   package_quantity: z.coerce.number().positive('Quantidade deve ser positiva'),
   unit: z.enum(['un', 'kg', 'g', 'L', 'ml', 'm', 'cm']),
   category_id: z.string().optional(),
+  dimensions: z.string().optional(),
   brand: z.string().optional(),
   supplier: z.string().optional(),
-  dimensions: z.string().optional(),
   stock_quantity: z.coerce.number().optional(),
   min_stock_alert: z.coerce.number().optional(),
 });
@@ -62,22 +64,31 @@ interface PackagingFormProps {
 export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormProps) {
   const { createPackaging, updatePackaging } = usePackaging();
   const { categories } = usePackagingCategories();
+  const [showOptional, setShowOptional] = useState(false);
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
-      purchase_price: 0,
-      package_quantity: 1,
+      purchase_price: undefined,
+      package_quantity: undefined,
       unit: 'un',
       category_id: '',
+      dimensions: '',
       brand: '',
       supplier: '',
-      dimensions: '',
       stock_quantity: undefined,
       min_stock_alert: undefined,
     },
   });
+
+  const watchPrice = form.watch('purchase_price');
+  const watchQuantity = form.watch('package_quantity');
+  const watchUnit = form.watch('unit');
+
+  const costInfo = watchPrice > 0 && watchQuantity > 0
+    ? getCostPerUnit(watchPrice, watchQuantity, watchUnit)
+    : null;
 
   useEffect(() => {
     if (packaging) {
@@ -87,27 +98,29 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
         package_quantity: packaging.package_quantity,
         unit: packaging.unit,
         category_id: packaging.category_id || '',
+        dimensions: packaging.dimensions || '',
         brand: packaging.brand || '',
         supplier: packaging.supplier || '',
-        dimensions: packaging.dimensions || '',
         stock_quantity: packaging.stock_quantity ?? undefined,
         min_stock_alert: packaging.min_stock_alert ?? undefined,
       });
+      setShowOptional(!!packaging.dimensions || !!packaging.brand || !!packaging.supplier || !!packaging.stock_quantity);
     } else {
       form.reset({
         name: '',
-        purchase_price: 0,
-        package_quantity: 1,
+        purchase_price: undefined,
+        package_quantity: undefined,
         unit: 'un',
         category_id: '',
+        dimensions: '',
         brand: '',
         supplier: '',
-        dimensions: '',
         stock_quantity: undefined,
         min_stock_alert: undefined,
       });
+      setShowOptional(false);
     }
-  }, [packaging, form]);
+  }, [packaging, form, open]);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -117,9 +130,9 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
         package_quantity: data.package_quantity,
         unit: data.unit,
         category_id: data.category_id || null,
+        dimensions: data.dimensions || null,
         brand: data.brand || null,
         supplier: data.supplier || null,
-        dimensions: data.dimensions || null,
         stock_quantity: data.stock_quantity ?? null,
         min_stock_alert: data.min_stock_alert ?? null,
       };
@@ -138,7 +151,7 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-[100vw] sm:max-w-[600px] max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-none sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
             {packaging ? 'Editar Embalagem' : 'Nova Embalagem'}
@@ -154,14 +167,14 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                 <FormItem>
                   <FormLabel>Nome *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Caixa Kraft 15x15cm" {...field} />
+                    <Input placeholder="Ex: Caixa Kraft 15x15cm" className="min-h-[44px]" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="purchase_price"
@@ -172,8 +185,10 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                       <Input 
                         type="number" 
                         step="0.01" 
-                        placeholder="0.00" 
-                        {...field} 
+                        placeholder="0,00"
+                        className="min-h-[44px]"
+                        {...field}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -192,8 +207,10 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                         <Input 
                           type="number" 
                           step="0.01" 
-                          placeholder="1" 
-                          {...field} 
+                          placeholder="0"
+                          className="min-h-[44px]"
+                          {...field}
+                          value={field.value ?? ''}
                         />
                       </FormControl>
                       <FormMessage />
@@ -209,13 +226,13 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                       <FormLabel>Unidade *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="min-h-[44px]">
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="max-h-[40vh]">
                           {UNITS.map((unit) => (
-                            <SelectItem key={unit.value} value={unit.value}>
+                            <SelectItem key={unit.value} value={unit.value} className="py-3">
                               {unit.label}
                             </SelectItem>
                           ))}
@@ -236,16 +253,16 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                   <FormLabel>Categoria</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="min-h-[44px]">
                         <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="max-h-[40vh]">
                       {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
+                        <SelectItem key={category.id} value={category.id} className="py-3">
                           <div className="flex items-center gap-2">
                             <div 
-                              className="w-3 h-3 rounded-full" 
+                              className="w-3 h-3 rounded-full flex-shrink-0" 
                               style={{ backgroundColor: category.color || '#6366f1' }}
                             />
                             {category.name}
@@ -259,104 +276,137 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="dimensions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dimensões</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: 15x15x10cm" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Cost Preview */}
+            {costInfo && (
+              <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
+                <div className="flex items-center gap-2 text-accent">
+                  <Calculator className="h-4 w-4" />
+                  <span className="text-sm font-medium">Custo por unidade:</span>
+                  <span className="font-bold">{costInfo.formatted}</span>
+                </div>
+              </div>
+            )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="brand"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Marca</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Sulformas" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Optional Fields Toggle */}
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full justify-between min-h-[44px]"
+              onClick={() => setShowOptional(!showOptional)}
+            >
+              <span>Campos opcionais</span>
+              {showOptional ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
 
-              <FormField
-                control={form.control}
-                name="supplier"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fornecedor</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Casa das Embalagens" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {showOptional && (
+              <div className="space-y-4 animate-fade-in">
+                <FormField
+                  control={form.control}
+                  name="dimensions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dimensões</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: 15x15x10cm" className="min-h-[44px]" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="stock_quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estoque Atual</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        placeholder="Opcional" 
-                        {...field} 
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="brand"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Marca</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Sulformas" className="min-h-[44px]" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="min_stock_alert"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Alerta de Estoque Mínimo</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        placeholder="Opcional" 
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                  <FormField
+                    control={form.control}
+                    name="supplier"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fornecedor</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Casa das Embalagens" className="min-h-[44px]" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="stock_quantity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estoque Atual</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="Opcional"
+                            className="min-h-[44px]"
+                            {...field} 
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="min_stock_alert"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Alerta de Estoque Mínimo</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="Opcional"
+                            className="min-h-[44px]"
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
+                className="w-full sm:w-auto min-h-[44px]"
                 onClick={() => onOpenChange(false)}
               >
                 Cancelar
               </Button>
               <Button 
-                type="submit" 
+                type="submit"
+                className="w-full sm:w-auto min-h-[44px]"
                 disabled={createPackaging.isPending || updatePackaging.isPending}
               >
+                {(createPackaging.isPending || updatePackaging.isPending) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 {packaging ? 'Salvar' : 'Criar'}
               </Button>
             </div>
