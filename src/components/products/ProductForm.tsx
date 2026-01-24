@@ -68,7 +68,7 @@ interface ProductFormProps {
 
 interface SelectedRecipe {
   recipe_id: string;
-  quantity: number;
+  quantity: number | null;
   unit: string;
   name: string;
   yield_quantity: number;
@@ -77,21 +77,21 @@ interface SelectedRecipe {
 
 interface SelectedIngredient {
   ingredient_id: string;
-  quantity: number;
+  quantity: number | null;
   unit: MeasurementUnit;
   name: string;
 }
 
 interface SelectedDecoration {
   decoration_id: string;
-  quantity: number;
+  quantity: number | null;
   unit: MeasurementUnit;
   name: string;
 }
 
 interface SelectedPackaging {
   packaging_id: string;
-  quantity: number;
+  quantity: number | null;
   name: string;
 }
 
@@ -190,10 +190,10 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
         profit_margin_percent: data.profit_margin_percent ?? 30,
         additional_costs: data.additional_costs ?? 0,
         notes: data.notes || null,
-        recipes: selectedRecipes.map(r => ({ recipe_id: r.recipe_id, quantity: r.quantity, unit: r.unit })),
-        ingredients: selectedIngredients.map(i => ({ ingredient_id: i.ingredient_id, quantity: i.quantity, unit: i.unit })),
-        decorations: selectedDecorations.map(d => ({ decoration_id: d.decoration_id, quantity: d.quantity, unit: d.unit })),
-        packaging: selectedPackaging.map(p => ({ packaging_id: p.packaging_id, quantity: p.quantity })),
+        recipes: selectedRecipes.map(r => ({ recipe_id: r.recipe_id, quantity: r.quantity ?? 0, unit: r.unit })),
+        ingredients: selectedIngredients.map(i => ({ ingredient_id: i.ingredient_id, quantity: i.quantity ?? 0, unit: i.unit })),
+        decorations: selectedDecorations.map(d => ({ decoration_id: d.decoration_id, quantity: d.quantity ?? 0, unit: d.unit })),
+        packaging: selectedPackaging.map(p => ({ packaging_id: p.packaging_id, quantity: p.quantity ?? 1 })),
       };
 
       if (product) {
@@ -212,7 +212,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
     if (recipe && !selectedRecipes.find(r => r.recipe_id === recipeId)) {
       setSelectedRecipes([...selectedRecipes, { 
         recipe_id: recipeId, 
-        quantity: recipe.yield_quantity, 
+        quantity: null,
         unit: recipe.yield_unit,
         name: recipe.name,
         yield_quantity: recipe.yield_quantity,
@@ -226,7 +226,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
     if (ingredient && !selectedIngredients.find(i => i.ingredient_id === ingredientId)) {
       setSelectedIngredients([...selectedIngredients, { 
         ingredient_id: ingredientId, 
-        quantity: 1, 
+        quantity: null, 
         unit: ingredient.unit,
         name: ingredient.name 
       }]);
@@ -238,7 +238,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
     if (decoration && !selectedDecorations.find(d => d.decoration_id === decorationId)) {
       setSelectedDecorations([...selectedDecorations, { 
         decoration_id: decorationId, 
-        quantity: 1, 
+        quantity: null, 
         unit: decoration.unit,
         name: decoration.name 
       }]);
@@ -250,7 +250,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
     if (pkg && !selectedPackaging.find(p => p.packaging_id === packagingId)) {
       setSelectedPackaging([...selectedPackaging, { 
         packaging_id: packagingId, 
-        quantity: 1, 
+        quantity: null, 
         name: pkg.name 
       }]);
     }
@@ -393,10 +393,12 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                               type="number"
                               step="0.01"
                               className="w-24 min-h-[44px]"
-                              value={r.quantity}
+                              placeholder={String(r.yield_quantity)}
+                              value={r.quantity ?? ''}
+                              autoComplete="off"
                               onChange={(e) => {
                                 const updated = [...selectedRecipes];
-                                updated[idx].quantity = parseFloat(e.target.value) || 0;
+                                updated[idx].quantity = e.target.value === '' ? null : parseFloat(e.target.value);
                                 setSelectedRecipes(updated);
                               }}
                             />
@@ -461,10 +463,12 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                             type="number"
                             step="0.01"
                             className="w-20 min-h-[44px]"
-                            value={i.quantity}
+                            placeholder="Qtd"
+                            value={i.quantity ?? ''}
+                            autoComplete="off"
                             onChange={(e) => {
                               const updated = [...selectedIngredients];
-                              updated[idx].quantity = parseFloat(e.target.value) || 0;
+                              updated[idx].quantity = e.target.value === '' ? null : parseFloat(e.target.value);
                               setSelectedIngredients(updated);
                             }}
                           />
@@ -537,10 +541,12 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                             type="number"
                             step="0.01"
                             className="w-20 min-h-[44px]"
-                            value={d.quantity}
+                            placeholder="Qtd"
+                            value={d.quantity ?? ''}
+                            autoComplete="off"
                             onChange={(e) => {
                               const updated = [...selectedDecorations];
-                              updated[idx].quantity = parseFloat(e.target.value) || 0;
+                              updated[idx].quantity = e.target.value === '' ? null : parseFloat(e.target.value);
                               setSelectedDecorations(updated);
                             }}
                           />
@@ -613,10 +619,12 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
                             type="number"
                             step="1"
                             className="w-20 min-h-[44px]"
-                            value={p.quantity}
+                            placeholder="Qtd"
+                            value={p.quantity ?? ''}
+                            autoComplete="off"
                             onChange={(e) => {
                               const updated = [...selectedPackaging];
-                              updated[idx].quantity = parseFloat(e.target.value) || 1;
+                              updated[idx].quantity = e.target.value === '' ? null : parseFloat(e.target.value);
                               setSelectedPackaging(updated);
                             }}
                           />
