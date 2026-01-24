@@ -16,7 +16,8 @@ import {
   Sparkles,
   ChevronDown,
   LayoutDashboard,
-  User
+  User,
+  Crown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -38,7 +39,8 @@ export type PageType =
   | 'products' 
   | 'product-categories' 
   | 'settings'
-  | 'profile';
+  | 'profile'
+  | 'subscription';
 
 interface NavItem {
   id: PageType;
@@ -112,6 +114,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
         { id: 'packaging-categories', label: 'Categorias' }
       ]
     },
+    { id: 'subscription', label: 'Assinatura', icon: Crown },
     { id: 'settings', label: 'Configurações', icon: Settings },
     { id: 'profile', label: 'Meu Perfil', icon: User },
   ];
