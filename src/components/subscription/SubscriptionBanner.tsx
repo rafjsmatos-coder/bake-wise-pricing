@@ -27,8 +27,8 @@ export function SubscriptionBanner() {
     const isUrgent = (subscription.days_remaining || 0) <= 3;
 
     return (
-      <div className={`px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-2 ${
-        isUrgent ? 'bg-destructive/10' : 'bg-accent/10'
+      <div className={`px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-2 sticky top-0 z-[60] ${
+        isUrgent ? 'bg-destructive/10 border-b border-destructive/20' : 'bg-accent/10 border-b border-accent/20'
       }`}>
         <div className="flex items-center gap-2 min-w-0">
           <Clock className={`h-4 w-4 shrink-0 ${isUrgent ? 'text-destructive' : 'text-accent'}`} />
@@ -51,7 +51,7 @@ export function SubscriptionBanner() {
 
   if (subscription.status === 'active') {
     return (
-      <div className="px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-2 bg-accent/5">
+      <div className="px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-2 bg-accent/5 border-b border-accent/10 sticky top-0 z-[60]">
         <div className="flex items-center gap-2 min-w-0">
           <Badge variant="secondary" className="gap-1 bg-accent/10 text-accent shrink-0">
             <Crown className="h-3 w-3" />
