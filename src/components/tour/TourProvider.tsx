@@ -8,7 +8,7 @@ interface TourWrapperProps {
 }
 
 function TourController({ onSidebarToggle }: { onSidebarToggle?: (open: boolean) => void }) {
-  const { currentStep, isOpen } = useTour();
+  const { currentStep, isOpen, setCurrentStep } = useTour();
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -16,13 +16,15 @@ function TourController({ onSidebarToggle }: { onSidebarToggle?: (open: boolean)
 
     // Steps that need sidebar open: nav items (steps 4-8)
     const sidebarSteps = [4, 5, 6, 7, 8];
+    const needsSidebar = sidebarSteps.includes(currentStep);
     
-    if (sidebarSteps.includes(currentStep)) {
+    if (needsSidebar) {
+      // Open sidebar first
       onSidebarToggle(true);
     } else {
       onSidebarToggle(false);
     }
-  }, [currentStep, isOpen, isMobile, onSidebarToggle]);
+  }, [currentStep, isOpen, isMobile, onSidebarToggle, setCurrentStep]);
 
   return null;
 }
