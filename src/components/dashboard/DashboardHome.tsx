@@ -3,8 +3,10 @@ import { useRecipes } from '@/hooks/useRecipes';
 import { useIngredients } from '@/hooks/useIngredients';
 import { useDecorations } from '@/hooks/useDecorations';
 import { usePackaging } from '@/hooks/usePackaging';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { StartTourButton } from '@/components/tour/StartTourButton';
 import { 
   ShoppingBag, 
@@ -14,8 +16,13 @@ import {
   Box,
   Plus,
   Loader2,
-  Cake
+  Cake,
+  Crown,
+  Clock,
+  Settings
 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface DashboardHomeProps {
   onNavigate: (page: string) => void;
@@ -27,8 +34,16 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
   const { ingredients, isLoading: loadingIngredients } = useIngredients();
   const { decorations, isLoading: loadingDecorations } = useDecorations();
   const { packagingItems, isLoading: loadingPackaging } = usePackaging();
+  const { subscription, createCheckout, openCustomerPortal } = useSubscription();
 
   const isLoading = loadingProducts || loadingRecipes || loadingIngredients || loadingDecorations || loadingPackaging;
+
+  const handleUpgrade = async () => {
+    const url = await createCheckout();
+    if (url) {
+      window.open(url, '_blank');
+    }
+  };
 
   const summaryCards = [
     { 
@@ -102,6 +117,60 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
         </div>
         <StartTourButton variant="card" />
       </div>
+
+      {/* Subscription Status Card */}
+      {subscription.status === 'trial' && (
+        <Card className={`border-2 ${(subscription.days_remaining || 0) <= 3 ? 'border-destructive/50 bg-destructive/5' : 'border-accent/50 bg-accent/5'}`}>
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${(subscription.days_remaining || 0) <= 3 ? 'bg-destructive/10' : 'bg-accent/10'}`}>
+                  <Clock className={`h-5 w-5 ${(subscription.days_remaining || 0) <= 3 ? 'text-destructive' : 'text-accent'}`} />
+                </div>
+                <div>
+                  <p className="font-medium">Período de Teste</p>
+                  <p className={`text-sm ${(subscription.days_remaining || 0) <= 3 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                    {subscription.days_remaining === 1 ? '1 dia restante' : `${subscription.days_remaining} dias restantes`}
+                  </p>
+                </div>
+              </div>
+              <Button onClick={handleUpgrade} className="gap-2">
+                <Crown className="h-4 w-4" />
+                Assinar Premium
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {subscription.status === 'active' && (
+        <Card className="border-2 border-accent/30 bg-accent/5">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-accent/10">
+                  <Crown className="h-5 w-5 text-accent" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">Plano Premium</p>
+                    <Badge variant="secondary" className="bg-accent/10 text-accent text-xs">Ativo</Badge>
+                  </div>
+                  {subscription.subscription_end && (
+                    <p className="text-sm text-muted-foreground">
+                      Renova {formatDistanceToNow(new Date(subscription.subscription_end), { addSuffix: true, locale: ptBR })}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Button variant="outline" onClick={openCustomerPortal} className="gap-2">
+                <Settings className="h-4 w-4" />
+                Gerenciar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Cards */}
       {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
