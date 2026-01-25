@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FieldLabel } from '@/components/ui/field-label';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -141,12 +141,9 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Nome */}
           <div className="space-y-2">
-            <FieldLabel 
-              htmlFor="name" 
-              label="Nome" 
-              required 
-              help="Digite como você costuma chamar esta decoração no dia a dia"
-            />
+            <Label htmlFor="name">
+              Nome <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="name"
               placeholder="Ex: Fita de Cetim Rosa"
@@ -161,12 +158,9 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
           {/* Preço e Quantidade */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <FieldLabel 
-                htmlFor="purchase_price" 
-                label="Preço de Compra (R$)" 
-                required 
-                help="Valor total que você pagou pela embalagem inteira"
-              />
+              <Label htmlFor="purchase_price">
+                Preço de Compra (R$) <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="purchase_price"
                 type="number"
@@ -182,12 +176,9 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
             </div>
 
             <div className="space-y-2">
-              <FieldLabel 
-                htmlFor="package_quantity" 
-                label="Quantidade" 
-                required 
-                help="Quantas unidades, metros ou gramas vêm na embalagem"
-              />
+              <Label htmlFor="package_quantity">
+                Quantidade <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="package_quantity"
                 type="number"
@@ -206,11 +197,9 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
           {/* Unidade e Categoria */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <FieldLabel 
-                label="Unidade" 
-                required 
-                help="A unidade de medida do pacote. Ex: metros para fitas, unidades para flores"
-              />
+              <Label>
+                Unidade <span className="text-destructive">*</span>
+              </Label>
               <Select
                 value={watchUnit}
                 onValueChange={(value: MeasurementUnit) => setValue('unit', value)}
@@ -229,10 +218,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
             </div>
 
             <div className="space-y-2">
-              <FieldLabel 
-                label="Categoria" 
-                help="Agrupe decorações similares para organizar melhor"
-              />
+              <Label>Categoria</Label>
               <Select
                 value={watch('category_id') || 'none'}
                 onValueChange={(value) => setValue('category_id', value === 'none' ? null : value)}
@@ -285,11 +271,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
             <div className="space-y-4 pt-2 animate-fade-in">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <FieldLabel 
-                    htmlFor="brand" 
-                    label="Marca" 
-                    help="Ajuda a lembrar qual marca você costuma comprar"
-                  />
+                  <Label htmlFor="brand">Marca</Label>
                   <Input
                     id="brand"
                     placeholder="Ex: Fitas São José"
@@ -298,11 +280,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
                   />
                 </div>
                 <div className="space-y-2">
-                  <FieldLabel 
-                    htmlFor="supplier" 
-                    label="Fornecedor" 
-                    help="Onde você costuma comprar esta decoração"
-                  />
+                  <Label htmlFor="supplier">Fornecedor</Label>
                   <Input
                     id="supplier"
                     placeholder="Ex: Atacado das Fitas"
@@ -314,11 +292,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <FieldLabel 
-                    htmlFor="stock_quantity" 
-                    label="Estoque Atual" 
-                    help="Quantas unidades/embalagens você tem agora"
-                  />
+                  <Label htmlFor="stock_quantity">Estoque Atual</Label>
                   <Input
                     id="stock_quantity"
                     type="number"
@@ -330,11 +304,7 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
                   />
                 </div>
                 <div className="space-y-2">
-                  <FieldLabel 
-                    htmlFor="min_stock_alert" 
-                    label="Alerta de Estoque Mínimo" 
-                    help="Você será avisado quando o estoque ficar abaixo deste valor"
-                  />
+                  <Label htmlFor="min_stock_alert">Alerta de Estoque Mínimo</Label>
                   <Input
                     id="min_stock_alert"
                     type="number"
