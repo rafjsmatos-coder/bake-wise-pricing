@@ -1,11 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -16,9 +12,11 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
 const PREMIUM_PRICE_ID = "price_1StDnC1UfMJqJ1ycnqShIkOZ";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCorsPreflightRequest(req);
+  if (corsResponse) return corsResponse;
+
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
 
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
@@ -74,7 +72,7 @@ serve(async (req) => {
       logStep("No existing customer, will create new");
     }
 
-    const origin = req.headers.get("origin") || "https://bake-wise-pricing.lovable.app";
+    const redirectOrigin = origin || "https://bake-wise-pricing.lovable.app";
     
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -87,8 +85,8 @@ serve(async (req) => {
       ],
       mode: "subscription",
       payment_method_types: ["card", "boleto"],
-      success_url: `${origin}/?checkout=success`,
-      cancel_url: `${origin}/?checkout=canceled`,
+      success_url: `${redirectOrigin}/?checkout=success`,
+      cancel_url: `${redirectOrigin}/?checkout=canceled`,
       metadata: {
         user_id: user.id,
       },
