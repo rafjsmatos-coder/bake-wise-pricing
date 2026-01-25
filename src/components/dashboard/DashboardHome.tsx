@@ -5,7 +5,6 @@ import { useDecorations } from '@/hooks/useDecorations';
 import { usePackaging } from '@/hooks/usePackaging';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { StartTourButton } from '@/components/tour/StartTourButton';
 import { 
   ShoppingBag, 
   BookOpen, 
@@ -90,22 +89,18 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
   return (
     <div className="space-y-8 max-w-full overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4" data-tour="welcome">
-        <div className="flex items-center gap-4">
-          <div className="w-12 sm:w-14 h-12 sm:h-14 bg-accent/10 rounded-xl flex items-center justify-center shrink-0">
-            <Cake className="h-6 sm:h-7 w-6 sm:w-7 text-accent" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">Dashboard</h1>
-            <p className="text-muted-foreground">Visão geral do seu negócio</p>
-          </div>
+      <div className="flex items-center gap-4">
+        <div className="w-12 sm:w-14 h-12 sm:h-14 bg-accent/10 rounded-xl flex items-center justify-center shrink-0">
+          <Cake className="h-6 sm:h-7 w-6 sm:w-7 text-accent" />
         </div>
-        <StartTourButton variant="card" />
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">Dashboard</h1>
+          <p className="text-muted-foreground">Visão geral do seu negócio</p>
+        </div>
       </div>
 
       {/* Summary Cards */}
-      {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" data-tour="summary-cards">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {summaryCards.map((card) => (
           <Card 
             key={card.title} 
@@ -128,7 +123,7 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       </div>
 
       {/* Quick Actions */}
-      <Card data-tour="quick-actions">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">Ações Rápidas</CardTitle>
         </CardHeader>

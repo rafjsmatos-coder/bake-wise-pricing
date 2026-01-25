@@ -119,19 +119,6 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
     { id: 'profile', label: 'Meu Perfil', icon: User },
   ];
 
-  // Map nav item IDs to tour data attributes
-  const getTourAttribute = (id: PageType) => {
-    const tourMap: Partial<Record<PageType, string>> = {
-      ingredients: 'nav-ingredients',
-      recipes: 'nav-recipes',
-      products: 'nav-products',
-      decorations: 'nav-decorations',
-      packaging: 'nav-packaging',
-      settings: 'nav-settings',
-    };
-    return tourMap[id];
-  };
-
   const isChildActive = (item: NavItem) => {
     return item.children?.some(child => child.id === currentPage) || false;
   };
@@ -195,7 +182,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
                   >
                     <div className="space-y-1">
                       {/* Parent button */}
-                      <div className="flex items-center" data-tour={getTourAttribute(item.id)}>
+                      <div className="flex items-center">
                         <button
                           onClick={() => handleNavClick(item.id)}
                           className={cn(
@@ -250,7 +237,6 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  data-tour={getTourAttribute(item.id)}
                   className={cn(
                     'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-left',
                     isActive
