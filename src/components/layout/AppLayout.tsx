@@ -1,6 +1,7 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useSidebarControl } from '@/hooks/useSidebarControl';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
@@ -58,7 +59,7 @@ interface AppLayoutProps {
 export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { sidebarOpen, setSidebarOpen } = useSidebarControl();
 
   const getInitials = () => {
     if (profile?.full_name) {
