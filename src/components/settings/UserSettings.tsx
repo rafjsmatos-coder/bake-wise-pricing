@@ -197,7 +197,7 @@ export function UserSettings() {
           </div>
         </div>
 
-        {/* Gas Cost / Gasto com Gás */}
+        {/* Gas Cost / Gás do Forno */}
         <div className="p-6 bg-card border border-border rounded-lg space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -205,24 +205,9 @@ export function UserSettings() {
                 <Flame className="h-5 w-5 text-orange-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold">Gasto com Gás</h2>
-                  <HoverCard>
-                    <HoverCardTrigger asChild>
-                      <button type="button" className="text-muted-foreground hover:text-foreground">
-                        <Info className="h-4 w-4" />
-                      </button>
-                    </HoverCardTrigger>
-                    <HoverCardContent className="w-80">
-                      <p className="text-sm">
-                        Ative se seu forno principal for a gás. O valor será aplicado 
-                        automaticamente baseado no tempo de forno de cada receita.
-                      </p>
-                    </HoverCardContent>
-                  </HoverCard>
-                </div>
+                <h2 className="font-semibold">Gás do Forno (R$/h)</h2>
                 <p className="text-sm text-muted-foreground">
-                  Custo por hora do uso do forno a gás.
+                  Aplicado apenas se o forno for a gás.
                 </p>
               </div>
             </div>
@@ -253,7 +238,7 @@ export function UserSettings() {
 
               <CalculationExample
                 formula="Valor do botijão ÷ horas de uso"
-                example="R$ 120,00 ÷ 60h"
+                example="R$ 120 ÷ 60h"
                 result="R$ 2,00/h"
               />
 
