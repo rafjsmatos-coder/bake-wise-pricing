@@ -4,6 +4,8 @@
 const ALLOWED_ORIGINS = [
   'https://bake-wise-pricing.lovable.app',
   'https://id-preview--c0021bd6-83d4-45de-aa94-e9d690844ef1.lovable.app',
+  'https://precibake.com.br',
+  'https://www.precibake.com.br',
   'http://localhost:5173',
   'http://localhost:3000',
 ];
