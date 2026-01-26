@@ -408,15 +408,15 @@ export function UserSettings() {
                   </HoverCardTrigger>
                   <HoverCardContent className="w-80">
                     <p className="text-sm">
-                      Aplicado sobre o subtotal do produto para cobrir custos que não são 
-                      cadastrados individualmente, como luvas, toucas, produtos de limpeza, 
-                      água, e utensílios descartáveis.
+                      Aplicado sobre o subtotal do produto para cobrir custos fixos e variáveis 
+                      que não são cadastrados individualmente, como: conta de luz, água, aluguel, 
+                      internet, luvas, toucas, produtos de limpeza e utensílios descartáveis.
                     </p>
                   </HoverCardContent>
                 </HoverCard>
               </div>
               <p className="text-sm text-muted-foreground">
-                Percentual para cobrir EPIs, limpeza, embalagens auxiliares e consumíveis.
+                Percentual para cobrir luz, água, aluguel, EPIs, limpeza e consumíveis.
               </p>
             </div>
           </div>
