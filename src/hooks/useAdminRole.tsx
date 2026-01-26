@@ -22,20 +22,11 @@ export function AdminRoleProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Verificar se a sessão ainda é válida antes de chamar a edge function
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !sessionData.session) {
-      console.log('[useAdminRole] Session invalid, skipping admin check');
-      setIsAdmin(false);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('check-admin-role', {
         headers: {
-          Authorization: `Bearer ${sessionData.session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
