@@ -16,7 +16,11 @@ export function AdminRoleProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const checkAdminRole = useCallback(async () => {
-    if (!session?.access_token) {
+    // Validação proativa: obter sessão fresca do storage
+    const { data: sessionData } = await supabase.auth.getSession();
+    const freshToken = sessionData?.session?.access_token;
+
+    if (!freshToken) {
       setIsAdmin(false);
       setIsLoading(false);
       return;
@@ -26,7 +30,7 @@ export function AdminRoleProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('check-admin-role', {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${freshToken}`,
         },
       });
 
@@ -42,7 +46,7 @@ export function AdminRoleProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.access_token]);
+  }, []);
 
   useEffect(() => {
     checkAdminRole();

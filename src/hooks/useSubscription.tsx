@@ -31,7 +31,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const checkSubscription = useCallback(async () => {
-    if (!session?.access_token || !user) {
+    // Validação proativa: obter sessão fresca do storage
+    const { data: sessionData } = await supabase.auth.getSession();
+    const freshToken = sessionData?.session?.access_token;
+
+    if (!freshToken || !user) {
       setSubscription({ subscribed: false, status: 'expired' });
       setIsLoading(false);
       return;
@@ -41,7 +45,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${freshToken}`,
         },
       });
 
@@ -72,18 +76,22 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.access_token, user]);
+  }, [user]);
 
   const createCheckout = async (): Promise<string | null> => {
-    if (!session?.access_token) {
-      console.error('No session available');
+    // Validação proativa: obter sessão fresca do storage
+    const { data: sessionData } = await supabase.auth.getSession();
+    const freshToken = sessionData?.session?.access_token;
+
+    if (!freshToken) {
+      console.error('No valid session available for checkout');
       return null;
     }
 
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${freshToken}`,
         },
       });
 
@@ -105,15 +113,19 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   };
 
   const openCustomerPortal = async () => {
-    if (!session?.access_token) {
-      console.error('No session available');
+    // Validação proativa: obter sessão fresca do storage
+    const { data: sessionData } = await supabase.auth.getSession();
+    const freshToken = sessionData?.session?.access_token;
+
+    if (!freshToken) {
+      console.error('No valid session available for customer portal');
       return;
     }
 
     try {
       const { data, error } = await supabase.functions.invoke('customer-portal', {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${freshToken}`,
         },
       });
 
