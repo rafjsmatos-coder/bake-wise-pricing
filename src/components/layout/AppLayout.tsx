@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { useSidebarControl } from '@/hooks/useSidebarControl';
+import { useSupport } from '@/hooks/useSupport';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
@@ -53,6 +54,7 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   children?: { id: PageType; label: string }[];
+  badge?: number;
 }
 
 interface AppLayoutProps {
@@ -66,6 +68,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
   const { profile } = useProfile();
   const { isAdmin } = useAdminRole();
   const { sidebarOpen, setSidebarOpen } = useSidebarControl();
+  const { openTicketsCount } = useSupport();
 
   const getInitials = () => {
     if (profile?.full_name) {
@@ -121,7 +124,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
         { id: 'packaging-categories', label: 'Categorias' }
       ]
     },
-    { id: 'support', label: 'Suporte', icon: Headphones },
+    { id: 'support', label: 'Suporte', icon: Headphones, badge: isAdmin ? openTicketsCount : undefined },
     { id: 'subscription', label: 'Assinatura', icon: Crown },
     { id: 'settings', label: 'Configurações', icon: Settings },
     { id: 'profile', label: 'Meu Perfil', icon: User },
@@ -268,7 +271,12 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
                   )}
                 >
                   <item.icon className="h-5 w-5" />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium flex-1">{item.label}</span>
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <span className="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
