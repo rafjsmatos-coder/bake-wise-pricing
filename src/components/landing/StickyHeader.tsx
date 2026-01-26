@@ -33,7 +33,7 @@ export function StickyHeader({ onGetStarted }: StickyHeaderProps) {
             <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
               <Cake className="w-4 h-4 text-accent" />
             </div>
-            <span className="font-semibold text-foreground hidden sm:inline">Confeitaria Pro</span>
+            <span className="font-semibold text-foreground hidden sm:inline">PreciBake</span>
           </div>
           <Button onClick={onGetStarted} size="sm" className="gap-2 shadow-md">
             Teste Grátis

@@ -65,7 +65,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
                 <strong>Próximos passos:</strong>
                 <ol className="list-decimal list-inside mt-2 space-y-1">
                   <li>Abra sua caixa de entrada</li>
-                  <li>Procure o e-mail de "Confeitaria Pro"</li>
+                  <li>Procure o e-mail de "PreciBake"</li>
                   <li>Clique no link para criar uma nova senha</li>
                   <li>Se não encontrar, verifique a pasta de spam</li>
                 </ol>
