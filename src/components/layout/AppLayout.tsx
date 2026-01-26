@@ -20,7 +20,8 @@ import {
   LayoutDashboard,
   User,
   Crown,
-  Shield
+  Shield,
+  Headphones
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -44,7 +45,8 @@ export type PageType =
   | 'settings'
   | 'profile'
   | 'subscription'
-  | 'admin';
+  | 'admin'
+  | 'support';
 
 interface NavItem {
   id: PageType;
@@ -119,6 +121,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
         { id: 'packaging-categories', label: 'Categorias' }
       ]
     },
+    { id: 'support', label: 'Suporte', icon: Headphones },
     { id: 'subscription', label: 'Assinatura', icon: Crown },
     { id: 'settings', label: 'Configurações', icon: Settings },
     { id: 'profile', label: 'Meu Perfil', icon: User },

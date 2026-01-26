@@ -15,6 +15,7 @@ import { ProductCategoriesList } from '@/components/product-categories/ProductCa
 import { UserSettings } from '@/components/settings/UserSettings';
 import { ProfileSettings } from '@/components/settings/ProfileSettings';
 import { AdminPanel } from '@/components/admin/AdminPanel';
+import { SupportPage } from '@/components/support/SupportPage';
 
 export function Dashboard() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
@@ -35,6 +36,7 @@ export function Dashboard() {
         {currentPage === 'subscription' && <SubscriptionSettings />}
       {currentPage === 'settings' && <UserSettings />}
       {currentPage === 'profile' && <ProfileSettings />}
+      {currentPage === 'support' && <SupportPage />}
       {currentPage === 'admin' && <AdminPanel />}
     </AppLayout>
   );

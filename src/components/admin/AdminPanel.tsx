@@ -2,7 +2,8 @@ import { useAdminRole } from '@/hooks/useAdminRole';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserManagement } from './UserManagement';
 import { AdminStats } from './AdminStats';
-import { Shield, Users, BarChart3, Loader2 } from 'lucide-react';
+import { SupportManagement } from './SupportManagement';
+import { Shield, Users, BarChart3, Loader2, Headphones } from 'lucide-react';
 
 export function AdminPanel() {
   const { isAdmin, isLoading } = useAdminRole();
@@ -49,6 +50,10 @@ export function AdminPanel() {
             <Users className="h-4 w-4" />
             Usuários
           </TabsTrigger>
+          <TabsTrigger value="support" className="flex items-center gap-2">
+            <Headphones className="h-4 w-4" />
+            Suporte
+          </TabsTrigger>
           <TabsTrigger value="stats" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Estatísticas
@@ -57,6 +62,10 @@ export function AdminPanel() {
 
         <TabsContent value="users">
           <UserManagement />
+        </TabsContent>
+
+        <TabsContent value="support">
+          <SupportManagement />
         </TabsContent>
 
         <TabsContent value="stats">
