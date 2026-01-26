@@ -8,6 +8,7 @@ export interface Category {
   user_id: string;
   name: string;
   color: string;
+  description: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -15,11 +16,13 @@ export interface Category {
 export interface CreateCategoryData {
   name: string;
   color?: string;
+  description?: string;
 }
 
 export interface UpdateCategoryData {
   name?: string;
   color?: string;
+  description?: string;
 }
 
 export function useCategories() {

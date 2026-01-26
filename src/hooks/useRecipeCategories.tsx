@@ -8,6 +8,7 @@ export interface RecipeCategory {
   user_id: string;
   name: string;
   color: string | null;
+  description: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -15,6 +16,7 @@ export interface RecipeCategory {
 export interface CreateRecipeCategoryData {
   name: string;
   color?: string;
+  description?: string;
 }
 
 export interface UpdateRecipeCategoryData extends Partial<CreateRecipeCategoryData> {}

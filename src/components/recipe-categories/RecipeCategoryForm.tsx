@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ import { Loader2 } from 'lucide-react';
 const categorySchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(50),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Cor inválida'),
+  description: z.string().max(200, 'Máximo 200 caracteres').optional(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -48,6 +50,7 @@ export function RecipeCategoryForm({ open, onOpenChange, category }: RecipeCateg
     defaultValues: {
       name: '',
       color: '#6366f1',
+      description: '',
     },
   });
 
@@ -56,11 +59,13 @@ export function RecipeCategoryForm({ open, onOpenChange, category }: RecipeCateg
       reset({
         name: category.name,
         color: category.color || '#6366f1',
+        description: category.description || '',
       });
     } else {
       reset({
         name: '',
         color: DEFAULT_COLORS[Math.floor(Math.random() * DEFAULT_COLORS.length)],
+        description: '',
       });
     }
   }, [category, reset, open]);
@@ -69,16 +74,27 @@ export function RecipeCategoryForm({ open, onOpenChange, category }: RecipeCateg
 
   const onSubmit = async (data: CategoryFormData) => {
     if (category) {
-      await updateCategory.mutateAsync({ id: category.id, data: { name: data.name, color: data.color } });
+      await updateCategory.mutateAsync({ 
+        id: category.id, 
+        data: { 
+          name: data.name.trim(), 
+          color: data.color,
+          description: data.description?.trim() || null,
+        } 
+      });
     } else {
-      await createCategory.mutateAsync({ name: data.name, color: data.color });
+      await createCategory.mutateAsync({ 
+        name: data.name.trim(), 
+        color: data.color,
+        description: data.description?.trim() || undefined,
+      });
     }
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {category ? 'Editar Categoria de Receita' : 'Nova Categoria de Receita'}
@@ -95,6 +111,20 @@ export function RecipeCategoryForm({ open, onOpenChange, category }: RecipeCateg
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Descrição (opcional)</Label>
+            <Textarea
+              id="description"
+              placeholder="Ex: Receitas completas de bolos simples ou decorados."
+              className="resize-none"
+              rows={3}
+              {...register('description')}
+            />
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description.message}</p>
             )}
           </div>
 

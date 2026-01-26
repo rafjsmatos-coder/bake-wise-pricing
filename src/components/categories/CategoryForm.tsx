@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -17,21 +18,15 @@ import { Loader2 } from 'lucide-react';
 const categorySchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(50),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Cor inválida'),
+  description: z.string().max(200, 'Máximo 200 caracteres').optional(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
 
 const PRESET_COLORS = [
-  '#f59e0b', // amber
-  '#ec4899', // pink
-  '#3b82f6', // blue
-  '#22c55e', // green
-  '#a855f7', // purple
-  '#ef4444', // red
-  '#06b6d4', // cyan
-  '#f97316', // orange
-  '#78350f', // brown
-  '#6b7280', // gray
+  '#f59e0b', '#ec4899', '#3b82f6', '#22c55e',
+  '#a855f7', '#ef4444', '#06b6d4', '#f97316',
+  '#78350f', '#6b7280', '#14b8a6', '#8b5cf6',
 ];
 
 interface CategoryFormProps {
@@ -55,6 +50,7 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
     defaultValues: {
       name: '',
       color: '#6366f1',
+      description: '',
     },
   });
 
@@ -63,11 +59,13 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
       reset({
         name: category.name,
         color: category.color,
+        description: category.description || '',
       });
     } else {
       reset({
         name: '',
         color: PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)],
+        description: '',
       });
     }
   }, [category, reset, open]);
@@ -78,12 +76,17 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
     if (category) {
       await updateCategory.mutateAsync({
         id: category.id,
-        data: { name: data.name.trim(), color: data.color },
+        data: { 
+          name: data.name.trim(), 
+          color: data.color,
+          description: data.description?.trim() || null,
+        },
       });
     } else {
       await createCategory.mutateAsync({
         name: data.name.trim(),
         color: data.color,
+        description: data.description?.trim() || undefined,
       });
     }
     onOpenChange(false);
@@ -91,10 +94,10 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {category ? 'Editar Categoria' : 'Nova Categoria'}
+            {category ? 'Editar Categoria' : 'Nova Categoria de Ingrediente'}
           </DialogTitle>
         </DialogHeader>
 
@@ -108,6 +111,20 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Descrição (opcional)</Label>
+            <Textarea
+              id="description"
+              placeholder="Ex: Leite, creme de leite, manteiga, iogurte, etc."
+              className="resize-none"
+              rows={3}
+              {...register('description')}
+            />
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description.message}</p>
             )}
           </div>
 

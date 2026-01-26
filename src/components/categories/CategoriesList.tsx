@@ -3,7 +3,6 @@ import { useCategories, type Category } from '@/hooks/useCategories';
 import { useIngredients } from '@/hooks/useIngredients';
 import { CategoryForm } from './CategoryForm';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +19,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Plus, MoreHorizontal, Pencil, Trash2, Tags, Loader2 } from 'lucide-react';
 
 export function CategoriesList() {
@@ -65,9 +70,9 @@ export function CategoriesList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Categorias</h1>
+          <h1 className="text-2xl font-bold text-foreground">Categorias de Ingredientes</h1>
           <p className="text-muted-foreground">
-            Organize seus ingredientes em categorias personalizáveis
+            {categories.length} categoria{categories.length !== 1 ? 's' : ''} cadastrada{categories.length !== 1 ? 's' : ''}
           </p>
         </div>
         <Button onClick={() => setFormOpen(true)} className="gap-2">
@@ -94,18 +99,20 @@ export function CategoriesList() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => {
             const count = getIngredientCount(category.id);
+            const hasDescription = category.description && category.description.trim().length > 0;
+            
             return (
               <div
                 key={category.id}
                 className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow animate-fade-in"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
                     <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                       style={{ backgroundColor: `${category.color}20` }}
                     >
                       <div
@@ -113,8 +120,8 @@ export function CategoriesList() {
                         style={{ backgroundColor: category.color }}
                       />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-foreground truncate">
                         {category.name}
                       </h3>
                       <p className="text-sm text-muted-foreground">
@@ -125,7 +132,7 @@ export function CategoriesList() {
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -144,6 +151,23 @@ export function CategoriesList() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+
+                {hasDescription && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="text-sm text-muted-foreground mt-3 line-clamp-2 cursor-default">
+                          {category.description}
+                        </p>
+                      </TooltipTrigger>
+                      {category.description && category.description.length > 80 && (
+                        <TooltipContent side="bottom" className="max-w-xs">
+                          <p>{category.description}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
             );
           })}
