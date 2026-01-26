@@ -1,27 +1,18 @@
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { type Recipe } from '@/hooks/useRecipes';
 import { useIngredients } from '@/hooks/useIngredients';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { calculateRecipeCost, type IngredientData, type TimeBasedCostSettings } from '@/lib/recipe-cost-calculator';
 import { formatCurrency, type MeasurementUnit } from '@/lib/unit-conversion';
 import { 
-  MoreVertical, 
-  Edit, 
+  Pencil, 
   Trash2, 
-  Copy, 
   Clock, 
   Flame, 
-  Package,
-  TrendingUp,
-  Eye 
+  Eye,
+  TrendingUp
 } from 'lucide-react';
 
 interface RecipeCardProps {
@@ -82,17 +73,14 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
   const ingredientCount = recipe.recipe_ingredients?.length || 0;
 
   return (
-    <div className="group bg-card border border-border rounded-lg p-4 hover:shadow-md hover:border-accent/30 transition-all overflow-hidden">
+    <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate group-hover:text-accent transition-colors">
-            {recipe.name}
-          </h3>
           {recipe.recipe_categories && (
             <Badge
               variant="secondary"
-              className="mt-1 max-w-[120px] truncate"
+              className="text-xs max-w-[100px] truncate mb-1"
               style={{
                 backgroundColor: `${recipe.recipe_categories.color}20`,
                 color: recipe.recipe_categories.color,
@@ -102,49 +90,36 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
               {recipe.recipe_categories.name}
             </Badge>
           )}
+          <h3 className="font-semibold text-foreground truncate">{recipe.name}</h3>
         </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="shrink-0">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onView}>
-              <Eye className="h-4 w-4 mr-2" />
-              Ver detalhes
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onEdit}>
-              <Edit className="h-4 w-4 mr-2" />
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onDuplicate}>
-              <Copy className="h-4 w-4 mr-2" />
-              Duplicar
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onDelete} className="text-destructive">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex gap-1 shrink-0">
+          <Button variant="ghost" size="icon" onClick={onView} className="h-8 w-8">
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8">
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8">
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-4">
+      {/* Components summary */}
+      <div className="flex flex-wrap gap-2 text-xs mb-3">
+        <Badge variant="outline">{ingredientCount} ingrediente{ingredientCount > 1 ? 's' : ''}</Badge>
+      </div>
+
+      {/* Time info */}
+      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
         <div className="flex items-center gap-1">
-          <Package className="h-3.5 w-3.5" />
-          <span>{ingredientCount} ingredientes</span>
+          <Clock className="h-4 w-4" />
+          <span>{recipe.prep_time_minutes}min preparo</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Clock className="h-3.5 w-3.5" />
-          <span>{recipe.prep_time_minutes} min</span>
-        </div>
-        {recipe.oven_time_minutes && (
+        {recipe.oven_time_minutes && recipe.oven_time_minutes > 0 && (
           <div className="flex items-center gap-1">
-            <Flame className="h-3.5 w-3.5 text-orange-500" />
-            <span>{recipe.oven_time_minutes} min</span>
+            <Flame className="h-4 w-4 text-destructive" />
+            <span>{recipe.oven_time_minutes}min forno</span>
           </div>
         )}
       </div>
@@ -154,19 +129,18 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
         Rende: <span className="font-medium text-foreground">{recipe.yield_quantity} {recipe.yield_unit}</span>
       </div>
 
-      {/* Cost */}
+      {/* Costs */}
       {costBreakdown && (
-        <div className="pt-3 border-t border-border">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-muted-foreground">
-              Total: {formatCurrency(costBreakdown.totalCost)}
-            </div>
-            <div className="flex items-center gap-1.5 text-accent">
-              <TrendingUp className="h-4 w-4" />
-              <span className="font-bold">
-                {formatCurrency(costBreakdown.costPerUnit)}/{recipe.yield_unit}
-              </span>
-            </div>
+        <div className="pt-3 border-t border-border space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Custo Total</span>
+            <span className="font-medium text-foreground">{formatCurrency(costBreakdown.totalCost)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Custo por {recipe.yield_unit}</span>
+            <span className="font-bold text-primary text-lg">
+              {formatCurrency(costBreakdown.costPerUnit)}
+            </span>
           </div>
         </div>
       )}
