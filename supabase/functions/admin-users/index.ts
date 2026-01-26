@@ -227,6 +227,204 @@ serve(async (req) => {
         );
       }
 
+      case "getUserDetails": {
+        const { userId } = params;
+
+        if (!userId) {
+          throw new Error("User ID is required");
+        }
+
+        // Get user from auth
+        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (authError || !authUser.user) {
+          throw new Error("User not found");
+        }
+
+        // Get profile
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        // Get subscription
+        const { data: subscription } = await supabaseAdmin
+          .from("subscriptions")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        // Get roles
+        const { data: roles } = await supabaseAdmin
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+
+        // Get data counts
+        const [
+          { count: ingredientsCount },
+          { count: recipesCount },
+          { count: productsCount },
+          { count: packagingCount },
+          { count: decorationsCount },
+        ] = await Promise.all([
+          supabaseAdmin.from("ingredients").select("*", { count: "exact", head: true }).eq("user_id", userId),
+          supabaseAdmin.from("recipes").select("*", { count: "exact", head: true }).eq("user_id", userId),
+          supabaseAdmin.from("products").select("*", { count: "exact", head: true }).eq("user_id", userId),
+          supabaseAdmin.from("packaging").select("*", { count: "exact", head: true }).eq("user_id", userId),
+          supabaseAdmin.from("decorations").select("*", { count: "exact", head: true }).eq("user_id", userId),
+        ]);
+
+        logStep("User details retrieved", { userId });
+
+        return new Response(
+          JSON.stringify({
+            user: {
+              id: authUser.user.id,
+              email: authUser.user.email,
+              createdAt: authUser.user.created_at,
+              lastSignIn: authUser.user.last_sign_in_at,
+            },
+            profile,
+            subscription,
+            roles: roles?.map((r) => r.role) || [],
+            dataCounts: {
+              ingredients: ingredientsCount || 0,
+              recipes: recipesCount || 0,
+              products: productsCount || 0,
+              packaging: packagingCount || 0,
+              decorations: decorationsCount || 0,
+            },
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+
+      case "updateSubscription": {
+        const { userId, status, trialEnd, subscriptionEnd } = params;
+
+        if (!userId) {
+          throw new Error("User ID is required");
+        }
+
+        const updateData: Record<string, unknown> = {};
+        if (status) updateData.status = status;
+        if (trialEnd !== undefined) updateData.trial_end = trialEnd;
+        if (subscriptionEnd !== undefined) updateData.subscription_end = subscriptionEnd;
+
+        const { error: updateError } = await supabaseAdmin
+          .from("subscriptions")
+          .update(updateData)
+          .eq("user_id", userId);
+
+        if (updateError) {
+          throw new Error(`Failed to update subscription: ${updateError.message}`);
+        }
+
+        logStep("Subscription updated", { userId, ...updateData });
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+
+      case "extendTrial": {
+        const { userId, days } = params;
+
+        if (!userId || !days) {
+          throw new Error("User ID and days are required");
+        }
+
+        // Get current subscription
+        const { data: subscription } = await supabaseAdmin
+          .from("subscriptions")
+          .select("trial_end")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (!subscription) {
+          throw new Error("Subscription not found");
+        }
+
+        // Calculate new trial end date
+        const currentTrialEnd = new Date(subscription.trial_end);
+        const now = new Date();
+        const baseDate = currentTrialEnd > now ? currentTrialEnd : now;
+        const newTrialEnd = new Date(baseDate);
+        newTrialEnd.setDate(newTrialEnd.getDate() + parseInt(days));
+
+        const { error: updateError } = await supabaseAdmin
+          .from("subscriptions")
+          .update({
+            status: "trial",
+            trial_end: newTrialEnd.toISOString(),
+          })
+          .eq("user_id", userId);
+
+        if (updateError) {
+          throw new Error(`Failed to extend trial: ${updateError.message}`);
+        }
+
+        logStep("Trial extended", { userId, days, newTrialEnd: newTrialEnd.toISOString() });
+
+        return new Response(
+          JSON.stringify({ success: true, newTrialEnd: newTrialEnd.toISOString() }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+
+      case "deleteUser": {
+        const { userId } = params;
+
+        if (!userId) {
+          throw new Error("User ID is required");
+        }
+
+        // Cannot delete yourself
+        if (userId === requestingUserId) {
+          throw new Error("Cannot delete your own account");
+        }
+
+        // Check if target user is admin
+        const { data: targetRoles } = await supabaseAdmin
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        if (targetRoles) {
+          throw new Error("Cannot delete another admin user");
+        }
+
+        // Delete user (cascade will handle related data)
+        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+        if (deleteError) {
+          throw new Error(`Failed to delete user: ${deleteError.message}`);
+        }
+
+        logStep("User deleted", { userId });
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+
       default:
         throw new Error(`Unknown action: ${action}`);
     }

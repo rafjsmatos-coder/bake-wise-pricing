@@ -21,6 +21,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -30,10 +37,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, Loader2, Shield, ShieldOff, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Search,
+  Loader2,
+  Shield,
+  ShieldOff,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Eye,
+  Edit,
+  Clock,
+  Trash2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { UserDetailsModal } from './UserDetailsModal';
+import { EditSubscriptionDialog } from './EditSubscriptionDialog';
+import { ExtendTrialDialog } from './ExtendTrialDialog';
+import { DeleteUserDialog } from './DeleteUserDialog';
 
 interface User {
   id: string;
@@ -56,11 +79,33 @@ export function UserManagement() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  
+  // Dialog states
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     user: User | null;
     action: 'promote' | 'demote';
   }>({ open: false, user: null, action: 'promote' });
+  
+  const [detailsModal, setDetailsModal] = useState<{
+    open: boolean;
+    userId: string | null;
+  }>({ open: false, userId: null });
+  
+  const [editSubscriptionDialog, setEditSubscriptionDialog] = useState<{
+    open: boolean;
+    user: User | null;
+  }>({ open: false, user: null });
+  
+  const [extendTrialDialog, setExtendTrialDialog] = useState<{
+    open: boolean;
+    user: User | null;
+  }>({ open: false, user: null });
+  
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    user: User | null;
+  }>({ open: false, user: null });
 
   const perPage = 20;
 
@@ -150,164 +195,221 @@ export function UserManagement() {
   const totalPages = Math.ceil(total / perPage);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Gerenciamento de Usuários</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por email ou nome..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Gerenciamento de Usuários</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por email ou nome..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-10"
+              />
+            </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value === 'all' ? '' : value);
                 setPage(1);
               }}
-              className="pl-10"
-            />
+            >
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="trial">Trial</SelectItem>
+                <SelectItem value="active">Ativo</SelectItem>
+                <SelectItem value="expired">Expirado</SelectItem>
+                <SelectItem value="canceled">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => {
-              setStatusFilter(value === 'all' ? '' : value);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="trial">Trial</SelectItem>
-              <SelectItem value="active">Ativo</SelectItem>
-              <SelectItem value="expired">Expirado</SelectItem>
-              <SelectItem value="canceled">Cancelado</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
-        {/* Table */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-accent" />
-          </div>
-        ) : (
-          <>
-            <div className="rounded-md border overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Data de Cadastro</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.length === 0 ? (
+          {/* Table */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-accent" />
+            </div>
+          ) : (
+            <>
+              <div className="rounded-md border overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                        Nenhum usuário encontrado
-                      </TableCell>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Data de Cadastro</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ) : (
-                    users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.email}</TableCell>
-                        <TableCell>{user.fullName || '-'}</TableCell>
-                        <TableCell>{getStatusBadge(user.subscriptionStatus)}</TableCell>
-                        <TableCell>
-                          {format(new Date(user.createdAt), "dd/MM/yyyy", { locale: ptBR })}
-                        </TableCell>
-                        <TableCell>
-                          {user.isAdmin ? (
-                            <Badge variant="default" className="bg-primary">
-                              <Shield className="h-3 w-3 mr-1" />
-                              Admin
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline">Usuário</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {user.isAdmin ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                setConfirmDialog({
-                                  open: true,
-                                  user,
-                                  action: 'demote',
-                                })
-                              }
-                            >
-                              <ShieldOff className="h-4 w-4 mr-1" />
-                              Remover Admin
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                setConfirmDialog({
-                                  open: true,
-                                  user,
-                                  action: 'promote',
-                                })
-                              }
-                            >
-                              <Shield className="h-4 w-4 mr-1" />
-                              Tornar Admin
-                            </Button>
-                          )}
+                  </TableHeader>
+                  <TableBody>
+                    {users.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          Nenhum usuário encontrado
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Mostrando {(page - 1) * perPage + 1} a {Math.min(page * perPage, total)} de {total} usuários
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm">
-                    Página {page} de {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                    ) : (
+                      users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.email}</TableCell>
+                          <TableCell>{user.fullName || '-'}</TableCell>
+                          <TableCell>{getStatusBadge(user.subscriptionStatus)}</TableCell>
+                          <TableCell>
+                            {format(new Date(user.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                          </TableCell>
+                          <TableCell>
+                            {user.isAdmin ? (
+                              <Badge variant="default" className="bg-primary">
+                                <Shield className="h-3 w-3 mr-1" />
+                                Admin
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Usuário</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-popover">
+                                <DropdownMenuItem
+                                  onClick={() => setDetailsModal({ open: true, userId: user.id })}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Ver Detalhes
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setEditSubscriptionDialog({ open: true, user })}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar Assinatura
+                                </DropdownMenuItem>
+                                {(user.subscriptionStatus === 'trial' || user.subscriptionStatus === 'expired') && (
+                                  <DropdownMenuItem
+                                    onClick={() => setExtendTrialDialog({ open: true, user })}
+                                  >
+                                    <Clock className="h-4 w-4 mr-2" />
+                                    Estender Trial
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                {user.isAdmin ? (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      setConfirmDialog({ open: true, user, action: 'demote' })
+                                    }
+                                  >
+                                    <ShieldOff className="h-4 w-4 mr-2" />
+                                    Remover Admin
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      setConfirmDialog({ open: true, user, action: 'promote' })
+                                    }
+                                  >
+                                    <Shield className="h-4 w-4 mr-2" />
+                                    Tornar Admin
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => setDeleteDialog({ open: true, user })}
+                                  className="text-destructive focus:text-destructive"
+                                  disabled={user.isAdmin}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Deletar Usuário
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-            )}
-          </>
-        )}
-      </CardContent>
 
-      {/* Confirmation Dialog */}
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando {(page - 1) * perPage + 1} a {Math.min(page * perPage, total)} de {total} usuários
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm">
+                      Página {page} de {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modals and Dialogs */}
+      <UserDetailsModal
+        userId={detailsModal.userId}
+        open={detailsModal.open}
+        onOpenChange={(open) => setDetailsModal({ open, userId: open ? detailsModal.userId : null })}
+      />
+
+      <EditSubscriptionDialog
+        user={editSubscriptionDialog.user}
+        open={editSubscriptionDialog.open}
+        onOpenChange={(open) => setEditSubscriptionDialog({ open, user: open ? editSubscriptionDialog.user : null })}
+        onSuccess={fetchUsers}
+      />
+
+      <ExtendTrialDialog
+        user={extendTrialDialog.user}
+        open={extendTrialDialog.open}
+        onOpenChange={(open) => setExtendTrialDialog({ open, user: open ? extendTrialDialog.user : null })}
+        onSuccess={fetchUsers}
+      />
+
+      <DeleteUserDialog
+        user={deleteDialog.user}
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, user: open ? deleteDialog.user : null })}
+        onSuccess={fetchUsers}
+      />
+
+      {/* Admin Toggle Confirmation Dialog */}
       <AlertDialog
         open={confirmDialog.open}
         onOpenChange={(open) =>
@@ -335,6 +437,6 @@ export function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </>
   );
 }
