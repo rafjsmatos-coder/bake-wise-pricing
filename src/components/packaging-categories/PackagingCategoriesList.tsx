@@ -16,6 +16,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { usePackagingCategories, PackagingCategory } from '@/hooks/usePackagingCategories';
 import { usePackaging } from '@/hooks/usePackaging';
 import { PackagingCategoryForm } from './PackagingCategoryForm';
@@ -77,38 +83,40 @@ export function PackagingCategoriesList() {
 
       {/* Categories List */}
       {categories.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => {
             const count = getPackagingCount(category.id);
+            const hasDescription = category.description && category.description.trim().length > 0;
+            
             return (
               <div
                 key={category.id}
                 className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
                     <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                       style={{ backgroundColor: `${category.color}20` }}
                     >
-                      <div
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: category.color || '#6366f1' }}
+                      <Package
+                        className="h-5 w-5"
+                        style={{ color: category.color || '#6366f1' }}
                       />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-foreground truncate">
                         {category.name}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {count} embalagem{count !== 1 ? 'ns' : ''}
+                        {count} embalage{count !== 1 ? 'ns' : 'm'}
                       </p>
                     </div>
                   </div>
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -127,6 +135,23 @@ export function PackagingCategoriesList() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+
+                {hasDescription && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="text-sm text-muted-foreground mt-3 line-clamp-2 cursor-default">
+                          {category.description}
+                        </p>
+                      </TooltipTrigger>
+                      {category.description && category.description.length > 80 && (
+                        <TooltipContent side="bottom" className="max-w-xs">
+                          <p>{category.description}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
             );
           })}

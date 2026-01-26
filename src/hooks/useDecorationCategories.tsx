@@ -8,6 +8,7 @@ export interface DecorationCategory {
   user_id: string;
   name: string;
   color: string | null;
+  description: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -15,6 +16,7 @@ export interface DecorationCategory {
 export interface CreateDecorationCategoryData {
   name: string;
   color?: string;
+  description?: string;
 }
 
 export interface UpdateDecorationCategoryData extends Partial<CreateDecorationCategoryData> {}

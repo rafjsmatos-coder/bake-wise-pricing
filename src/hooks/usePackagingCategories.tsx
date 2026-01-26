@@ -8,9 +8,18 @@ export interface PackagingCategory {
   user_id: string;
   name: string;
   color: string | null;
+  description: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export interface CreatePackagingCategoryData {
+  name: string;
+  color?: string;
+  description?: string;
+}
+
+export interface UpdatePackagingCategoryData extends Partial<CreatePackagingCategoryData> {}
 
 export function usePackagingCategories() {
   const { user } = useAuth();
@@ -34,7 +43,7 @@ export function usePackagingCategories() {
   });
 
   const createCategory = useMutation({
-    mutationFn: async (category: { name: string; color?: string }) => {
+    mutationFn: async (category: CreatePackagingCategoryData) => {
       if (!user?.id) throw new Error('Usuário não autenticado');
       
       const { data, error } = await supabase
@@ -43,6 +52,7 @@ export function usePackagingCategories() {
           user_id: user.id,
           name: category.name,
           color: category.color || '#6366f1',
+          description: category.description || null,
         })
         .select()
         .single();
@@ -61,16 +71,16 @@ export function usePackagingCategories() {
   });
 
   const updateCategory = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; name?: string; color?: string }) => {
-      const { data, error } = await supabase
+    mutationFn: async ({ id, data }: { id: string; data: UpdatePackagingCategoryData }) => {
+      const { data: category, error } = await supabase
         .from('packaging_categories')
-        .update(updates)
+        .update(data)
         .eq('id', id)
         .select()
         .single();
       
       if (error) throw error;
-      return data;
+      return category;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['packaging-categories'] });
