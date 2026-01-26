@@ -1,91 +1,106 @@
 
-# Sistema de Notificações de Suporte - Implementado ✅
+# Correção Crítica: Domínio precibake.com.br Bloqueado pelo CORS
 
-## Funcionalidades Implementadas
+## Problema Identificado
 
-### 1. Notificações Contextuais no Menu
+O site em `precibake.com.br` está mostrando "período de teste expirou" porque o **domínio personalizado não está configurado na lista de origens CORS permitidas**.
 
-**Para Administradores:**
-- Badge vermelho mostra tickets que **ainda não foram respondidos** pelo admin
-- Quando o admin responde, o badge é removido automaticamente
-- Lógica: Conta tickets onde `has_admin_reply = false`
+### Diagnóstico Técnico
 
-**Para Usuários:**
-- Badge vermelho mostra tickets próprios com **nova resposta do admin**
-- Quando o usuário visualiza/responde, o badge é removido
-- Lógica: Conta tickets onde a última resposta foi de admin
+1. **Arquivo problemático**: `supabase/functions/_shared/cors.ts`
 
-### 2. Identificação Correta de Mensagens
+2. **Lista atual de origens permitidas**:
+   ```typescript
+   const ALLOWED_ORIGINS = [
+     'https://bake-wise-pricing.lovable.app',
+     'https://id-preview--c0021bd6-83d4-45de-aa94-e9d690844ef1.lovable.app',
+     'http://localhost:5173',
+     'http://localhost:3000',
+   ];
+   ```
 
-**Mensagem Original:**
-- Se o visualizador é o criador → "Você"
-- Se não → Nome do criador (ex: "João Silva")
+3. **O que acontece**:
+   - Usuário acessa `precibake.com.br`
+   - Frontend tenta chamar `check-subscription`
+   - Edge function recebe origem `https://precibake.com.br`
+   - CORS verifica: domínio NÃO está na lista e NÃO termina com `.lovable.app` ou `.lovableproject.com`
+   - Edge function retorna com header CORS apontando para origem errada
+   - Browser bloqueia a resposta (CORS error)
+   - `useSubscription.tsx` captura o erro e define `status: 'expired'`
+   - SubscriptionPaywall é exibido
 
-**Respostas:**
-- Se o visualizador é o autor → "Você"
-- Se é resposta de admin → "Suporte PreciBake"
-- Se é do criador do ticket → Nome do criador
-
----
-
-## Arquivos Modificados
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/hooks/useSupport.tsx` | Join com profiles, lógica de contagem contextual |
-| `src/components/layout/AppLayout.tsx` | Usa `pendingTicketsCount` para ambos perfis |
-| `src/components/support/TicketDetails.tsx` | Lógica de identificação de mensagens |
-
----
-
-## Fluxo de Notificações
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                      ADMIN                                  │
-├─────────────────────────────────────────────────────────────┤
-│ Usuário cria ticket → Admin vê badge (1)                   │
-│ Admin responde → Badge removido                             │
-│ Usuário responde novamente → Badge NÃO aparece             │
-│   (já respondido pelo admin pelo menos 1x)                  │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│                      USUÁRIO                                │
-├─────────────────────────────────────────────────────────────┤
-│ Usuário cria ticket → Sem badge                            │
-│ Admin responde → Usuário vê badge (1)                      │
-│ Usuário visualiza/responde → Badge removido                │
-│ Admin responde novamente → Badge aparece (1)               │
-└─────────────────────────────────────────────────────────────┘
-```
+4. **Verificação do banco de dados**: A assinatura está correta:
+   - Usuário: Pamella Izadora (p.souza1794@gmail.com)
+   - Status: `trial`
+   - Trial End: `2026-03-09` (43 dias restantes)
+   - O problema é puramente de CORS, não de dados
 
 ---
 
-## Lógica Técnica
+## Solução
+
+Adicionar `precibake.com.br` (com e sem `www`) à lista de origens permitidas.
+
+### Arquivo a Modificar
+
+**`supabase/functions/_shared/cors.ts`**
 
 ```typescript
-// Para Admin: tickets sem resposta de admin
-pendingTicketsCount = tickets.filter(t => 
-  (t.status === 'open' || t.status === 'in_progress') &&
-  !ticketsWithAdminStatus.get(`has_admin_${t.id}`)
-).length;
-
-// Para Usuário: tickets com última resposta de admin
-pendingTicketsCount = tickets.filter(t => 
-  t.user_id === user?.id &&
-  (t.status === 'open' || t.status === 'in_progress') &&
-  ticketsWithAdminStatus.get(t.id) === true
-).length;
+const ALLOWED_ORIGINS = [
+  'https://bake-wise-pricing.lovable.app',
+  'https://id-preview--c0021bd6-83d4-45de-aa94-e9d690844ef1.lovable.app',
+  'https://precibake.com.br',      // ADICIONAR
+  'https://www.precibake.com.br',  // ADICIONAR
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
 ```
 
 ---
 
-## Status
+## Fluxo Corrigido
 
-✅ **Implementado e funcionando**
+```text
+Antes (bloqueado):
+┌─────────────────┐    ┌────────────────────┐    ┌─────────────────┐
+│ precibake.com.br│───>│ check-subscription │───>│ CORS BLOCKED    │
+└─────────────────┘    └────────────────────┘    │ status: expired │
+                                                  └─────────────────┘
 
-Próximas melhorias possíveis:
-- Sistema de "marcar como lido" explícito
-- Notificações por email quando admin responder
-- Histórico de visualizações
+Depois (funcionando):
+┌─────────────────┐    ┌────────────────────┐    ┌─────────────────┐
+│ precibake.com.br│───>│ check-subscription │───>│ CORS OK         │
+└─────────────────┘    └────────────────────┘    │ status: trial   │
+                                                  │ days: 43        │
+                                                  └─────────────────┘
+```
+
+---
+
+## Resumo da Implementação
+
+| Ação | Arquivo | Alteração |
+|------|---------|-----------|
+| Adicionar domínios | `supabase/functions/_shared/cors.ts` | Incluir `precibake.com.br` e `www.precibake.com.br` |
+| Reimplantar | Edge Functions | Todas as funções usam este arquivo compartilhado |
+
+---
+
+## Edge Functions Afetadas
+
+Todas as edge functions que usam `cors.ts` serão corrigidas:
+- `check-subscription`
+- `create-checkout`
+- `customer-portal`
+- `stripe-webhook`
+- `admin-users`
+- `check-admin-role`
+
+---
+
+## Verificação Pós-Correção
+
+1. Acessar `precibake.com.br` logado
+2. Verificar que o Dashboard carrega normalmente
+3. Confirmar que o banner mostra "Trial: X dias restantes"
+4. Testar criação de checkout (botão Assinar Premium)
