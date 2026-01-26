@@ -58,24 +58,36 @@ export function useSupport() {
     
     setIsLoading(true);
     try {
-      // Buscar tickets com join no profiles para obter o nome do criador
-      const { data, error } = await supabase
+      // Buscar tickets
+      const { data: ticketsData, error: ticketsError } = await supabase
         .from('support_tickets')
-        .select(`
-          *,
-          profiles:user_id (full_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (ticketsError) throw ticketsError;
+
+      // Buscar perfis dos usuários dos tickets
+      const userIds = [...new Set((ticketsData || []).map(t => t.user_id))];
+      let profilesMap: Record<string, string> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', userIds);
+        
+        profilesData?.forEach(p => {
+          profilesMap[p.user_id] = p.full_name || 'Usuário';
+        });
+      }
 
       // Type cast the data to match our interface
-      const typedTickets: SupportTicket[] = (data || []).map(ticket => ({
+      const typedTickets: SupportTicket[] = (ticketsData || []).map(ticket => ({
         ...ticket,
         type: ticket.type as TicketType,
         status: ticket.status as TicketStatus,
         priority: ticket.priority as TicketPriority,
-        user_name: (ticket.profiles as any)?.full_name || 'Usuário',
+        user_name: profilesMap[ticket.user_id] || 'Usuário',
       }));
 
       setTickets(typedTickets);
