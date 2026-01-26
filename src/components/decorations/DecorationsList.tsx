@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -85,7 +84,7 @@ export function DecorationsList() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
@@ -141,29 +140,29 @@ export function DecorationsList() {
 
       {/* Content */}
       {decorations.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Nenhuma decoração cadastrada</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Comece adicionando suas decorações para usar em produtos.
-            </p>
-            <Button onClick={() => setFormOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Decoração
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="font-medium text-foreground mb-1">Nenhuma decoração cadastrada</h3>
+          <p className="text-muted-foreground text-sm">
+            Comece adicionando suas decorações para usar em produtos
+          </p>
+          <Button onClick={() => setFormOpen(true)} className="mt-4 gap-2">
+            <Plus className="h-4 w-4" />
+            Adicionar Decoração
+          </Button>
+        </div>
       ) : filteredDecorations.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Search className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Nenhuma decoração encontrada</h3>
-            <p className="text-muted-foreground text-center">
-              Tente ajustar os filtros de busca.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="font-medium text-foreground mb-1">Nenhuma decoração encontrada</h3>
+          <p className="text-muted-foreground text-sm">
+            Tente ajustar os filtros de busca
+          </p>
+        </div>
       ) : (
         <div className="space-y-8">
           {groupedDecorations.map(([categoryId, group]) => (

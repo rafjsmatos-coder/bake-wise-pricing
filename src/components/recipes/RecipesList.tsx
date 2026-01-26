@@ -95,7 +95,7 @@ export function RecipesList() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground truncate">Receitas</h1>
           <p className="text-muted-foreground">
-            Gerencie suas receitas e calcule custos automaticamente
+            {recipes.length} receita{recipes.length !== 1 ? 's' : ''} cadastrada{recipes.length !== 1 ? 's' : ''}
           </p>
         </div>
         <Button onClick={() => setFormOpen(true)} className="w-full sm:w-auto shrink-0">
@@ -151,21 +151,23 @@ export function RecipesList() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16">
-          <Book className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <Book className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="font-medium text-foreground mb-1">
             {searchTerm || categoryFilter !== 'all'
               ? 'Nenhuma receita encontrada'
               : 'Nenhuma receita cadastrada'}
           </h3>
-          <p className="text-muted-foreground mb-4">
+          <p className="text-muted-foreground text-sm">
             {searchTerm || categoryFilter !== 'all'
               ? 'Tente ajustar os filtros de busca'
               : 'Comece criando sua primeira receita'}
           </p>
           {!searchTerm && categoryFilter === 'all' && (
-            <Button onClick={() => setFormOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={() => setFormOpen(true)} className="mt-4 gap-2">
+              <Plus className="h-4 w-4" />
               Criar primeira receita
             </Button>
           )}

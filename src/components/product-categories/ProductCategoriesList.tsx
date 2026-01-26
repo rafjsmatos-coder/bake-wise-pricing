@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { useProductCategories, ProductCategory } from '@/hooks/useProductCategories';
-import { ProductCategoryForm } from './ProductCategoryForm';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,12 +16,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useProductCategories, ProductCategory } from '@/hooks/useProductCategories';
+import { useProducts } from '@/hooks/useProducts';
+import { ProductCategoryForm } from './ProductCategoryForm';
+import { Plus, MoreHorizontal, Pencil, Trash2, ShoppingBag, Loader2 } from 'lucide-react';
 
 export function ProductCategoriesList() {
   const { categories, isLoading, deleteCategory } = useProductCategories();
+  const { products } = useProducts();
   const [formOpen, setFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ProductCategory | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<ProductCategory | null>(null);
+
+  const getProductCount = (categoryId: string) => {
+    return products.filter((p) => p.category_id === categoryId).length;
+  };
 
   const handleEdit = (category: ProductCategory) => {
     setEditingCategory(category);
@@ -43,17 +54,20 @@ export function ProductCategoriesList() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Categorias de Produtos</h1>
-          <p className="text-muted-foreground">Organize seus produtos por categorias</p>
+          <h1 className="text-2xl font-bold text-foreground">Categorias de Produtos</h1>
+          <p className="text-muted-foreground">
+            {categories.length} categoria{categories.length !== 1 ? 's' : ''} cadastrada{categories.length !== 1 ? 's' : ''}
+          </p>
         </div>
         <Button onClick={() => setFormOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -61,51 +75,77 @@ export function ProductCategoriesList() {
         </Button>
       </div>
 
-      {categories.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground mb-4">
-              Nenhuma categoria de produto cadastrada ainda.
-            </p>
-            <Button onClick={() => setFormOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Criar Primeira Categoria
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {categories.map((category) => (
-            <Card key={category.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+      {/* Categories List */}
+      {categories.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {categories.map((category) => {
+            const count = getProductCount(category.id);
+            return (
+              <div
+                key={category.id}
+                className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div 
-                      className="w-4 h-4 rounded-full" 
-                      style={{ backgroundColor: category.color || '#6366f1' }}
-                    />
-                    <CardTitle className="text-lg">{category.name}</CardTitle>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(category)}
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: `${category.color}20` }}
                     >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeletingCategory(category)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: category.color || '#6366f1' }}
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">
+                        {category.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {count} produto{count !== 1 ? 's' : ''}
+                      </p>
+                    </div>
                   </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(category)}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setDeletingCategory(category)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-              </CardHeader>
-            </Card>
-          ))}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="font-medium text-foreground mb-1">
+            Nenhuma categoria cadastrada
+          </h3>
+          <p className="text-muted-foreground text-sm">
+            Crie categorias para organizar seus produtos
+          </p>
+          <Button onClick={() => setFormOpen(true)} className="mt-4 gap-2">
+            <Plus className="h-4 w-4" />
+            Criar Primeira Categoria
+          </Button>
         </div>
       )}
 
@@ -126,7 +166,10 @@ export function ProductCategoriesList() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

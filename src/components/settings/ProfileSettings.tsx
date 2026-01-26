@@ -123,7 +123,7 @@ export function ProfileSettings() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
@@ -131,7 +131,7 @@ export function ProfileSettings() {
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold">Meu Perfil</h1>
+        <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
         <p className="text-muted-foreground">Gerencie suas informações pessoais e do negócio</p>
       </div>
 
