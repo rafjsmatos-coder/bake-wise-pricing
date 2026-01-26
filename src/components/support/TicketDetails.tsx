@@ -33,13 +33,22 @@ export function TicketDetails({ ticket, onBack }: TicketDetailsProps) {
   const isClosed = ticket.status === 'closed' || ticket.status === 'resolved';
 
   useEffect(() => {
+    let isMounted = true;
+    
     const loadReplies = async () => {
       setIsLoading(true);
       const data = await fetchReplies(ticket.id);
-      setReplies(data);
-      setIsLoading(false);
+      if (isMounted) {
+        setReplies(data);
+        setIsLoading(false);
+      }
     };
+    
     loadReplies();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [ticket.id, fetchReplies]);
 
   const handleSendReply = async () => {

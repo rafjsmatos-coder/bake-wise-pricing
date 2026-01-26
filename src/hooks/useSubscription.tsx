@@ -37,11 +37,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Verificar se a sessão ainda é válida antes de chamar a edge function
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !sessionData.session) {
+      console.log('Session invalid, skipping subscription check');
+      setSubscription({ subscribed: false, status: 'expired' });
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${sessionData.session.access_token}`,
         },
       });
 

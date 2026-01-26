@@ -153,7 +153,7 @@ export function useSupport() {
     }
   };
 
-  const fetchReplies = async (ticketId: string): Promise<SupportReply[]> => {
+  const fetchReplies = useCallback(async (ticketId: string): Promise<SupportReply[]> => {
     try {
       const { data, error } = await supabase
         .from('support_replies')
@@ -173,7 +173,7 @@ export function useSupport() {
       });
       return [];
     }
-  };
+  }, [toast]);
 
   const addReply = async (ticketId: string, message: string) => {
     if (!user) return;
@@ -207,6 +207,11 @@ export function useSupport() {
   // Filter helpers
   const supportTickets = tickets.filter(t => t.type === 'support');
   const suggestions = tickets.filter(t => t.type === 'suggestion');
+  
+  // Contador de tickets pendentes (para notificação de admin)
+  const openTicketsCount = tickets.filter(
+    t => t.status === 'open' || t.status === 'in_progress'
+  ).length;
 
   return {
     tickets,
@@ -218,5 +223,6 @@ export function useSupport() {
     fetchReplies,
     addReply,
     refetch: fetchTickets,
+    openTicketsCount,
   };
 }
