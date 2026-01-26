@@ -1,11 +1,18 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Search } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Plus, Search, ShoppingBag, Loader2 } from 'lucide-react';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useUserSettings } from '@/hooks/useUserSettings';
+import { useProductCategories } from '@/hooks/useProductCategories';
 import { ProductCard } from './ProductCard';
 import { ProductForm } from './ProductForm';
 import { ProductDetails } from './ProductDetails';
@@ -26,11 +33,13 @@ export function ProductsList() {
   const { products, isLoading, deleteProduct } = useProducts();
   const { recipes } = useRecipes();
   const { settings } = useUserSettings();
+  const { categories } = useProductCategories();
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   // Calculate recipe costs
   const recipeCosts = useMemo(() => {
@@ -84,9 +93,14 @@ export function ProductsList() {
     return costs;
   }, [products, recipeCosts, settings]);
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === 'all' || 
+        (categoryFilter === 'uncategorized' ? !product.category_id : product.category_id === categoryFilter);
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, categoryFilter]);
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
@@ -114,17 +128,20 @@ export function ProductsList() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold truncate">Produtos</h1>
-          <p className="text-muted-foreground">Gerencie seus produtos e precificação</p>
+          <h1 className="text-2xl font-bold text-foreground truncate">Produtos</h1>
+          <p className="text-muted-foreground">
+            {products.length} produto{products.length !== 1 ? 's' : ''} cadastrado{products.length !== 1 ? 's' : ''}
+          </p>
         </div>
         <Button onClick={() => setFormOpen(true)} className="w-full sm:w-auto shrink-0">
           <Plus className="h-4 w-4 mr-2" />
@@ -132,33 +149,60 @@ export function ProductsList() {
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar produtos..."
-          className="pl-10 min-h-[44px]"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar produtos..."
+            className="pl-10 min-h-[44px]"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-full sm:w-48 min-h-[44px]">
+            <SelectValue placeholder="Categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as categorias</SelectItem>
+            <SelectItem value="uncategorized">Sem categoria</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: cat.color || '#6366f1' }}
+                  />
+                  {cat.name}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
+      {/* Products List */}
       {filteredProducts.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground mb-4">
-              {searchQuery 
-                ? 'Nenhum produto encontrado com esta busca.'
-                : 'Nenhum produto cadastrado ainda.'
-              }
-            </p>
-            {!searchQuery && (
-              <Button onClick={() => setFormOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Primeiro Produto
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="font-medium text-foreground mb-1">
+            {products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum resultado encontrado'}
+          </h3>
+          <p className="text-muted-foreground text-sm">
+            {products.length === 0
+              ? 'Comece adicionando seu primeiro produto'
+              : 'Tente ajustar os filtros de busca'}
+          </p>
+          {products.length === 0 && (
+            <Button onClick={() => setFormOpen(true)} className="mt-4 gap-2">
+              <Plus className="h-4 w-4" />
+              Criar Primeiro Produto
+            </Button>
+          )}
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredProducts.map((product) => (
@@ -201,7 +245,10 @@ export function ProductsList() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

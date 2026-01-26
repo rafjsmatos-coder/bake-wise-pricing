@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -11,15 +17,21 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useRecipeCategories, type RecipeCategory } from '@/hooks/useRecipeCategories';
+import { useRecipes } from '@/hooks/useRecipes';
 import { RecipeCategoryForm } from './RecipeCategoryForm';
-import { Plus, Edit, Trash2, BookmarkPlus, Loader2 } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, BookmarkPlus, Loader2 } from 'lucide-react';
 
 export function RecipeCategoriesList() {
   const { categories, isLoading, deleteCategory } = useRecipeCategories();
+  const { recipes } = useRecipes();
   const [formOpen, setFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<RecipeCategory | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<RecipeCategory | null>(null);
+
+  const getRecipeCount = (categoryId: string) => {
+    return recipes.filter((r) => r.category_id === categoryId).length;
+  };
 
   const handleEdit = (category: RecipeCategory) => {
     setEditingCategory(category);
@@ -59,7 +71,7 @@ export function RecipeCategoriesList() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Categorias de Receitas</h1>
           <p className="text-muted-foreground">
-            Organize suas receitas em categorias
+            {categories.length} categoria{categories.length !== 1 ? 's' : ''} cadastrada{categories.length !== 1 ? 's' : ''}
           </p>
         </div>
         <Button onClick={() => setFormOpen(true)}>
@@ -70,56 +82,73 @@ export function RecipeCategoriesList() {
 
       {/* Categories List */}
       {categories.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categories.map((category) => (
-            <div
-              key={category.id}
-              className="flex items-center justify-between p-4 bg-card border border-border rounded-lg group hover:border-accent/30 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: `${category.color}20` }}
-                >
-                  <BookmarkPlus
-                    className="h-5 w-5"
-                    style={{ color: category.color || '#6366f1' }}
-                  />
-                </div>
-                <span className="font-medium">{category.name}</span>
-              </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {categories.map((category) => {
+            const count = getRecipeCount(category.id);
+            return (
+              <div
+                key={category.id}
+                className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: `${category.color}20` }}
+                    >
+                      <BookmarkPlus
+                        className="h-5 w-5"
+                        style={{ color: category.color || '#6366f1' }}
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">
+                        {category.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {count} receita{count !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleEdit(category)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(category)}
-                  className="text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(category)}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(category)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
-        <div className="text-center py-16">
-          <BookmarkPlus className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <BookmarkPlus className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="font-medium text-foreground mb-1">
             Nenhuma categoria cadastrada
           </h3>
-          <p className="text-muted-foreground mb-4">
+          <p className="text-muted-foreground text-sm">
             Categorias ajudam a organizar suas receitas
           </p>
-          <Button onClick={() => setFormOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={() => setFormOpen(true)} className="mt-4 gap-2">
+            <Plus className="h-4 w-4" />
             Criar primeira categoria
           </Button>
         </div>
