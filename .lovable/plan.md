@@ -1,238 +1,261 @@
 
-# Plano: Gerenciamento Completo de Usuarios no Painel Admin
+
+# Sistema de Suporte e Sugestoes - PreciBake
 
 ## Objetivo
-Expandir o painel administrativo com funcionalidades para gerenciar assinaturas, visualizar detalhes completos de usuarios e deletar usuarios do sistema.
+Implementar um sistema completo onde usuarios podem:
+1. **Abrir tickets de suporte** para resolver problemas
+2. **Enviar sugestoes** para melhorar o sistema
+
+Administradores visualizam e gerenciam tudo pelo painel admin.
 
 ---
 
-## 1. Novas Acoes na Edge Function admin-users
+## 1. Estrutura do Banco de Dados
 
-### 1.1 Acao: updateSubscription
+### 1.1 Tabela support_tickets
 
-Permite alterar manualmente o status e datas de assinatura de um usuario.
+Campos principais:
+- `id`: Identificador unico (UUID)
+- `user_id`: ID do usuario que criou
+- `type`: Tipo do registro - 'support' ou 'suggestion'
+- `subject`: Assunto curto
+- `message`: Descricao detalhada
+- `status`: open, in_progress, resolved, closed
+- `priority`: low, normal, high, urgent (para suporte)
+- `created_at`, `updated_at`: Timestamps
 
-```typescript
-case "updateSubscription": {
-  const { userId, status, trialEnd, subscriptionEnd } = params;
-  
-  // Atualizar tabela subscriptions com service role
-  await supabaseAdmin
-    .from("subscriptions")
-    .update({
-      status,
-      trial_end: trialEnd,
-      subscription_end: subscriptionEnd
-    })
-    .eq("user_id", userId);
-}
-```
+### 1.2 Tabela support_replies
 
-**Campos editaveis:**
-- `status`: trial, active, expired, canceled
-- `trial_end`: Data de fim do trial
-- `subscription_end`: Data de fim da assinatura
+Campos principais:
+- `id`: Identificador unico
+- `ticket_id`: Referencia ao ticket
+- `user_id`: Quem enviou a resposta
+- `message`: Conteudo da resposta
+- `is_admin_reply`: Se foi resposta do admin
+- `created_at`: Timestamp
 
-### 1.2 Acao: extendTrial
+### 1.3 Politicas de Seguranca (RLS)
 
-Atalho para estender o periodo de trial de um usuario.
+**Para usuarios:**
+- Podem criar tickets/sugestoes proprios
+- Podem visualizar apenas seus proprios registros
+- Podem responder aos seus proprios tickets
 
-```typescript
-case "extendTrial": {
-  const { userId, days } = params;
-  
-  // Busca trial_end atual e adiciona dias
-  // Atualiza com nova data e status = 'trial'
-}
-```
-
-### 1.3 Acao: getUserDetails
-
-Retorna todas as informacoes de um usuario especifico.
-
-```typescript
-case "getUserDetails": {
-  const { userId } = params;
-  
-  // Retorna:
-  // - Dados do auth (email, created_at, last_sign_in)
-  // - Profile completo
-  // - Subscription completa
-  // - Roles
-  // - Contagem de dados (ingredientes, receitas, produtos)
-}
-```
-
-### 1.4 Acao: deleteUser
-
-Deleta um usuario e todos os dados associados.
-
-```typescript
-case "deleteUser": {
-  const { userId } = params;
-  
-  // Nao pode deletar a si mesmo
-  // Nao pode deletar outro admin
-  
-  // Deleta usuario via auth.admin.deleteUser()
-  // Cascade deleta profiles, subscriptions, etc.
-}
-```
+**Para admins:**
+- Podem visualizar todos os registros
+- Podem atualizar status e prioridade
+- Podem responder qualquer ticket
 
 ---
 
-## 2. Migracao SQL
+## 2. Interface do Usuario
 
-### 2.1 Permitir UPDATE na tabela subscriptions para admins
+### 2.1 Botao no Menu Lateral
 
-Atualmente a tabela `subscriptions` nao tem politica de UPDATE. Como usamos service role na edge function, isso nao e problema, mas documentamos aqui para clareza.
+Novo item "Suporte" no menu principal com icone de headphones/lifeBuoy.
 
-**Nao e necessaria migracao** - service role bypassa RLS.
+### 2.2 Pagina de Suporte
 
----
+**Duas abas:**
+- **Meus Tickets**: Lista de tickets de suporte do usuario
+- **Minhas Sugestoes**: Lista de sugestoes enviadas
 
-## 3. Novos Componentes UI
+**Acoes disponiveis:**
+- "Novo Ticket" - Abre formulario de suporte
+- "Nova Sugestao" - Abre formulario de sugestao
 
-### 3.1 UserDetailsModal
+### 2.3 Formulario de Ticket de Suporte
 
-**Arquivo:** `src/components/admin/UserDetailsModal.tsx`
+Campos:
+- Assunto (obrigatorio)
+- Descricao do problema (obrigatorio, minimo 20 caracteres)
 
-Modal com abas mostrando:
-- **Perfil**: Nome, negocio, contato, endereco, redes sociais
-- **Assinatura**: Status, datas, ID Stripe (se houver)
-- **Dados**: Contagem de ingredientes, receitas, produtos, embalagens
-- **Acoes**: Botoes para acoes rapidas
+### 2.4 Formulario de Sugestao
 
-### 3.2 EditSubscriptionDialog
+Campos:
+- Titulo da sugestao (obrigatorio)
+- Descricao detalhada (obrigatorio, minimo 20 caracteres)
 
-**Arquivo:** `src/components/admin/EditSubscriptionDialog.tsx`
+### 2.5 Visualizacao de Detalhes
 
-Formulario para editar:
-- Status (Select: trial, active, expired, canceled)
-- Data fim do trial (DatePicker)
-- Data fim da assinatura (DatePicker)
-
-### 3.3 ExtendTrialDialog
-
-**Arquivo:** `src/components/admin/ExtendTrialDialog.tsx`
-
-Formulario simples:
-- Input numerico: quantidade de dias
-- Botao confirmar
-
-### 3.4 DeleteUserDialog
-
-**Arquivo:** `src/components/admin/DeleteUserDialog.tsx`
-
-Confirmacao com:
-- Aviso sobre dados que serao deletados
-- Campo para digitar email do usuario como confirmacao
-- Botao destrutivo
+- Status atual (badge colorido)
+- Historico de mensagens (estilo chat)
+- Campo para enviar nova mensagem
 
 ---
 
-## 4. Atualizacoes no UserManagement
+## 3. Interface do Administrador
 
-### 4.1 Coluna de Acoes Expandida
+### 3.1 Nova Aba no Painel Admin
 
-Adicionar dropdown menu com:
-- Ver Detalhes
-- Editar Assinatura
-- Estender Trial (se status = trial ou expired)
-- Promover/Remover Admin
-- Deletar Usuario
+Adicionar aba "Suporte" com:
+- Sub-aba: Tickets de Suporte
+- Sub-aba: Sugestoes
 
-### 4.2 Integracao com Modais
+### 3.2 Lista de Tickets/Sugestoes
 
-Estados para controlar abertura de cada modal/dialog.
+Colunas da tabela:
+- Usuario (nome/email)
+- Tipo (Suporte/Sugestao)
+- Assunto
+- Status (badge colorido)
+- Prioridade (apenas para suporte)
+- Data
+- Acoes
+
+**Filtros disponiveis:**
+- Por tipo (suporte/sugestao)
+- Por status
+- Por prioridade
+- Busca por texto
+
+### 3.3 Modal de Gerenciamento
+
+Ao clicar em um ticket:
+- Ver informacoes do usuario
+- Ver mensagem original
+- Alterar status
+- Alterar prioridade (suporte)
+- Historico de respostas
+- Campo para responder
 
 ---
 
-## 5. Estrutura de Arquivos
+## 4. Badges e Cores
 
-```
-src/components/admin/
-├── AdminPanel.tsx              (existente)
-├── AdminStats.tsx              (existente)
-├── UserManagement.tsx          (MODIFICAR)
-├── UserDetailsModal.tsx        (NOVO)
-├── EditSubscriptionDialog.tsx  (NOVO)
-├── ExtendTrialDialog.tsx       (NOVO)
-└── DeleteUserDialog.tsx        (NOVO)
+### Status
+- Aberto: Amarelo
+- Em Andamento: Azul
+- Resolvido: Verde
+- Fechado: Cinza
 
-supabase/functions/
-└── admin-users/
-    └── index.ts                (MODIFICAR)
-```
+### Prioridade (Suporte)
+- Baixa: Cinza
+- Normal: Azul
+- Alta: Laranja
+- Urgente: Vermelho
+
+### Tipo
+- Suporte: Azul com icone de headphones
+- Sugestao: Verde com icone de lampada
 
 ---
 
-## 6. Fluxo de Seguranca
+## 5. Arquivos a Serem Criados
+
+### Componentes do Usuario
+- `src/components/support/SupportPage.tsx` - Pagina principal
+- `src/components/support/TicketForm.tsx` - Formulario de ticket
+- `src/components/support/SuggestionForm.tsx` - Formulario de sugestao
+- `src/components/support/TicketList.tsx` - Lista de tickets
+- `src/components/support/TicketDetails.tsx` - Detalhes e chat
+
+### Componentes do Admin
+- `src/components/admin/SupportManagement.tsx` - Gerenciamento completo
+- `src/components/admin/AdminTicketModal.tsx` - Modal de resposta
+
+### Hooks
+- `src/hooks/useSupport.tsx` - Logica de dados
+
+### Atualizacoes
+- `src/components/layout/AppLayout.tsx` - Adicionar menu
+- `src/components/admin/AdminPanel.tsx` - Nova aba
+- `src/pages/Dashboard.tsx` - Integrar navegacao
+
+---
+
+## 6. Fluxo do Usuario
 
 ```text
-Admin clica em acao
-        |
-        v
-Frontend envia request com JWT
-        |
-        v
-Edge function valida admin via user_roles
-        |
-        v
-Executa acao com service role
-        |
-        v
-Retorna resultado
-        |
-        v
-Frontend atualiza lista
+Usuario quer ajuda ou tem ideia
+           |
+           v
+    Clica em "Suporte"
+           |
+           v
+  Ve abas: Tickets | Sugestoes
+           |
+     +-----+-----+
+     |           |
+     v           v
+ Ticket?    Sugestao?
+     |           |
+     v           v
+Formulario  Formulario
+de Suporte  de Sugestao
+     |           |
+     v           v
+Preenche e envia dados
+           |
+           v
+  Salvo no banco com status "open"
+           |
+           v
+Usuario acompanha resposta do admin
 ```
-
-**Protecoes:**
-- Nao pode deletar a si mesmo
-- Nao pode deletar outro admin
-- Todas as acoes logadas no console da edge function
 
 ---
 
-## 7. Interface do Dropdown de Acoes
+## 7. Fluxo do Administrador
 
-```
-[Acoes v]
-├── 👁 Ver Detalhes
-├── ✏️ Editar Assinatura
-├── ⏰ Estender Trial
-├── ─────────────────
-├── 🛡 Promover Admin / Remover Admin
-├── ─────────────────
-└── 🗑 Deletar Usuario (vermelho)
+```text
+Admin acessa painel
+        |
+        v
+Clica na aba "Suporte"
+        |
+        v
+Ve sub-abas: Tickets | Sugestoes
+        |
+        v
+Filtra por status/prioridade
+        |
+        v
+Clica em item para abrir modal
+        |
+        v
+Le mensagem, altera status, responde
+        |
+        v
+Usuario recebe notificacao visual
 ```
 
 ---
 
 ## 8. Ordem de Implementacao
 
-1. **Edge Function** - Adicionar novas acoes (updateSubscription, extendTrial, getUserDetails, deleteUser)
-2. **UserDetailsModal** - Modal de visualizacao
-3. **EditSubscriptionDialog** - Formulario de edicao
-4. **ExtendTrialDialog** - Atalho para trial
-5. **DeleteUserDialog** - Confirmacao de exclusao
-6. **UserManagement** - Integrar dropdown e modais
-7. **Testes** - Validar todas as acoes
+1. **Migracao SQL**
+   - Criar tabela support_tickets com campo type
+   - Criar tabela support_replies
+   - Configurar RLS para usuarios e admins
+
+2. **Hook useSupport**
+   - Funcoes: fetch, create, reply, updateStatus
+
+3. **Componentes do Usuario**
+   - SupportPage, TicketForm, SuggestionForm
+   - TicketList, TicketDetails
+
+4. **Integracao no Layout**
+   - Menu lateral e navegacao
+
+5. **Componentes do Admin**
+   - SupportManagement, AdminTicketModal
+   - Integrar no AdminPanel
 
 ---
 
 ## Resumo de Funcionalidades
 
-| Funcionalidade | Status Atual | Apos Implementacao |
-|----------------|--------------|-------------------|
-| Listar usuarios | OK | OK |
-| Buscar por email/nome | OK | OK |
-| Filtrar por status | OK | OK |
-| Promover/Remover admin | OK | OK |
-| Ver detalhes completos | - | NOVO |
-| Editar status assinatura | - | NOVO |
-| Alterar datas assinatura | - | NOVO |
-| Estender trial | - | NOVO |
-| Deletar usuario | - | NOVO |
+| Funcionalidade | Usuario | Admin |
+|----------------|---------|-------|
+| Criar ticket de suporte | OK | - |
+| Enviar sugestao | OK | - |
+| Ver proprios registros | OK | - |
+| Ver todos registros | - | OK |
+| Responder | OK (proprio) | OK (todos) |
+| Alterar status | - | OK |
+| Alterar prioridade | - | OK |
+| Filtrar e buscar | - | OK |
 
