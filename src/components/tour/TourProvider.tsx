@@ -8,23 +8,22 @@ interface TourWrapperProps {
 }
 
 function TourController({ onSidebarToggle }: { onSidebarToggle?: (open: boolean) => void }) {
-  const { currentStep, isOpen, setCurrentStep } = useTour();
+  const { currentStep, isOpen } = useTour();
   const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!isOpen || !isMobile || !onSidebarToggle) return;
 
-    // Steps that need sidebar open: nav items (steps 4-8)
-    const sidebarSteps = [4, 5, 6, 7, 8];
+    // Steps that need sidebar open: nav items (steps 3-8, zero-indexed)
+    // Step 0: welcome, Step 1: summary-cards, Step 2: quick-actions
+    // Step 3: nav-ingredients, Step 4: nav-recipes, Step 5: nav-products
+    // Step 6: nav-decorations, Step 7: nav-packaging, Step 8: nav-settings
+    // Step 9: welcome (final)
+    const sidebarSteps = [3, 4, 5, 6, 7, 8];
     const needsSidebar = sidebarSteps.includes(currentStep);
     
-    if (needsSidebar) {
-      // Open sidebar first
-      onSidebarToggle(true);
-    } else {
-      onSidebarToggle(false);
-    }
-  }, [currentStep, isOpen, isMobile, onSidebarToggle, setCurrentStep]);
+    onSidebarToggle(needsSidebar);
+  }, [currentStep, isOpen, isMobile, onSidebarToggle]);
 
   return null;
 }
