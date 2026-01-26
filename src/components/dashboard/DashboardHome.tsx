@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useIngredients } from '@/hooks/useIngredients';
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { prepareExternalNavigation } from '@/lib/open-external';
 
 interface DashboardHomeProps {
   onNavigate: (page: string) => void;
@@ -34,14 +36,38 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
   const { ingredients, isLoading: loadingIngredients } = useIngredients();
   const { decorations, isLoading: loadingDecorations } = useDecorations();
   const { packagingItems, isLoading: loadingPackaging } = usePackaging();
-  const { subscription, createCheckout, openCustomerPortal } = useSubscription();
+  const { subscription, createCheckout, getCustomerPortalUrl } = useSubscription();
+  
+  const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false);
+  const [isProcessingPortal, setIsProcessingPortal] = useState(false);
 
   const isLoading = loadingProducts || loadingRecipes || loadingIngredients || loadingDecorations || loadingPackaging;
 
   const handleUpgrade = async () => {
-    const url = await createCheckout();
-    if (url) {
-      window.open(url, '_blank');
+    setIsProcessingUpgrade(true);
+    
+    // Prepare navigation BEFORE the async call
+    const navigate = prepareExternalNavigation();
+    
+    try {
+      const url = await createCheckout();
+      navigate(url);
+    } finally {
+      setIsProcessingUpgrade(false);
+    }
+  };
+
+  const handleManage = async () => {
+    setIsProcessingPortal(true);
+    
+    // Prepare navigation BEFORE the async call
+    const navigate = prepareExternalNavigation();
+    
+    try {
+      const url = await getCustomerPortalUrl();
+      navigate(url);
+    } finally {
+      setIsProcessingPortal(false);
     }
   };
 
@@ -134,8 +160,12 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
                   </p>
                 </div>
               </div>
-              <Button onClick={handleUpgrade} className="gap-2">
-                <Crown className="h-4 w-4" />
+              <Button onClick={handleUpgrade} disabled={isProcessingUpgrade} className="gap-2">
+                {isProcessingUpgrade ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Crown className="h-4 w-4" />
+                )}
                 Assinar Premium
               </Button>
             </div>
@@ -163,8 +193,12 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
                   )}
                 </div>
               </div>
-              <Button variant="outline" onClick={openCustomerPortal} className="gap-2">
-                <Settings className="h-4 w-4" />
+              <Button variant="outline" onClick={handleManage} disabled={isProcessingPortal} className="gap-2">
+                {isProcessingPortal ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Settings className="h-4 w-4" />
+                )}
                 Gerenciar
               </Button>
             </div>

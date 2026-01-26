@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { validateAuth, createAdminClient } from "../_shared/auth.ts";
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -15,17 +15,6 @@ serve(async (req) => {
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-
-  // Service role client for database operations and auth validation
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { persistSession: false }
-  });
-
-  const authHeader = req.headers.get("Authorization");
-  const userToken = authHeader?.replace("Bearer ", "") ?? "";
-
   try {
     logStep("Function started");
 
@@ -33,48 +22,28 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     logStep("Stripe key verified");
 
-    if (!authHeader) {
-      logStep("No authorization header");
+    // Use the new auth helper
+    const { user, error: authError } = await validateAuth(req);
+    
+    if (authError || !user) {
+      logStep("Authentication failed", { error: authError });
       return new Response(JSON.stringify({ 
         subscribed: false, 
         status: 'expired',
-        error: "Not authenticated" 
+        error: authError || "Not authenticated",
+        code: "unauthenticated"
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+        status: 200, // Return 200 to avoid error noise in frontend
       });
     }
-    logStep("Authorization header found");
 
-    // Use admin client to validate user token (bypasses JWT expiry issues)
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(userToken);
-    
-    if (userError || !userData?.user) {
-      logStep("Authentication failed", { error: userError?.message });
-      return new Response(JSON.stringify({ 
-        subscribed: false, 
-        status: 'expired',
-        error: "Session expired" 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-    
-    const user = userData.user;
-    if (!user?.email) {
-      logStep("No email found");
-      return new Response(JSON.stringify({ 
-        subscribed: false, 
-        status: 'expired' 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Get subscription from database using admin client
+    // Use admin client for database operations
+    const supabaseAdmin = createAdminClient();
+
+    // Get subscription from database
     const { data: subscription, error: subError } = await supabaseAdmin
       .from('subscriptions')
       .select('*')
@@ -127,7 +96,7 @@ serve(async (req) => {
       const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       
       if (daysRemaining <= 0) {
-        // Trial expired - update using admin client
+        // Trial expired
         await supabaseAdmin
           .from('subscriptions')
           .update({ status: 'expired' })
@@ -168,7 +137,7 @@ serve(async (req) => {
         const isActive = ['active', 'trialing'].includes(stripeSub.status);
         const subscriptionEnd = new Date(stripeSub.current_period_end * 1000).toISOString();
         
-        // Update local subscription status using admin client
+        // Update local subscription status
         if (stripeSub.status !== subscription.status) {
           const newStatus = stripeSub.status === 'active' ? 'active' : 
                            stripeSub.status === 'canceled' ? 'canceled' :

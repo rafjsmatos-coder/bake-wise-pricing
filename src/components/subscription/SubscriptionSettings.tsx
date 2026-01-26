@@ -1,18 +1,43 @@
+import { useState } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Crown, Clock, CheckCircle2, Settings, Calendar, CreditCard } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { prepareExternalNavigation } from '@/lib/open-external';
 
 export function SubscriptionSettings() {
-  const { subscription, isLoading, createCheckout, openCustomerPortal, checkSubscription } = useSubscription();
+  const { subscription, isLoading, createCheckout, getCustomerPortalUrl, checkSubscription } = useSubscription();
+  const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false);
+  const [isProcessingPortal, setIsProcessingPortal] = useState(false);
 
   const handleUpgrade = async () => {
-    const url = await createCheckout();
-    if (url) {
-      window.open(url, '_blank');
+    setIsProcessingUpgrade(true);
+    
+    // Prepare navigation BEFORE the async call
+    const navigate = prepareExternalNavigation();
+    
+    try {
+      const url = await createCheckout();
+      navigate(url);
+    } finally {
+      setIsProcessingUpgrade(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setIsProcessingPortal(true);
+    
+    // Prepare navigation BEFORE the async call
+    const navigate = prepareExternalNavigation();
+    
+    try {
+      const url = await getCustomerPortalUrl();
+      navigate(url);
+    } finally {
+      setIsProcessingPortal(false);
     }
   };
 
@@ -104,14 +129,22 @@ export function SubscriptionSettings() {
         </CardContent>
         <CardFooter className="flex gap-3">
           {(subscription.status === 'trial' || subscription.status === 'expired' || subscription.status === 'canceled') && (
-            <Button onClick={handleUpgrade} className="gap-2">
-              <Crown className="h-4 w-4" />
+            <Button onClick={handleUpgrade} disabled={isProcessingUpgrade} className="gap-2">
+              {isProcessingUpgrade ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Crown className="h-4 w-4" />
+              )}
               {subscription.status === 'trial' ? 'Assinar Premium' : 'Ativar Premium'}
             </Button>
           )}
           {subscription.status === 'active' && (
-            <Button variant="outline" onClick={openCustomerPortal} className="gap-2">
-              <Settings className="h-4 w-4" />
+            <Button variant="outline" onClick={handleManageSubscription} disabled={isProcessingPortal} className="gap-2">
+              {isProcessingPortal ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Settings className="h-4 w-4" />
+              )}
               Gerenciar Assinatura
             </Button>
           )}
@@ -153,8 +186,12 @@ export function SubscriptionSettings() {
         </CardContent>
         {subscription.status !== 'active' && (
           <CardFooter>
-            <Button onClick={handleUpgrade} className="w-full sm:w-auto gap-2">
-              <Crown className="h-4 w-4" />
+            <Button onClick={handleUpgrade} disabled={isProcessingUpgrade} className="w-full sm:w-auto gap-2">
+              {isProcessingUpgrade ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Crown className="h-4 w-4" />
+              )}
               Assinar por R$ 49,90/mês
             </Button>
           </CardFooter>
