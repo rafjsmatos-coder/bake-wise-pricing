@@ -8,8 +8,8 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
-// Premium plan price ID
-const PREMIUM_PRICE_ID = "price_1StDnC1UfMJqJ1ycnqShIkOZ";
+// Premium plan price ID (TEST: R$ 2,00 - original: price_1StDnC1UfMJqJ1ycnqShIkOZ)
+const PREMIUM_PRICE_ID = "price_1StxiA1UfMJqJ1ycQGzEmTYm";
 
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
