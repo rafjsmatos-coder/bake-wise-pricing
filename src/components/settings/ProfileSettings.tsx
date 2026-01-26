@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import imageCompression from 'browser-image-compression';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -88,7 +89,17 @@ export function ProfileSettings() {
 
     setIsUploading(true);
     try {
-      const avatarUrl = await uploadAvatar(file);
+      // Compress image to max 200KB before upload
+      const options = {
+        maxSizeMB: 0.2, // 200KB
+        maxWidthOrHeight: 512,
+        useWebWorker: true,
+        fileType: 'image/jpeg' as const,
+      };
+      
+      const compressedFile = await imageCompression(file, options);
+      
+      const avatarUrl = await uploadAvatar(compressedFile);
       if (avatarUrl) {
         await updateProfile.mutateAsync({ avatar_url: avatarUrl });
       }
@@ -170,7 +181,7 @@ export function ProfileSettings() {
                     className="hidden"
                   />
                   <p className="text-xs text-muted-foreground">
-                    JPG, PNG ou GIF. Máximo 5MB.
+                    JPG, PNG ou GIF. A imagem será comprimida automaticamente.
                   </p>
                 </div>
               </div>
