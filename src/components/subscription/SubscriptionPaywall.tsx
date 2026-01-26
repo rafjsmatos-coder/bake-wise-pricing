@@ -4,13 +4,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Crown, Clock, CheckCircle2, AlertTriangle, X, LogOut } from 'lucide-react';
+import { Loader2, Crown, Clock, CheckCircle2, AlertTriangle, X, LogOut, RefreshCw } from 'lucide-react';
 import { prepareExternalNavigation } from '@/lib/open-external';
 
 export function SubscriptionPaywall() {
-  const { subscription, isLoading, createCheckout, canAccessApp, sessionError } = useSubscription();
+  const { subscription, isLoading, createCheckout, canAccessApp, sessionError, checkSubscription } = useSubscription();
   const { signOut } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const handleUpgrade = async () => {
     setIsProcessing(true);
@@ -23,6 +24,15 @@ export function SubscriptionPaywall() {
       navigate(url);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleVerifySubscription = async () => {
+    setIsVerifying(true);
+    try {
+      await checkSubscription();
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -101,6 +111,12 @@ export function SubscriptionPaywall() {
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {/* Help message for users who just paid */}
+          <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+            <p className="font-medium text-foreground mb-1">Acabou de pagar?</p>
+            <p>O pagamento pode levar alguns segundos para ser processado. Clique em "Verificar Minha Assinatura" abaixo para atualizar.</p>
+          </div>
+
           {/* Premium Plan Card */}
           <div className="border-2 border-accent rounded-xl p-6 relative">
             <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground">
@@ -136,6 +152,20 @@ export function SubscriptionPaywall() {
         </CardContent>
 
         <CardFooter className="flex flex-col gap-3">
+          <Button 
+            onClick={handleVerifySubscription} 
+            className="w-full" 
+            size="lg"
+            variant="outline"
+            disabled={isVerifying}
+          >
+            {isVerifying ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Verificar Minha Assinatura
+          </Button>
           <Button 
             onClick={handleUpgrade} 
             className="w-full" 

@@ -1,4 +1,5 @@
 import { Cake } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Footer() {
   return (
@@ -11,6 +12,23 @@ export function Footer() {
             </div>
             <span className="font-semibold text-foreground">PreciBake</span>
           </div>
+          
+          <div className="flex items-center gap-4 text-sm">
+            <Link 
+              to="/privacidade" 
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Política de Privacidade
+            </Link>
+            <span className="text-muted-foreground">•</span>
+            <Link 
+              to="/termos" 
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Termos de Uso
+            </Link>
+          </div>
+          
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} PreciBake. Todos os direitos reservados.
           </p>

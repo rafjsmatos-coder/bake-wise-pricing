@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useAdminRole } from '@/hooks/useAdminRole';
@@ -22,7 +22,8 @@ import {
   User,
   Crown,
   Shield,
-  Headphones
+  Headphones,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -69,6 +70,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
   const { isAdmin } = useAdminRole();
   const { sidebarOpen, setSidebarOpen } = useSidebarControl();
   const { pendingTicketsCount } = useSupport();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const getInitials = () => {
     if (profile?.full_name) {
@@ -80,6 +82,19 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
         .slice(0, 2);
     }
     return user?.email?.slice(0, 2).toUpperCase() || 'U';
+  };
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut();
+      // Force page reload to ensure clean state
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Force reload even on error
+      window.location.href = '/';
+    }
   };
 
   const navItems: NavItem[] = [
@@ -306,10 +321,15 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
             <Button
               variant="outline"
               className="w-full"
-              onClick={signOut}
+              onClick={handleSignOut}
+              disabled={isSigningOut}
             >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
+              {isSigningOut ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <LogOut className="h-4 w-4 mr-2" />
+              )}
+              {isSigningOut ? 'Saindo...' : 'Sair'}
             </Button>
           </div>
         </div>
