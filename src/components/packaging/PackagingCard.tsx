@@ -1,7 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, Package, Ruler } from 'lucide-react';
+import { Pencil, Trash2, Ruler, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '@/lib/unit-conversion';
 
 interface PackagingCardProps {
@@ -33,88 +32,77 @@ export function PackagingCard({ packaging, onEdit, onDelete }: PackagingCardProp
     packaging.stock_quantity <= packaging.min_stock_alert;
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              {packaging.category && (
-                <Badge 
-                  variant="secondary" 
-                  className="text-xs"
-                  style={{ 
-                    backgroundColor: `${packaging.category.color}20`,
-                    color: packaging.category.color || undefined,
-                    borderColor: packaging.category.color || undefined,
-                  }}
-                >
-                  {packaging.category.name}
-                </Badge>
-              )}
-              {isLowStock && (
-                <Badge variant="destructive" className="text-xs">
-                  Estoque baixo
-                </Badge>
-              )}
-            </div>
-            <CardTitle className="text-lg truncate">{packaging.name}</CardTitle>
-            {(packaging.brand || packaging.supplier) && (
-              <p className="text-sm text-muted-foreground truncate">
-                {[packaging.brand, packaging.supplier].filter(Boolean).join(' • ')}
-              </p>
+    <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex-1 min-w-0">
+          {packaging.category && (
+            <Badge
+              variant="secondary"
+              className="text-xs max-w-[100px] truncate mb-1"
+              style={{
+                backgroundColor: `${packaging.category.color}20`,
+                color: packaging.category.color || undefined,
+                borderColor: packaging.category.color || undefined,
+              }}
+            >
+              {packaging.category.name}
+            </Badge>
+          )}
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-foreground truncate">{packaging.name}</h3>
+            {isLowStock && (
+              <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
             )}
           </div>
-          <div className="flex gap-1 ml-2">
-            <Button variant="ghost" size="icon" onClick={onEdit}>
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={onDelete}>
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-muted-foreground">Preço de compra</p>
-            <p className="font-medium">{formatCurrency(packaging.purchase_price)}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Quantidade</p>
-            <p className="font-medium">{packaging.package_quantity} {packaging.unit}</p>
-          </div>
+        <div className="flex gap-1 shrink-0">
+          <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8">
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8">
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
         </div>
-        
-        {packaging.dimensions && (
-          <div className="flex items-center gap-2 text-sm">
-            <Ruler className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Dimensões:</span>
-            <span className="font-medium">{packaging.dimensions}</span>
-          </div>
+      </div>
+
+      {/* Info */}
+      <div className="space-y-1 text-sm text-muted-foreground mb-3">
+        <p>
+          <span className="font-medium text-foreground">
+            {formatCurrency(packaging.purchase_price)}
+          </span>
+          {' / '}
+          {packaging.package_quantity} {packaging.unit}
+        </p>
+
+        {packaging.brand && (
+          <p>Marca: {packaging.brand}</p>
         )}
 
-        <div className="pt-2 border-t">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Custo unitário</span>
-            </div>
-            <span className="font-semibold text-primary">
-              {formatCurrency(packaging.cost_per_unit || 0)}/{packaging.unit}
-            </span>
+        {packaging.dimensions && (
+          <div className="flex items-center gap-1">
+            <Ruler className="h-3 w-3" />
+            <span>{packaging.dimensions}</span>
           </div>
-        </div>
+        )}
 
         {packaging.stock_quantity !== null && (
-          <div className="flex items-center justify-between text-sm pt-2 border-t">
-            <span className="text-muted-foreground">Estoque atual</span>
-            <span className={`font-medium ${isLowStock ? 'text-destructive' : ''}`}>
-              {packaging.stock_quantity} {packaging.unit}
-            </span>
-          </div>
+          <p className={isLowStock ? 'text-destructive' : ''}>
+            Estoque: {packaging.stock_quantity} {packaging.unit}
+          </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Cost */}
+      <div className="pt-3 border-t border-border">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Custo unitário</span>
+          <span className="font-bold text-primary">
+            {formatCurrency(packaging.cost_per_unit || 0)}/{packaging.unit}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
