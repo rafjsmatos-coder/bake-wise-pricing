@@ -76,7 +76,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
     } else {
       toast({
         title: 'Conta criada com sucesso! 🎉',
-        description: 'Bem-vindo(a) ao Confeitaria Pro! Você já pode começar a usar.',
+        description: 'Bem-vindo(a) ao PreciBake! Você já pode começar a usar.',
       });
     }
 
@@ -110,9 +110,9 @@ export function AuthForm({ onBack }: AuthFormProps) {
             <Cake className="w-8 h-8 text-accent" />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold">Confeitaria Pro</CardTitle>
+            <CardTitle className="text-2xl font-bold">PreciBake</CardTitle>
             <CardDescription className="text-muted-foreground">
-              Sistema de Precificação para Confeiteiros
+              O ponto certo do preço
             </CardDescription>
           </div>
         </CardHeader>

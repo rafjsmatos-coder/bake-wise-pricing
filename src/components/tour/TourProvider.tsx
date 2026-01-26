@@ -36,7 +36,7 @@ export function TourWrapper({ children, onSidebarToggle }: TourWrapperProps) {
     selector: '[data-tour="welcome"]',
     content: (
       <div className="space-y-2">
-        <h3 className="font-bold text-lg">Bem-vindo ao BakeWise! 🎂</h3>
+        <h3 className="font-bold text-lg">Bem-vindo ao PreciBake! 🎂</h3>
         <p>Vamos te mostrar como usar o sistema para precificar seus produtos de forma simples e profissional.</p>
         <p className="text-sm text-muted-foreground mt-2">O fluxo é: Ingredientes → Receitas → Produtos</p>
       </div>

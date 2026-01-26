@@ -161,7 +161,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
           </Button>
           <div className="flex items-center gap-2">
             <Cake className="h-6 w-6 text-accent" />
-            <span className="font-semibold">Confeitaria Pro</span>
+            <span className="font-semibold">PreciBake</span>
           </div>
         </div>
       </header>
@@ -181,8 +181,8 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
               <Cake className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <h1 className="font-bold text-foreground">Confeitaria Pro</h1>
-              <p className="text-xs text-muted-foreground">Precificação</p>
+              <h1 className="font-bold text-foreground">PreciBake</h1>
+              <p className="text-xs text-muted-foreground">O ponto certo do preço</p>
             </div>
           </div>
 
