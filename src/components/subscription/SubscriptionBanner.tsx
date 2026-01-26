@@ -1,17 +1,42 @@
+import { useState } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Crown, Clock, Settings } from 'lucide-react';
+import { Crown, Clock, Settings, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { prepareExternalNavigation } from '@/lib/open-external';
 
 export function SubscriptionBanner() {
-  const { subscription, createCheckout, openCustomerPortal } = useSubscription();
+  const { subscription, createCheckout, getCustomerPortalUrl } = useSubscription();
+  const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false);
+  const [isProcessingPortal, setIsProcessingPortal] = useState(false);
 
   const handleUpgrade = async () => {
-    const url = await createCheckout();
-    if (url) {
-      window.open(url, '_blank');
+    setIsProcessingUpgrade(true);
+    
+    // Prepare navigation BEFORE the async call
+    const navigate = prepareExternalNavigation();
+    
+    try {
+      const url = await createCheckout();
+      navigate(url);
+    } finally {
+      setIsProcessingUpgrade(false);
+    }
+  };
+
+  const handleManage = async () => {
+    setIsProcessingPortal(true);
+    
+    // Prepare navigation BEFORE the async call
+    const navigate = prepareExternalNavigation();
+    
+    try {
+      const url = await getCustomerPortalUrl();
+      navigate(url);
+    } finally {
+      setIsProcessingPortal(false);
     }
   };
 
@@ -40,9 +65,14 @@ export function SubscriptionBanner() {
           variant="outline" 
           size="sm" 
           onClick={handleUpgrade}
+          disabled={isProcessingUpgrade}
           className="gap-1 shrink-0 text-xs sm:text-sm h-8"
         >
-          <Crown className="h-3 w-3" />
+          {isProcessingUpgrade ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Crown className="h-3 w-3" />
+          )}
           <span className="hidden xs:inline">Assinar</span> Premium
         </Button>
       </div>
@@ -69,10 +99,15 @@ export function SubscriptionBanner() {
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={openCustomerPortal}
+          onClick={handleManage}
+          disabled={isProcessingPortal}
           className="gap-1 shrink-0 text-xs sm:text-sm h-8"
         >
-          <Settings className="h-3 w-3" />
+          {isProcessingPortal ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Settings className="h-3 w-3" />
+          )}
           Gerenciar
         </Button>
       </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { toast } from '@/hooks/use-toast';
 
 export interface SubscriptionStatus {
   subscribed: boolean;
@@ -16,33 +17,63 @@ interface SubscriptionContextType {
   isLoading: boolean;
   checkSubscription: () => Promise<void>;
   createCheckout: () => Promise<string | null>;
-  openCustomerPortal: () => Promise<void>;
+  getCustomerPortalUrl: () => Promise<string | null>;
   canAccessApp: boolean;
+  sessionError: boolean;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
+/**
+ * Helper to get a fresh access token, with refresh attempt if needed.
+ */
+async function getFreshAccessToken(): Promise<string | null> {
+  // First try to get the current session
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionData?.session?.access_token) {
+    return sessionData.session.access_token;
+  }
+
+  // If no session, try to refresh
+  if (sessionError || !sessionData?.session) {
+    console.log('[useSubscription] No session, attempting refresh...');
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+    
+    if (refreshError || !refreshData?.session?.access_token) {
+      console.error('[useSubscription] Session refresh failed:', refreshError?.message);
+      return null;
+    }
+    
+    return refreshData.session.access_token;
+  }
+
+  return null;
+}
+
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { user, session } = useAuth();
+  const { user, session, signOut } = useAuth();
   const [subscription, setSubscription] = useState<SubscriptionStatus>({
     subscribed: false,
     status: 'loading',
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionError, setSessionError] = useState(false);
 
   const checkSubscription = useCallback(async () => {
-    // Validação proativa: obter sessão fresca do storage
-    const { data: sessionData } = await supabase.auth.getSession();
-    const freshToken = sessionData?.session?.access_token;
+    const freshToken = await getFreshAccessToken();
 
     if (!freshToken || !user) {
       setSubscription({ subscribed: false, status: 'expired' });
       setIsLoading(false);
+      setSessionError(!user ? false : true);
       return;
     }
 
     try {
       setIsLoading(true);
+      setSessionError(false);
+      
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
           Authorization: `Bearer ${freshToken}`,
@@ -52,11 +83,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error('Error checking subscription:', error);
         setSubscription({ subscribed: false, status: 'expired' });
+        setSessionError(true);
         return;
       }
 
-      // Handle error in response body (graceful failure)
-      if (data?.error) {
+      // Handle unauthenticated response
+      if (data?.code === 'unauthenticated') {
+        console.log('Session expired, user needs to re-login');
+        setSubscription({ subscribed: false, status: 'expired' });
+        setSessionError(true);
+        return;
+      }
+
+      // Handle error in response body
+      if (data?.error && !data?.status) {
         console.log('Subscription check returned error:', data.error);
         setSubscription({ subscribed: false, status: 'expired' });
         return;
@@ -79,12 +119,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const createCheckout = async (): Promise<string | null> => {
-    // Validação proativa: obter sessão fresca do storage
-    const { data: sessionData } = await supabase.auth.getSession();
-    const freshToken = sessionData?.session?.access_token;
+    const freshToken = await getFreshAccessToken();
 
     if (!freshToken) {
       console.error('No valid session available for checkout');
+      toast({
+        title: "Sessão expirada",
+        description: "Por favor, faça login novamente para continuar.",
+        variant: "destructive",
+      });
+      setSessionError(true);
       return null;
     }
 
@@ -97,29 +141,65 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Error creating checkout:', error);
+        toast({
+          title: "Erro ao criar checkout",
+          description: "Tente novamente em alguns instantes.",
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      if (data.code === 'unauthenticated') {
+        toast({
+          title: "Sessão expirada",
+          description: "Por favor, faça login novamente para continuar.",
+          variant: "destructive",
+        });
+        setSessionError(true);
         return null;
       }
 
       if (data.already_subscribed) {
-        console.log('User already has active subscription');
+        toast({
+          title: "Assinatura ativa",
+          description: "Você já possui uma assinatura ativa.",
+        });
+        return null;
+      }
+
+      if (data.error) {
+        toast({
+          title: "Erro",
+          description: data.error,
+          variant: "destructive",
+        });
         return null;
       }
 
       return data.url;
     } catch (error) {
       console.error('Error creating checkout:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
       return null;
     }
   };
 
-  const openCustomerPortal = async () => {
-    // Validação proativa: obter sessão fresca do storage
-    const { data: sessionData } = await supabase.auth.getSession();
-    const freshToken = sessionData?.session?.access_token;
+  const getCustomerPortalUrl = async (): Promise<string | null> => {
+    const freshToken = await getFreshAccessToken();
 
     if (!freshToken) {
       console.error('No valid session available for customer portal');
-      return;
+      toast({
+        title: "Sessão expirada",
+        description: "Por favor, faça login novamente.",
+        variant: "destructive",
+      });
+      setSessionError(true);
+      return null;
     }
 
     try {
@@ -131,14 +211,42 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Error opening customer portal:', error);
-        return;
+        toast({
+          title: "Erro ao abrir portal",
+          description: "Tente novamente em alguns instantes.",
+          variant: "destructive",
+        });
+        return null;
       }
 
-      if (data.url) {
-        window.open(data.url, '_blank');
+      if (data.code === 'unauthenticated') {
+        toast({
+          title: "Sessão expirada",
+          description: "Por favor, faça login novamente.",
+          variant: "destructive",
+        });
+        setSessionError(true);
+        return null;
       }
+
+      if (data.error) {
+        toast({
+          title: "Erro",
+          description: data.error,
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      return data.url;
     } catch (error) {
       console.error('Error opening customer portal:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+      return null;
     }
   };
 
@@ -149,6 +257,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     } else {
       setSubscription({ subscribed: false, status: 'loading' });
       setIsLoading(false);
+      setSessionError(false);
     }
   }, [user, session, checkSubscription]);
 
@@ -158,6 +267,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     const checkoutStatus = urlParams.get('checkout');
     
     if (checkoutStatus === 'success') {
+      toast({
+        title: "Assinatura realizada!",
+        description: "Bem-vindo ao Premium! Aguarde enquanto verificamos seu pagamento.",
+      });
+      
       // Wait a bit for webhook to process
       setTimeout(() => {
         checkSubscription();
@@ -165,10 +279,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (checkoutStatus === 'canceled') {
+      toast({
+        title: "Checkout cancelado",
+        description: "Você pode tentar novamente quando quiser.",
+        variant: "destructive",
+      });
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [checkSubscription]);
 
-  // Periodic check every 30 minutes (reduced from 5 min to avoid unnecessary refreshes)
+  // Periodic check every 30 minutes
   useEffect(() => {
     if (!user || !session) return;
 
@@ -188,8 +309,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         isLoading,
         checkSubscription,
         createCheckout,
-        openCustomerPortal,
+        getCustomerPortalUrl,
         canAccessApp,
+        sessionError,
       }}
     >
       {children}

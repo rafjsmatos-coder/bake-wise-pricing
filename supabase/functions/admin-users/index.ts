@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { validateAuth, createAdminClient } from "../_shared/auth.ts";
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -17,32 +17,25 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      throw new Error("Missing Supabase environment variables");
-    }
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header provided");
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: { persistSession: false }
-    });
-
-    // Verify the requesting user is an admin
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+    // Use the new auth helper
+    const { user, error: authError } = await validateAuth(req);
     
-    if (userError || !userData.user) {
-      throw new Error("Authentication failed");
+    if (authError || !user) {
+      logStep("Authentication failed", { error: authError });
+      return new Response(
+        JSON.stringify({ error: authError || "Authentication failed", code: "unauthenticated" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        }
+      );
     }
 
-    const requestingUserId = userData.user.id;
+    const requestingUserId = user.id;
     logStep("User authenticated", { userId: requestingUserId });
+
+    // Use admin client for database operations
+    const supabaseAdmin = createAdminClient();
 
     // Check if requesting user is admin
     const { data: adminCheck } = await supabaseAdmin
@@ -90,17 +83,17 @@ serve(async (req) => {
           .select("user_id, role");
 
         // Combine data
-        let users = authUsers.users.map((user) => {
-          const profile = profiles?.find((p) => p.user_id === user.id);
-          const subscription = subscriptions?.find((s) => s.user_id === user.id);
-          const roles = userRoles?.filter((r) => r.user_id === user.id).map((r) => r.role) || [];
+        let users = authUsers.users.map((authUser) => {
+          const profile = profiles?.find((p) => p.user_id === authUser.id);
+          const subscription = subscriptions?.find((s) => s.user_id === authUser.id);
+          const roles = userRoles?.filter((r) => r.user_id === authUser.id).map((r) => r.role) || [];
 
           return {
-            id: user.id,
-            email: user.email,
+            id: authUser.id,
+            email: authUser.email,
             fullName: profile?.full_name || null,
             businessName: profile?.business_name || null,
-            createdAt: user.created_at,
+            createdAt: authUser.created_at,
             subscriptionStatus: subscription?.status || "unknown",
             trialEnd: subscription?.trial_end || null,
             subscriptionEnd: subscription?.subscription_end || null,
@@ -235,8 +228,8 @@ serve(async (req) => {
         }
 
         // Get user from auth
-        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
-        if (authError || !authUser.user) {
+        const { data: authUser, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (authUserError || !authUser.user) {
           throw new Error("User not found");
         }
 

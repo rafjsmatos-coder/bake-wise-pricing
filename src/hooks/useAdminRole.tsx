@@ -1,5 +1,4 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AdminRoleContextType {
@@ -10,15 +9,36 @@ interface AdminRoleContextType {
 
 const AdminRoleContext = createContext<AdminRoleContextType | undefined>(undefined);
 
+/**
+ * Helper to get a fresh access token
+ */
+async function getFreshAccessToken(): Promise<string | null> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionData?.session?.access_token) {
+    return sessionData.session.access_token;
+  }
+
+  // Try refresh if no session
+  if (sessionError || !sessionData?.session) {
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+    
+    if (refreshError || !refreshData?.session?.access_token) {
+      return null;
+    }
+    
+    return refreshData.session.access_token;
+  }
+
+  return null;
+}
+
 export function AdminRoleProvider({ children }: { children: ReactNode }) {
-  const { session } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const checkAdminRole = useCallback(async () => {
-    // Validação proativa: obter sessão fresca do storage
-    const { data: sessionData } = await supabase.auth.getSession();
-    const freshToken = sessionData?.session?.access_token;
+    const freshToken = await getFreshAccessToken();
 
     if (!freshToken) {
       setIsAdmin(false);
@@ -36,6 +56,9 @@ export function AdminRoleProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('[useAdminRole] Error checking admin role:', error);
+        setIsAdmin(false);
+      } else if (data?.code === 'unauthenticated') {
+        // Session expired, not an admin
         setIsAdmin(false);
       } else {
         setIsAdmin(data?.isAdmin || false);
