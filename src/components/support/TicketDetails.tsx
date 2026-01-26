@@ -49,7 +49,8 @@ export function TicketDetails({ ticket, onBack }: TicketDetailsProps) {
     return () => {
       isMounted = false;
     };
-  }, [ticket.id, fetchReplies]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticket.id]);
 
   const handleSendReply = async () => {
     if (!newMessage.trim()) return;
