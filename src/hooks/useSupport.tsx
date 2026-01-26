@@ -50,6 +50,7 @@ export function useSupport() {
   const { isAdmin } = useAdminRole();
   const { toast } = useToast();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [ticketsWithAdminStatus, setTicketsWithAdminStatus] = useState<Map<string, boolean>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchTickets = useCallback(async () => {
@@ -57,9 +58,13 @@ export function useSupport() {
     
     setIsLoading(true);
     try {
+      // Buscar tickets com join no profiles para obter o nome do criador
       const { data, error } = await supabase
         .from('support_tickets')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (full_name)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -70,9 +75,48 @@ export function useSupport() {
         type: ticket.type as TicketType,
         status: ticket.status as TicketStatus,
         priority: ticket.priority as TicketPriority,
+        user_name: (ticket.profiles as any)?.full_name || 'Usuário',
       }));
 
       setTickets(typedTickets);
+
+      // Buscar status de respostas de admin para cada ticket aberto
+      const openTicketIds = typedTickets
+        .filter(t => t.status === 'open' || t.status === 'in_progress')
+        .map(t => t.id);
+
+      if (openTicketIds.length > 0) {
+        const { data: repliesData } = await supabase
+          .from('support_replies')
+          .select('ticket_id, is_admin_reply, created_at')
+          .in('ticket_id', openTicketIds)
+          .order('created_at', { ascending: false });
+
+        // Mapear: ticket_id -> tem resposta de admin?
+        const adminStatusMap = new Map<string, boolean>();
+        const lastReplyMap = new Map<string, { is_admin_reply: boolean }>();
+
+        // Agrupar última resposta por ticket
+        repliesData?.forEach(reply => {
+          if (!lastReplyMap.has(reply.ticket_id)) {
+            lastReplyMap.set(reply.ticket_id, { is_admin_reply: reply.is_admin_reply });
+          }
+        });
+
+        // Para cada ticket aberto, verificar se tem alguma resposta de admin
+        openTicketIds.forEach(ticketId => {
+          const hasAnyAdminReply = repliesData?.some(r => r.ticket_id === ticketId && r.is_admin_reply) || false;
+          const lastReply = lastReplyMap.get(ticketId);
+          // Guardar: última resposta foi de admin?
+          adminStatusMap.set(ticketId, lastReply?.is_admin_reply || false);
+          // Também guardar se tem qualquer resposta de admin (para admin saber se já respondeu)
+          adminStatusMap.set(`has_admin_${ticketId}`, hasAnyAdminReply);
+        });
+
+        setTicketsWithAdminStatus(adminStatusMap);
+      } else {
+        setTicketsWithAdminStatus(new Map());
+      }
     } catch (error: any) {
       console.error('Error fetching tickets:', error);
       toast({
@@ -193,6 +237,9 @@ export function useSupport() {
       toast({
         title: 'Resposta enviada!',
       });
+
+      // Recarregar tickets para atualizar contadores de notificação
+      await fetchTickets();
     } catch (error: any) {
       console.error('Error adding reply:', error);
       toast({
@@ -208,10 +255,23 @@ export function useSupport() {
   const supportTickets = tickets.filter(t => t.type === 'support');
   const suggestions = tickets.filter(t => t.type === 'suggestion');
   
-  // Contador de tickets pendentes (para notificação de admin)
-  const openTicketsCount = tickets.filter(
-    t => t.status === 'open' || t.status === 'in_progress'
-  ).length;
+  // Contadores de notificação contextuais
+  const pendingTicketsCount = (() => {
+    if (isAdmin) {
+      // Admin: tickets abertos que NÃO têm resposta de admin ainda
+      return tickets.filter(t => 
+        (t.status === 'open' || t.status === 'in_progress') &&
+        !ticketsWithAdminStatus.get(`has_admin_${t.id}`)
+      ).length;
+    } else {
+      // Usuário: tickets próprios onde a última resposta foi de admin (resposta não lida)
+      return tickets.filter(t => 
+        t.user_id === user?.id &&
+        (t.status === 'open' || t.status === 'in_progress') &&
+        ticketsWithAdminStatus.get(t.id) === true
+      ).length;
+    }
+  })();
 
   return {
     tickets,
@@ -223,6 +283,6 @@ export function useSupport() {
     fetchReplies,
     addReply,
     refetch: fetchTickets,
-    openTicketsCount,
+    pendingTicketsCount,
   };
 }
