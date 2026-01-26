@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
+import { AdminRoleProvider } from "@/hooks/useAdminRole";
 import { SidebarControlProvider, useSidebarControl } from "@/hooks/useSidebarControl";
 import { TourWrapper } from "@/components/tour/TourProvider";
 import Index from "./pages/Index";
@@ -38,9 +39,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <SubscriptionProvider>
-        <SidebarControlProvider>
-          <AppContent />
-        </SidebarControlProvider>
+        <AdminRoleProvider>
+          <SidebarControlProvider>
+            <AppContent />
+          </SidebarControlProvider>
+        </AdminRoleProvider>
       </SubscriptionProvider>
     </AuthProvider>
   </QueryClientProvider>

@@ -1,6 +1,7 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useAdminRole } from '@/hooks/useAdminRole';
 import { useSidebarControl } from '@/hooks/useSidebarControl';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,7 +19,8 @@ import {
   ChevronDown,
   LayoutDashboard,
   User,
-  Crown
+  Crown,
+  Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -41,7 +43,8 @@ export type PageType =
   | 'product-categories' 
   | 'settings'
   | 'profile'
-  | 'subscription';
+  | 'subscription'
+  | 'admin';
 
 interface NavItem {
   id: PageType;
@@ -59,6 +62,7 @@ interface AppLayoutProps {
 export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
+  const { isAdmin } = useAdminRole();
   const { sidebarOpen, setSidebarOpen } = useSidebarControl();
 
   const getInitials = () => {
@@ -118,6 +122,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
     { id: 'subscription', label: 'Assinatura', icon: Crown },
     { id: 'settings', label: 'Configurações', icon: Settings },
     { id: 'profile', label: 'Meu Perfil', icon: User },
+    ...(isAdmin ? [{ id: 'admin' as PageType, label: 'Admin', icon: Shield }] : []),
   ];
 
   // Map nav item IDs to tour data attributes

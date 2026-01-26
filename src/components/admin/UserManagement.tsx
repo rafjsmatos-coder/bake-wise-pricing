@@ -1,0 +1,340 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Search, Loader2, Shield, ShieldOff, ChevronLeft, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+interface User {
+  id: string;
+  email: string;
+  fullName: string | null;
+  businessName: string | null;
+  createdAt: string;
+  subscriptionStatus: string;
+  trialEnd: string | null;
+  subscriptionEnd: string | null;
+  roles: string[];
+  isAdmin: boolean;
+}
+
+export function UserManagement() {
+  const { session } = useAuth();
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    user: User | null;
+    action: 'promote' | 'demote';
+  }>({ open: false, user: null, action: 'promote' });
+
+  const perPage = 20;
+
+  const fetchUsers = useCallback(async () => {
+    if (!session?.access_token) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-users', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          action: 'list',
+          page,
+          perPage,
+          search,
+          statusFilter,
+        },
+      });
+
+      if (error) {
+        toast.error('Erro ao carregar usuários');
+        console.error(error);
+        return;
+      }
+
+      setUsers(data.users || []);
+      setTotal(data.total || 0);
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao carregar usuários');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [session?.access_token, page, search, statusFilter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const handleToggleAdmin = async () => {
+    if (!confirmDialog.user || !session?.access_token) return;
+
+    try {
+      const { error } = await supabase.functions.invoke('admin-users', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          action: 'toggleAdmin',
+          userId: confirmDialog.user.id,
+          makeAdmin: confirmDialog.action === 'promote',
+        },
+      });
+
+      if (error) {
+        toast.error('Erro ao alterar permissão');
+        return;
+      }
+
+      toast.success(
+        confirmDialog.action === 'promote'
+          ? 'Usuário promovido a admin'
+          : 'Permissão de admin removida'
+      );
+      fetchUsers();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao alterar permissão');
+    } finally {
+      setConfirmDialog({ open: false, user: null, action: 'promote' });
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
+      trial: { variant: 'secondary', label: 'Trial' },
+      active: { variant: 'default', label: 'Ativo' },
+      expired: { variant: 'destructive', label: 'Expirado' },
+      canceled: { variant: 'outline', label: 'Cancelado' },
+    };
+    const config = variants[status] || { variant: 'outline' as const, label: status };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const totalPages = Math.ceil(total / perPage);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Gerenciamento de Usuários</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por email ou nome..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-10"
+            />
+          </div>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              setStatusFilter(value === 'all' ? '' : value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="trial">Trial</SelectItem>
+              <SelectItem value="active">Ativo</SelectItem>
+              <SelectItem value="expired">Expirado</SelectItem>
+              <SelectItem value="canceled">Cancelado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Table */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          </div>
+        ) : (
+          <>
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data de Cadastro</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        Nenhum usuário encontrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.email}</TableCell>
+                        <TableCell>{user.fullName || '-'}</TableCell>
+                        <TableCell>{getStatusBadge(user.subscriptionStatus)}</TableCell>
+                        <TableCell>
+                          {format(new Date(user.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell>
+                          {user.isAdmin ? (
+                            <Badge variant="default" className="bg-primary">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Admin
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">Usuário</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {user.isAdmin ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setConfirmDialog({
+                                  open: true,
+                                  user,
+                                  action: 'demote',
+                                })
+                              }
+                            >
+                              <ShieldOff className="h-4 w-4 mr-1" />
+                              Remover Admin
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setConfirmDialog({
+                                  open: true,
+                                  user,
+                                  action: 'promote',
+                                })
+                              }
+                            >
+                              <Shield className="h-4 w-4 mr-1" />
+                              Tornar Admin
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Mostrando {(page - 1) * perPage + 1} a {Math.min(page * perPage, total)} de {total} usuários
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm">
+                    Página {page} de {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) =>
+          !open && setConfirmDialog({ open: false, user: null, action: 'promote' })
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmDialog.action === 'promote'
+                ? 'Promover a Administrador'
+                : 'Remover Administrador'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDialog.action === 'promote'
+                ? `Tem certeza que deseja dar permissões de administrador para ${confirmDialog.user?.email}?`
+                : `Tem certeza que deseja remover as permissões de administrador de ${confirmDialog.user?.email}?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleToggleAdmin}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  );
+}
