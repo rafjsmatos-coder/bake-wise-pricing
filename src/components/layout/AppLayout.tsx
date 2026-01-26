@@ -68,7 +68,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
   const { profile } = useProfile();
   const { isAdmin } = useAdminRole();
   const { sidebarOpen, setSidebarOpen } = useSidebarControl();
-  const { openTicketsCount } = useSupport();
+  const { pendingTicketsCount } = useSupport();
 
   const getInitials = () => {
     if (profile?.full_name) {
@@ -124,7 +124,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
         { id: 'packaging-categories', label: 'Categorias' }
       ]
     },
-    { id: 'support', label: 'Suporte', icon: Headphones, badge: isAdmin ? openTicketsCount : undefined },
+    { id: 'support', label: 'Suporte', icon: Headphones, badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined },
     { id: 'subscription', label: 'Assinatura', icon: Crown },
     { id: 'settings', label: 'Configurações', icon: Settings },
     { id: 'profile', label: 'Meu Perfil', icon: User },

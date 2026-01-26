@@ -7,6 +7,7 @@ import { ArrowLeft, Send, Loader2, Headphones, Lightbulb, User, Shield } from 'l
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useSupport } from '@/hooks/useSupport';
+import { useAuth } from '@/hooks/useAuth';
 import type { SupportTicket, SupportReply, TicketStatus } from '@/hooks/useSupport';
 
 interface TicketDetailsProps {
@@ -22,7 +23,8 @@ const statusConfig: Record<TicketStatus, { label: string; variant: 'default' | '
 };
 
 export function TicketDetails({ ticket, onBack }: TicketDetailsProps) {
-  const { fetchReplies, addReply } = useSupport();
+  const { fetchReplies, addReply, refetch } = useSupport();
+  const { user } = useAuth();
   const [replies, setReplies] = useState<SupportReply[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
@@ -31,6 +33,7 @@ export function TicketDetails({ ticket, onBack }: TicketDetailsProps) {
   const isSupport = ticket.type === 'support';
   const status = statusConfig[ticket.status];
   const isClosed = ticket.status === 'closed' || ticket.status === 'resolved';
+  const isOwnTicket = ticket.user_id === user?.id;
 
   useEffect(() => {
     let isMounted = true;
@@ -61,6 +64,8 @@ export function TicketDetails({ ticket, onBack }: TicketDetailsProps) {
       const data = await fetchReplies(ticket.id);
       setReplies(data);
       setNewMessage('');
+      // Recarregar tickets para atualizar contadores (já feito no addReply, mas garantir refresh)
+      await refetch();
     } catch {
       // Error handled in hook
     } finally {
@@ -107,7 +112,9 @@ export function TicketDetails({ ticket, onBack }: TicketDetailsProps) {
           <div className="bg-muted/50 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Você</span>
+              <span className="text-sm font-medium">
+                {isOwnTicket ? 'Você' : (ticket.user_name || 'Usuário')}
+              </span>
               <span className="text-xs text-muted-foreground">
                 {format(new Date(ticket.created_at), "dd/MM/yyyy HH:mm")}
               </span>
@@ -139,7 +146,11 @@ export function TicketDetails({ ticket, onBack }: TicketDetailsProps) {
                       <User className="h-4 w-4 text-muted-foreground" />
                     )}
                     <span className="text-sm font-medium">
-                      {reply.is_admin_reply ? 'Suporte PreciBake' : 'Você'}
+                      {reply.user_id === user?.id 
+                        ? 'Você' 
+                        : reply.is_admin_reply 
+                          ? 'Suporte PreciBake' 
+                          : (ticket.user_name || 'Usuário')}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {format(new Date(reply.created_at), "dd/MM/yyyy HH:mm")}

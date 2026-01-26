@@ -1,196 +1,91 @@
 
-# Correções: Sistema de Suporte e Notificações
+# Sistema de Notificações de Suporte - Implementado ✅
 
-## Problemas Identificados
+## Funcionalidades Implementadas
 
-### 1. Flickering na Página de Suporte
-O componente `TicketDetails.tsx` usa `fetchReplies` como dependência do `useEffect`, mas essa função é recriada a cada render, causando loop infinito de re-renderização.
+### 1. Notificações Contextuais no Menu
 
-**Causa**: No hook `useSupport.tsx`, a função `fetchReplies` não está envolvida em `useCallback`, então cada vez que o componente re-renderiza, uma nova referência da função é criada, disparando o useEffect novamente.
+**Para Administradores:**
+- Badge vermelho mostra tickets que **ainda não foram respondidos** pelo admin
+- Quando o admin responde, o badge é removido automaticamente
+- Lógica: Conta tickets onde `has_admin_reply = false`
 
-### 2. Mensagem de Trial Expirado
-Os logs da edge function mostram:
-- `[CHECK-SUBSCRIPTION] Authentication failed - {"error":"Auth session missing!"}`
-- `Subscription check returned error: Session expired`
+**Para Usuários:**
+- Badge vermelho mostra tickets próprios com **nova resposta do admin**
+- Quando o usuário visualiza/responde, o badge é removido
+- Lógica: Conta tickets onde a última resposta foi de admin
 
-O token do usuário pode estar expirado ou a sessão está inconsistente.
+### 2. Identificação Correta de Mensagens
 
-### 3. Notificações no Menu
-Não existe contador de tickets/sugestões pendentes para administradores no menu.
+**Mensagem Original:**
+- Se o visualizador é o criador → "Você"
+- Se não → Nome do criador (ex: "João Silva")
 
----
-
-## Soluções Propostas
-
-### Correção 1: Memoizar `fetchReplies` no Hook
-
-**Arquivo**: `src/hooks/useSupport.tsx`
-
-Envolver a função `fetchReplies` com `useCallback` para evitar recriação desnecessária:
-
-```typescript
-const fetchReplies = useCallback(async (ticketId: string): Promise<SupportReply[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('support_replies')
-      .select('*')
-      .eq('ticket_id', ticketId)
-      .order('created_at', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
-  } catch (error: any) {
-    console.error('Error fetching replies:', error);
-    toast({
-      title: 'Erro ao carregar respostas',
-      description: error.message,
-      variant: 'destructive',
-    });
-    return [];
-  }
-}, [toast]);
-```
-
-### Correção 2: Remover `fetchReplies` das Dependências do useEffect
-
-**Arquivo**: `src/components/support/TicketDetails.tsx`
-
-Ajustar o `useEffect` para usar uma abordagem mais estável:
-
-```typescript
-useEffect(() => {
-  let isMounted = true;
-  
-  const loadReplies = async () => {
-    setIsLoading(true);
-    const data = await fetchReplies(ticket.id);
-    if (isMounted) {
-      setReplies(data);
-      setIsLoading(false);
-    }
-  };
-  
-  loadReplies();
-  
-  return () => {
-    isMounted = false;
-  };
-}, [ticket.id]); // Remover fetchReplies das dependências
-```
-
-### Correção 3: Adicionar Contador de Notificações no Menu
-
-**Arquivo**: `src/hooks/useSupport.tsx`
-
-Adicionar função para contar tickets abertos (para admin):
-
-```typescript
-// Contadores para notificações
-const openTicketsCount = tickets.filter(
-  t => t.status === 'open' || t.status === 'in_progress'
-).length;
-```
-
-**Arquivo**: `src/components/layout/AppLayout.tsx`
-
-Adicionar badge de notificação no item de Suporte (apenas para admins):
-
-```typescript
-// No item de navegação "Suporte"
-{ 
-  id: 'support', 
-  label: 'Suporte', 
-  icon: Headphones,
-  badge: isAdmin ? openTicketsCount : undefined 
-}
-```
-
-Renderizar badge no menu:
-
-```tsx
-<span className="font-medium">{item.label}</span>
-{item.badge > 0 && (
-  <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">
-    {item.badge}
-  </span>
-)}
-```
-
-### Correção 4: Verificar Sessão no useSubscription
-
-**Arquivo**: `src/hooks/useSubscription.tsx`
-
-Adicionar verificação de sessão válida antes de chamar a edge function:
-
-```typescript
-const checkSubscription = useCallback(async () => {
-  if (!session?.access_token || !user) {
-    setSubscription({ subscribed: false, status: 'expired' });
-    setIsLoading(false);
-    return;
-  }
-
-  // Verificar se o token é válido antes de fazer a chamada
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError || !sessionData.session) {
-    console.log('Session invalid, skipping subscription check');
-    setSubscription({ subscribed: false, status: 'expired' });
-    setIsLoading(false);
-    return;
-  }
-
-  // ... resto do código
-}, [session?.access_token, user]);
-```
+**Respostas:**
+- Se o visualizador é o autor → "Você"
+- Se é resposta de admin → "Suporte PreciBake"
+- Se é do criador do ticket → Nome do criador
 
 ---
 
-## Arquivos a Modificar
+## Arquivos Modificados
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/hooks/useSupport.tsx` | Memoizar `fetchReplies` com useCallback, adicionar contador de tickets abertos |
-| `src/components/support/TicketDetails.tsx` | Remover `fetchReplies` das dependências do useEffect, adicionar cleanup |
-| `src/components/layout/AppLayout.tsx` | Adicionar badge de notificação no menu para admins |
-| `src/hooks/useSubscription.tsx` | Melhorar verificação de sessão antes de chamar edge function |
+| `src/hooks/useSupport.tsx` | Join com profiles, lógica de contagem contextual |
+| `src/components/layout/AppLayout.tsx` | Usa `pendingTicketsCount` para ambos perfis |
+| `src/components/support/TicketDetails.tsx` | Lógica de identificação de mensagens |
 
 ---
 
-## Fluxo de Notificações (Admin)
+## Fluxo de Notificações
 
 ```text
-Admin faz login
-       |
-       v
-useSupport carrega todos os tickets
-       |
-       v
-Calcula tickets com status 'open' ou 'in_progress'
-       |
-       v
-Passa contador para AppLayout
-       |
-       v
-Exibe badge vermelho no item "Suporte" do menu
-       |
-       v
-Admin clica e visualiza tickets pendentes
+┌─────────────────────────────────────────────────────────────┐
+│                      ADMIN                                  │
+├─────────────────────────────────────────────────────────────┤
+│ Usuário cria ticket → Admin vê badge (1)                   │
+│ Admin responde → Badge removido                             │
+│ Usuário responde novamente → Badge NÃO aparece             │
+│   (já respondido pelo admin pelo menos 1x)                  │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                      USUÁRIO                                │
+├─────────────────────────────────────────────────────────────┤
+│ Usuário cria ticket → Sem badge                            │
+│ Admin responde → Usuário vê badge (1)                      │
+│ Usuário visualiza/responde → Badge removido                │
+│ Admin responde novamente → Badge aparece (1)               │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Ordem de Implementação
+## Lógica Técnica
 
-1. **Corrigir useSupport.tsx** - Memoizar fetchReplies e adicionar contador
-2. **Corrigir TicketDetails.tsx** - Ajustar useEffect para evitar loop
-3. **Atualizar AppLayout.tsx** - Adicionar badge de notificação
-4. **Melhorar useSubscription.tsx** - Verificação de sessão mais robusta
+```typescript
+// Para Admin: tickets sem resposta de admin
+pendingTicketsCount = tickets.filter(t => 
+  (t.status === 'open' || t.status === 'in_progress') &&
+  !ticketsWithAdminStatus.get(`has_admin_${t.id}`)
+).length;
+
+// Para Usuário: tickets com última resposta de admin
+pendingTicketsCount = tickets.filter(t => 
+  t.user_id === user?.id &&
+  (t.status === 'open' || t.status === 'in_progress') &&
+  ticketsWithAdminStatus.get(t.id) === true
+).length;
+```
 
 ---
 
-## Resultado Esperado
+## Status
 
-- Página de suporte/sugestões não pisca mais ao abrir detalhes
-- Admins veem contador de tickets pendentes no menu
-- Verificação de assinatura não mostra erro de sessão expirada indevidamente
-- Sistema mais estável e sem re-renderizações desnecessárias
+✅ **Implementado e funcionando**
+
+Próximas melhorias possíveis:
+- Sistema de "marcar como lido" explícito
+- Notificações por email quando admin responder
+- Histórico de visualizações
