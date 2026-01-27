@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { validateAuth, createAdminClient } from "../_shared/auth.ts";
 
@@ -17,10 +16,6 @@ serve(async (req) => {
 
   try {
     logStep("Function started");
-
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
 
     // Use the new auth helper
     const { user, error: authError } = await validateAuth(req);
@@ -87,7 +82,10 @@ serve(async (req) => {
       });
     }
 
-    logStep("Subscription found", { status: subscription.status, stripe_subscription_id: subscription.stripe_subscription_id });
+    logStep("Subscription found", { status: subscription.status });
+
+    // SIMPLIFIED: Trust only the database status (managed by admin)
+    // No more Stripe API calls here - admin manages status manually
 
     // Check trial status
     if (subscription.status === 'trial') {
@@ -96,7 +94,7 @@ serve(async (req) => {
       const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       
       if (daysRemaining <= 0) {
-        // Trial expired
+        // Trial expired - update status
         await supabaseAdmin
           .from('subscriptions')
           .update({ status: 'expired' })
@@ -126,48 +124,24 @@ serve(async (req) => {
       });
     }
 
-    // Check Stripe subscription status for paid users
-    if (subscription.stripe_subscription_id) {
-      const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-      
-      try {
-        const stripeSub = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
-        logStep("Stripe subscription retrieved", { status: stripeSub.status });
-        
-        const isActive = ['active', 'trialing'].includes(stripeSub.status);
-        const subscriptionEnd = new Date(stripeSub.current_period_end * 1000).toISOString();
-        
-        // Update local subscription status
-        if (stripeSub.status !== subscription.status) {
-          const newStatus = stripeSub.status === 'active' ? 'active' : 
-                           stripeSub.status === 'canceled' ? 'canceled' :
-                           stripeSub.status === 'past_due' ? 'past_due' : 'expired';
-          
-          await supabaseAdmin
-            .from('subscriptions')
-            .update({ 
-              status: newStatus,
-              subscription_end: subscriptionEnd
-            })
-            .eq('user_id', user.id);
-        }
-
-        return new Response(JSON.stringify({
-          subscribed: isActive,
-          status: stripeSub.status,
-          subscription_end: subscriptionEnd,
-          product_id: stripeSub.items.data[0]?.price?.product
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      } catch (stripeError) {
-        logStep("Error retrieving Stripe subscription", { error: String(stripeError) });
-      }
+    // For active subscriptions, trust the database status
+    if (subscription.status === 'active') {
+      logStep("Active subscription from database");
+      return new Response(JSON.stringify({
+        subscribed: true,
+        status: 'active',
+        subscription_end: subscription.subscription_end,
+        product_id: subscription.stripe_product_id
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
-    // Fallback to local status
+    // For expired/canceled, deny access
     const isExpired = subscription.status === 'expired' || subscription.status === 'canceled';
+    logStep("Subscription status", { status: subscription.status, isExpired });
+    
     return new Response(JSON.stringify({
       subscribed: !isExpired,
       status: subscription.status,

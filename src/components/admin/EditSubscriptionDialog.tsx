@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -31,6 +32,9 @@ interface User {
   subscriptionStatus: string;
   trialEnd: string | null;
   subscriptionEnd: string | null;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  stripeProductId?: string | null;
 }
 
 interface EditSubscriptionDialogProps {
@@ -45,6 +49,9 @@ export function EditSubscriptionDialog({ user, open, onOpenChange, onSuccess }: 
   const [status, setStatus] = useState('');
   const [trialEnd, setTrialEnd] = useState<Date | undefined>();
   const [subscriptionEnd, setSubscriptionEnd] = useState<Date | undefined>();
+  const [stripeCustomerId, setStripeCustomerId] = useState('');
+  const [stripeSubscriptionId, setStripeSubscriptionId] = useState('');
+  const [stripeProductId, setStripeProductId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -52,6 +59,9 @@ export function EditSubscriptionDialog({ user, open, onOpenChange, onSuccess }: 
       setStatus(user.subscriptionStatus || 'trial');
       setTrialEnd(user.trialEnd ? new Date(user.trialEnd) : undefined);
       setSubscriptionEnd(user.subscriptionEnd ? new Date(user.subscriptionEnd) : undefined);
+      setStripeCustomerId(user.stripeCustomerId || '');
+      setStripeSubscriptionId(user.stripeSubscriptionId || '');
+      setStripeProductId(user.stripeProductId || '');
     }
   }, [open, user]);
 
@@ -70,6 +80,9 @@ export function EditSubscriptionDialog({ user, open, onOpenChange, onSuccess }: 
           status,
           trialEnd: trialEnd?.toISOString() || null,
           subscriptionEnd: subscriptionEnd?.toISOString() || null,
+          stripeCustomerId: stripeCustomerId.trim() || null,
+          stripeSubscriptionId: stripeSubscriptionId.trim() || null,
+          stripeProductId: stripeProductId.trim() || null,
         },
       });
 
@@ -91,7 +104,7 @@ export function EditSubscriptionDialog({ user, open, onOpenChange, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Assinatura</DialogTitle>
         </DialogHeader>
@@ -166,6 +179,42 @@ export function EditSubscriptionDialog({ user, open, onOpenChange, onSuccess }: 
                 />
               </PopoverContent>
             </Popover>
+          </div>
+
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-3 text-sm">IDs do Stripe (opcional)</h4>
+            
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Customer ID</Label>
+                <Input
+                  value={stripeCustomerId}
+                  onChange={(e) => setStripeCustomerId(e.target.value)}
+                  placeholder="cus_..."
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Subscription ID</Label>
+                <Input
+                  value={stripeSubscriptionId}
+                  onChange={(e) => setStripeSubscriptionId(e.target.value)}
+                  placeholder="sub_..."
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Product ID</Label>
+                <Input
+                  value={stripeProductId}
+                  onChange={(e) => setStripeProductId(e.target.value)}
+                  placeholder="prod_..."
+                  className="font-mono text-sm"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
