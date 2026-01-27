@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { validateAuth, createAdminClient } from "../_shared/auth.ts";
 
@@ -75,7 +76,7 @@ serve(async (req) => {
         // Get all subscriptions
         const { data: subscriptions } = await supabaseAdmin
           .from("subscriptions")
-          .select("user_id, status, trial_end, subscription_end");
+          .select("user_id, status, trial_end, subscription_end, stripe_customer_id, stripe_subscription_id");
 
         // Get all user roles
         const { data: userRoles } = await supabaseAdmin
@@ -97,6 +98,8 @@ serve(async (req) => {
             subscriptionStatus: subscription?.status || "unknown",
             trialEnd: subscription?.trial_end || null,
             subscriptionEnd: subscription?.subscription_end || null,
+            stripeCustomerId: subscription?.stripe_customer_id || null,
+            stripeSubscriptionId: subscription?.stripe_subscription_id || null,
             roles,
             isAdmin: roles.includes("admin"),
           };
@@ -297,7 +300,7 @@ serve(async (req) => {
       }
 
       case "updateSubscription": {
-        const { userId, status, trialEnd, subscriptionEnd } = params;
+        const { userId, status, trialEnd, subscriptionEnd, stripeCustomerId, stripeSubscriptionId, stripeProductId } = params;
 
         if (!userId) {
           throw new Error("User ID is required");
@@ -307,6 +310,9 @@ serve(async (req) => {
         if (status) updateData.status = status;
         if (trialEnd !== undefined) updateData.trial_end = trialEnd;
         if (subscriptionEnd !== undefined) updateData.subscription_end = subscriptionEnd;
+        if (stripeCustomerId !== undefined) updateData.stripe_customer_id = stripeCustomerId || null;
+        if (stripeSubscriptionId !== undefined) updateData.stripe_subscription_id = stripeSubscriptionId || null;
+        if (stripeProductId !== undefined) updateData.stripe_product_id = stripeProductId || null;
 
         const { error: updateError } = await supabaseAdmin
           .from("subscriptions")
@@ -416,6 +422,200 @@ serve(async (req) => {
             status: 200,
           }
         );
+      }
+
+      case "getStripeInfo": {
+        const { email, stripeCustomerId } = params;
+
+        if (!email && !stripeCustomerId) {
+          throw new Error("Email or Stripe Customer ID is required");
+        }
+
+        const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+        if (!stripeKey) {
+          throw new Error("STRIPE_SECRET_KEY is not configured");
+        }
+
+        const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+
+        let customer = null;
+        let subscriptions: Stripe.Subscription[] = [];
+        let invoices: Stripe.Invoice[] = [];
+
+        try {
+          // Find customer by ID or email
+          if (stripeCustomerId) {
+            customer = await stripe.customers.retrieve(stripeCustomerId);
+            if ((customer as Stripe.DeletedCustomer).deleted) {
+              customer = null;
+            }
+          } else if (email) {
+            const customers = await stripe.customers.list({ email, limit: 1 });
+            customer = customers.data[0] || null;
+          }
+
+          if (customer && !(customer as Stripe.DeletedCustomer).deleted) {
+            const activeCustomer = customer as Stripe.Customer;
+            
+            // Get subscriptions
+            const subsResult = await stripe.subscriptions.list({
+              customer: activeCustomer.id,
+              limit: 5,
+            });
+            subscriptions = subsResult.data;
+
+            // Get recent invoices
+            const invoicesResult = await stripe.invoices.list({
+              customer: activeCustomer.id,
+              limit: 5,
+            });
+            invoices = invoicesResult.data;
+          }
+
+          logStep("Stripe info retrieved", { 
+            customerId: customer && !(customer as Stripe.DeletedCustomer).deleted ? (customer as Stripe.Customer).id : null,
+            subscriptionsCount: subscriptions.length,
+            invoicesCount: invoices.length
+          });
+
+          return new Response(
+            JSON.stringify({
+              customer: customer && !(customer as Stripe.DeletedCustomer).deleted ? {
+                id: (customer as Stripe.Customer).id,
+                email: (customer as Stripe.Customer).email,
+                created: (customer as Stripe.Customer).created,
+                name: (customer as Stripe.Customer).name,
+              } : null,
+              subscriptions: subscriptions.map((sub) => ({
+                id: sub.id,
+                status: sub.status,
+                current_period_start: sub.current_period_start,
+                current_period_end: sub.current_period_end,
+                cancel_at_period_end: sub.cancel_at_period_end,
+                plan: sub.items.data[0]?.price ? {
+                  id: sub.items.data[0].price.id,
+                  product: sub.items.data[0].price.product,
+                  amount: sub.items.data[0].price.unit_amount,
+                  currency: sub.items.data[0].price.currency,
+                  interval: sub.items.data[0].price.recurring?.interval,
+                } : null,
+              })),
+              invoices: invoices.map((inv) => ({
+                id: inv.id,
+                status: inv.status,
+                amount_paid: inv.amount_paid,
+                currency: inv.currency,
+                created: inv.created,
+                hosted_invoice_url: inv.hosted_invoice_url,
+              })),
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            }
+          );
+        } catch (stripeError) {
+          logStep("Stripe error", { error: String(stripeError) });
+          return new Response(
+            JSON.stringify({
+              customer: null,
+              subscriptions: [],
+              invoices: [],
+              error: "Could not retrieve Stripe data",
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            }
+          );
+        }
+      }
+
+      case "syncFromStripe": {
+        const { userId, email, stripeCustomerId } = params;
+
+        if (!userId) {
+          throw new Error("User ID is required");
+        }
+
+        if (!email && !stripeCustomerId) {
+          throw new Error("Email or Stripe Customer ID is required");
+        }
+
+        const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+        if (!stripeKey) {
+          throw new Error("STRIPE_SECRET_KEY is not configured");
+        }
+
+        const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+
+        try {
+          let customer = null;
+
+          // Find customer
+          if (stripeCustomerId) {
+            customer = await stripe.customers.retrieve(stripeCustomerId);
+            if ((customer as Stripe.DeletedCustomer).deleted) {
+              customer = null;
+            }
+          } else if (email) {
+            const customers = await stripe.customers.list({ email, limit: 1 });
+            customer = customers.data[0] || null;
+          }
+
+          if (!customer || (customer as Stripe.DeletedCustomer).deleted) {
+            throw new Error("Customer not found in Stripe");
+          }
+
+          const activeCustomer = customer as Stripe.Customer;
+
+          // Get active subscription
+          const subsResult = await stripe.subscriptions.list({
+            customer: activeCustomer.id,
+            status: "active",
+            limit: 1,
+          });
+
+          const updateData: Record<string, unknown> = {
+            stripe_customer_id: activeCustomer.id,
+          };
+
+          if (subsResult.data.length > 0) {
+            const sub = subsResult.data[0];
+            updateData.status = "active";
+            updateData.stripe_subscription_id = sub.id;
+            updateData.stripe_product_id = sub.items.data[0]?.price?.product || null;
+            updateData.subscription_start = new Date(sub.current_period_start * 1000).toISOString();
+            updateData.subscription_end = new Date(sub.current_period_end * 1000).toISOString();
+          } else {
+            // No active subscription
+            updateData.status = "expired";
+            updateData.stripe_subscription_id = null;
+          }
+
+          const { error: updateError } = await supabaseAdmin
+            .from("subscriptions")
+            .update(updateData)
+            .eq("user_id", userId);
+
+          if (updateError) {
+            throw new Error(`Failed to update subscription: ${updateError.message}`);
+          }
+
+          logStep("Synced from Stripe", { userId, ...updateData });
+
+          return new Response(
+            JSON.stringify({ success: true, data: updateData }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            }
+          );
+        } catch (stripeError) {
+          const errorMessage = stripeError instanceof Error ? stripeError.message : String(stripeError);
+          logStep("Sync error", { error: errorMessage });
+          throw new Error(`Stripe sync failed: ${errorMessage}`);
+        }
       }
 
       default:
