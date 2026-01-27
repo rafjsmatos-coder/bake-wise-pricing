@@ -20,7 +20,6 @@ import {
   ChevronDown,
   LayoutDashboard,
   User,
-  Crown,
   Shield,
   Headphones,
   Loader2
@@ -46,7 +45,6 @@ export type PageType =
   | 'product-categories' 
   | 'settings'
   | 'profile'
-  | 'subscription'
   | 'admin'
   | 'support';
 
@@ -145,7 +143,6 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
       ]
     },
     { id: 'support', label: 'Suporte', icon: Headphones, badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined },
-    { id: 'subscription', label: 'Assinatura', icon: Crown },
     { id: 'settings', label: 'Configurações', icon: Settings },
     { id: 'profile', label: 'Meu Perfil', icon: User },
     ...(isAdmin ? [{ id: 'admin' as PageType, label: 'Admin', icon: Shield }] : []),

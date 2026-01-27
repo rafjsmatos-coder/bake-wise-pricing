@@ -1,13 +1,10 @@
-import { useState } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useIngredients } from '@/hooks/useIngredients';
 import { useDecorations } from '@/hooks/useDecorations';
 import { usePackaging } from '@/hooks/usePackaging';
-import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { StartTourButton } from '@/components/tour/StartTourButton';
 import { 
   ShoppingBag, 
@@ -17,14 +14,8 @@ import {
   Box,
   Plus,
   Loader2,
-  Cake,
-  Crown,
-  Clock,
-  Settings
+  Cake
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { prepareExternalNavigation } from '@/lib/open-external';
 
 interface DashboardHomeProps {
   onNavigate: (page: string) => void;
@@ -36,40 +27,8 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
   const { ingredients, isLoading: loadingIngredients } = useIngredients();
   const { decorations, isLoading: loadingDecorations } = useDecorations();
   const { packagingItems, isLoading: loadingPackaging } = usePackaging();
-  const { subscription, createCheckout, getCustomerPortalUrl } = useSubscription();
-  
-  const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false);
-  const [isProcessingPortal, setIsProcessingPortal] = useState(false);
 
   const isLoading = loadingProducts || loadingRecipes || loadingIngredients || loadingDecorations || loadingPackaging;
-
-  const handleUpgrade = async () => {
-    setIsProcessingUpgrade(true);
-    
-    // Prepare navigation BEFORE the async call
-    const navigate = prepareExternalNavigation();
-    
-    try {
-      const url = await createCheckout();
-      navigate(url);
-    } finally {
-      setIsProcessingUpgrade(false);
-    }
-  };
-
-  const handleManage = async () => {
-    setIsProcessingPortal(true);
-    
-    // Prepare navigation BEFORE the async call
-    const navigate = prepareExternalNavigation();
-    
-    try {
-      const url = await getCustomerPortalUrl();
-      navigate(url);
-    } finally {
-      setIsProcessingPortal(false);
-    }
-  };
 
   const summaryCards = [
     { 
@@ -144,70 +103,7 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
         <StartTourButton variant="card" />
       </div>
 
-      {/* Subscription Status Card */}
-      {subscription.status === 'trial' && (
-        <Card className={`border-2 ${(subscription.days_remaining || 0) <= 3 ? 'border-destructive/50 bg-destructive/5' : 'border-accent/50 bg-accent/5'}`}>
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${(subscription.days_remaining || 0) <= 3 ? 'bg-destructive/10' : 'bg-accent/10'}`}>
-                  <Clock className={`h-5 w-5 ${(subscription.days_remaining || 0) <= 3 ? 'text-destructive' : 'text-accent'}`} />
-                </div>
-                <div>
-                  <p className="font-medium">Período de Teste</p>
-                  <p className={`text-sm ${(subscription.days_remaining || 0) <= 3 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                    {subscription.days_remaining === 1 ? '1 dia restante' : `${subscription.days_remaining} dias restantes`}
-                  </p>
-                </div>
-              </div>
-              <Button onClick={handleUpgrade} disabled={isProcessingUpgrade} className="gap-2">
-                {isProcessingUpgrade ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Crown className="h-4 w-4" />
-                )}
-                Assinar Premium
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {subscription.status === 'active' && (
-        <Card className="border-2 border-accent/30 bg-accent/5">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-accent/10">
-                  <Crown className="h-5 w-5 text-accent" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">Plano Premium</p>
-                    <Badge variant="secondary" className="bg-accent/10 text-accent text-xs">Ativo</Badge>
-                  </div>
-                  {subscription.subscription_end && (
-                    <p className="text-sm text-muted-foreground">
-                      Renova {formatDistanceToNow(new Date(subscription.subscription_end), { addSuffix: true, locale: ptBR })}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <Button variant="outline" onClick={handleManage} disabled={isProcessingPortal} className="gap-2">
-                {isProcessingPortal ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Settings className="h-4 w-4" />
-                )}
-                Gerenciar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Summary Cards */}
-      {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" data-tour="summary-cards">
         {summaryCards.map((card) => (
           <Card 
