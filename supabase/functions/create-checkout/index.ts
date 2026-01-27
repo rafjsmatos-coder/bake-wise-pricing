@@ -8,8 +8,8 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
-// Premium plan price ID (TEST: R$ 2,00 - original: price_1StDnC1UfMJqJ1ycnqShIkOZ)
-const PREMIUM_PRICE_ID = "price_1StxiA1UfMJqJ1ycQGzEmTYm";
+// Premium plan price ID (R$ 49,90/mês - prod_TqveXZbKMEctFq)
+const PREMIUM_PRICE_ID = "price_1StDnC1UfMJqJ1ycnqShIkOZ";
 
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
