@@ -13,6 +13,12 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ onGetStarted }: HeroSectionProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onGetStarted();
+  };
+
   return (
     <header className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-primary/5" />
@@ -24,7 +30,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             </div>
             <span className="font-bold text-xl text-foreground">PreciBake</span>
           </div>
-          <Button onClick={onGetStarted} variant="outline" className="gap-2">
+          <Button onClick={handleClick} variant="outline" className="gap-2" type="button">
             <LogIn className="w-4 h-4" />
             Entrar / Criar Conta
           </Button>
@@ -49,7 +55,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           </p>
 
           <div className="flex justify-center pt-4">
-            <Button size="lg" onClick={onGetStarted} className="gap-2 text-base px-8 shadow-lg hover:shadow-xl transition-shadow">
+            <Button size="lg" onClick={handleClick} className="gap-2 text-base px-8 shadow-lg hover:shadow-xl transition-shadow" type="button">
               Começar Teste Grátis
               <ArrowRight className="w-5 h-5" />
             </Button>
