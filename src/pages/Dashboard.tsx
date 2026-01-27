@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { AppLayout, PageType } from '@/components/layout/AppLayout';
-import { SubscriptionSettings } from '@/components/subscription/SubscriptionSettings';
 import { DashboardHome } from '@/components/dashboard/DashboardHome';
 import { IngredientsList } from '@/components/ingredients/IngredientsList';
 import { CategoriesList } from '@/components/categories/CategoriesList';
@@ -23,17 +22,16 @@ export function Dashboard() {
   return (
     <AppLayout currentPage={currentPage} onPageChange={setCurrentPage}>
       {currentPage === 'dashboard' && <DashboardHome onNavigate={(page) => setCurrentPage(page as PageType)} />}
-        {currentPage === 'products' && <ProductsList />}
-        {currentPage === 'product-categories' && <ProductCategoriesList />}
-        {currentPage === 'recipes' && <RecipesList />}
-        {currentPage === 'recipe-categories' && <RecipeCategoriesList />}
-        {currentPage === 'ingredients' && <IngredientsList />}
-        {currentPage === 'categories' && <CategoriesList />}
-        {currentPage === 'decorations' && <DecorationsList />}
-        {currentPage === 'decoration-categories' && <DecorationCategoriesList />}
-        {currentPage === 'packaging' && <PackagingList />}
-        {currentPage === 'packaging-categories' && <PackagingCategoriesList />}
-        {currentPage === 'subscription' && <SubscriptionSettings />}
+      {currentPage === 'products' && <ProductsList />}
+      {currentPage === 'product-categories' && <ProductCategoriesList />}
+      {currentPage === 'recipes' && <RecipesList />}
+      {currentPage === 'recipe-categories' && <RecipeCategoriesList />}
+      {currentPage === 'ingredients' && <IngredientsList />}
+      {currentPage === 'categories' && <CategoriesList />}
+      {currentPage === 'decorations' && <DecorationsList />}
+      {currentPage === 'decoration-categories' && <DecorationCategoriesList />}
+      {currentPage === 'packaging' && <PackagingList />}
+      {currentPage === 'packaging-categories' && <PackagingCategoriesList />}
       {currentPage === 'settings' && <UserSettings />}
       {currentPage === 'profile' && <ProfileSettings />}
       {currentPage === 'support' && <SupportPage />}

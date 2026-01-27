@@ -16,7 +16,7 @@ export function CTASection({ onGetStarted }: CTASectionProps) {
       <div className="container mx-auto px-4 text-center relative">
         <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 mb-6">
           <Sparkles className="w-4 h-4" />
-          <span className="text-sm font-medium">14 dias grátis — sem cartão</span>
+          <span className="text-sm font-medium">Calcule seus preços com precisão</span>
         </div>
         
         <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -32,13 +32,9 @@ export function CTASection({ onGetStarted }: CTASectionProps) {
           onClick={onGetStarted}
           className="gap-2 text-base px-8 shadow-xl hover:shadow-2xl transition-all hover:scale-105"
         >
-          Começar Teste Grátis (14 dias)
+          Começar Agora
           <ArrowRight className="w-5 h-5" />
         </Button>
-
-        <p className="text-sm opacity-75 mt-4">
-          Sem compromisso. Cancele quando quiser.
-        </p>
       </div>
     </section>
   );

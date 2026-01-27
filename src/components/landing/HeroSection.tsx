@@ -36,7 +36,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         <div className="max-w-3xl mx-auto text-center space-y-6">
           <Badge variant="secondary" className="gap-1.5 px-4 py-1.5">
             <Sparkles className="w-3.5 h-3.5" />
-            14 dias grátis — sem cartão
+            Calcule seus preços com precisão
           </Badge>
           
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
@@ -51,7 +51,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Button size="lg" onClick={handleClick} className="gap-2 text-base px-8 shadow-lg hover:shadow-xl transition-shadow" type="button">
-              Começar Teste Grátis
+              Começar Agora
               <ArrowRight className="w-5 h-5" />
             </Button>
             <Button 
@@ -68,11 +68,11 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           <div className="flex items-center justify-center gap-6 pt-6 text-sm text-muted-foreground flex-wrap">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-accent" />
-              Sem cartão de crédito
+              Fácil de usar
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-accent" />
-              Cancele quando quiser
+              Cálculos precisos
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-accent" />

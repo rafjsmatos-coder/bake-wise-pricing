@@ -43,7 +43,7 @@ export function StickyHeader({ onGetStarted }: StickyHeaderProps) {
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={handleClick} size="sm" className="gap-2 shadow-md" type="button">
-              Teste Grátis
+              Começar Agora
               <ArrowRight className="w-4 h-4" />
             </Button>
             <Button 

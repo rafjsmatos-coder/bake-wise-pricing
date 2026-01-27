@@ -14,13 +14,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -46,16 +39,12 @@ import {
   ChevronRight,
   MoreHorizontal,
   Eye,
-  Edit,
-  Clock,
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { UserDetailsModal } from './UserDetailsModal';
-import { EditSubscriptionDialog } from './EditSubscriptionDialog';
-import { ExtendTrialDialog } from './ExtendTrialDialog';
 import { DeleteUserDialog } from './DeleteUserDialog';
 
 interface User {
@@ -64,9 +53,6 @@ interface User {
   fullName: string | null;
   businessName: string | null;
   createdAt: string;
-  subscriptionStatus: string;
-  trialEnd: string | null;
-  subscriptionEnd: string | null;
   roles: string[];
   isAdmin: boolean;
 }
@@ -76,7 +62,6 @@ export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   
@@ -91,16 +76,6 @@ export function UserManagement() {
     open: boolean;
     userId: string | null;
   }>({ open: false, userId: null });
-  
-  const [editSubscriptionDialog, setEditSubscriptionDialog] = useState<{
-    open: boolean;
-    user: User | null;
-  }>({ open: false, user: null });
-  
-  const [extendTrialDialog, setExtendTrialDialog] = useState<{
-    open: boolean;
-    user: User | null;
-  }>({ open: false, user: null });
   
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
@@ -123,7 +98,6 @@ export function UserManagement() {
           page,
           perPage,
           search,
-          statusFilter,
         },
       });
 
@@ -141,7 +115,7 @@ export function UserManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.access_token, page, search, statusFilter]);
+  }, [session?.access_token, page, search]);
 
   useEffect(() => {
     fetchUsers();
@@ -181,17 +155,6 @@ export function UserManagement() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
-      trial: { variant: 'secondary', label: 'Trial' },
-      active: { variant: 'default', label: 'Ativo' },
-      expired: { variant: 'destructive', label: 'Expirado' },
-      canceled: { variant: 'outline', label: 'Cancelado' },
-    };
-    const config = variants[status] || { variant: 'outline' as const, label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
   const totalPages = Math.ceil(total / perPage);
 
   return (
@@ -215,24 +178,6 @@ export function UserManagement() {
                 className="pl-10"
               />
             </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => {
-                setStatusFilter(value === 'all' ? '' : value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="trial">Trial</SelectItem>
-                <SelectItem value="active">Ativo</SelectItem>
-                <SelectItem value="expired">Expirado</SelectItem>
-                <SelectItem value="canceled">Cancelado</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Table */}
@@ -248,7 +193,6 @@ export function UserManagement() {
                     <TableRow>
                       <TableHead>Email</TableHead>
                       <TableHead>Nome</TableHead>
-                      <TableHead>Status</TableHead>
                       <TableHead>Data de Cadastro</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
@@ -257,7 +201,7 @@ export function UserManagement() {
                   <TableBody>
                     {users.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                           Nenhum usuário encontrado
                         </TableCell>
                       </TableRow>
@@ -266,7 +210,6 @@ export function UserManagement() {
                         <TableRow key={user.id}>
                           <TableCell className="font-medium">{user.email}</TableCell>
                           <TableCell>{user.fullName || '-'}</TableCell>
-                          <TableCell>{getStatusBadge(user.subscriptionStatus)}</TableCell>
                           <TableCell>
                             {format(new Date(user.createdAt), "dd/MM/yyyy", { locale: ptBR })}
                           </TableCell>
@@ -294,20 +237,6 @@ export function UserManagement() {
                                   <Eye className="h-4 w-4 mr-2" />
                                   Ver Detalhes
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => setEditSubscriptionDialog({ open: true, user })}
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Editar Assinatura
-                                </DropdownMenuItem>
-                                {(user.subscriptionStatus === 'trial' || user.subscriptionStatus === 'expired') && (
-                                  <DropdownMenuItem
-                                    onClick={() => setExtendTrialDialog({ open: true, user })}
-                                  >
-                                    <Clock className="h-4 w-4 mr-2" />
-                                    Estender Trial
-                                  </DropdownMenuItem>
-                                )}
                                 <DropdownMenuSeparator />
                                 {user.isAdmin ? (
                                   <DropdownMenuItem
@@ -386,20 +315,6 @@ export function UserManagement() {
         userId={detailsModal.userId}
         open={detailsModal.open}
         onOpenChange={(open) => setDetailsModal({ open, userId: open ? detailsModal.userId : null })}
-      />
-
-      <EditSubscriptionDialog
-        user={editSubscriptionDialog.user}
-        open={editSubscriptionDialog.open}
-        onOpenChange={(open) => setEditSubscriptionDialog({ open, user: open ? editSubscriptionDialog.user : null })}
-        onSuccess={fetchUsers}
-      />
-
-      <ExtendTrialDialog
-        user={extendTrialDialog.user}
-        open={extendTrialDialog.open}
-        onOpenChange={(open) => setExtendTrialDialog({ open, user: open ? extendTrialDialog.user : null })}
-        onSuccess={fetchUsers}
       />
 
       <DeleteUserDialog
