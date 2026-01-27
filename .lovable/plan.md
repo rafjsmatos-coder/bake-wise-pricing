@@ -1,144 +1,189 @@
 
+
+# Plano: Simplificação do Sistema de Assinaturas + Stripe no Admin
+
 ## Objetivo
-Corrigir definitivamente (1) o erro recorrente de verificação de assinatura (“Session expired” / 401 / “Auth session missing!”) no domínio **precibake.com.br** e (2) o problema do botão **“Assinar Premium”** que “não faz nada” no celular (no Dashboard e na página de Assinatura), além de revisar os demais botões relacionados (upgrade e portal do cliente).
+1. **Remover verificação de trial/assinatura via Stripe** - confiar apenas no status do banco de dados (que o admin gerencia)
+2. **Adicionar informações do Stripe no painel admin** - exibir dados atualizados diretamente do Stripe para facilitar o gerenciamento manual
 
 ---
 
-## Diagnóstico (com base no print e nos logs)
-### 1) Erro de verificação de assinatura / admin (401)
-Os logs das funções mostram repetidamente:
-- **`Authentication failed - {"error":"Auth session missing!"}`** (check-subscription)
-- **`Authentication error: Auth session missing!`** (check-admin-role)
+## Parte 1: Simplificar Verificação de Assinatura
 
-Isso indica que a validação de usuário dentro das funções está falhando no trecho que usa `supabaseAdmin.auth.getUser(token)` / `supabaseClient.auth.getUser(token)` (mesmo quando o header Authorization “existe”). Esse tipo de erro é comum em ambiente Deno/Edge com certas combinações do SDK, e pode acontecer mesmo com token “aparentemente correto”.
+### Mudança Principal
+Remover a verificação contra a API do Stripe na função `check-subscription`. O sistema passará a confiar **apenas no status do banco de dados**, que pode ser gerenciado pelo admin.
 
-Resultado prático: a verificação de assinatura cai em “expirado” e o sistema bloqueia o acesso mesmo para quem pagou.
+### Arquivo: `supabase/functions/check-subscription/index.ts`
 
-### 2) Botão “Assinar Premium” não funciona no celular
-Nos componentes, o fluxo é:
-- `onClick` → `await createCheckout()` → `window.open(url, '_blank')`
+**Antes (atual):**
+- Busca assinatura no banco
+- Se tiver `stripe_subscription_id`, consulta o Stripe
+- Atualiza o banco baseado no status do Stripe
+- Retorna o status
 
-Em navegadores mobile (principalmente iOS Safari e alguns Android), **popups são bloqueados quando o `window.open()` acontece depois de um `await`** (perde o “gesto do usuário”). Por isso “não acontece nada”.
+**Depois (simplificado):**
+- Busca assinatura no banco
+- Retorna diretamente o status do banco
+- Não consulta o Stripe (elimina o erro `RangeError`)
 
-Também há o mesmo risco em “Gerenciar Assinatura” (customer portal), porque hoje o hook abre `window.open` somente depois de esperar a função retornar.
+```
+┌─────────────────────────────────────────────────────────────┐
+│           Fluxo Simplificado de Verificação                 │
+│                                                              │
+│   1. Usuário acessa o app                                   │
+│   2. Frontend chama check-subscription                       │
+│   3. Função busca status no banco                           │
+│   4. Retorna: subscribed=true se status='trial'/'active'    │
+│   5. Se status='expired'/'canceled' → mostra paywall        │
+│                                                              │
+│   Admin pode alterar o status manualmente a qualquer momento│
+└─────────────────────────────────────────────────────────────┘
+```
 
----
-
-## Estratégia de correção (2 frentes em paralelo)
-
-### Frente A — “Resolver de vez” o erro de sessão/assinatura
-1) **Trocar o método de autenticação dentro das funções do backend**
-   - Implementar um helper compartilhado (ex.: `supabase/functions/_shared/auth.ts`) para:
-     - Ler `Authorization: Bearer <token>`
-     - Validar o token de forma robusta (sem depender de `auth.getUser(token)` do SDK que está retornando `Auth session missing!`)
-     - Extrair `userId` (e `email` quando necessário)
-   - Abordagem recomendada para ser bem estável:
-     - Fazer uma chamada HTTP direta ao endpoint de usuário da autenticação (server-to-server), usando `fetch(...)` + `apikey` do backend, ou usar `getClaims()` (dependendo do que for mais confiável no runtime atual).
-   - Adicionar logs seguros (ex.: `hasAuthHeader`, `tokenLength`) sem imprimir token.
-
-2) **Aplicar o helper nas funções que hoje quebram**
-   Atualizar para usar o helper e parar de usar `auth.getUser(token)`:
-   - `supabase/functions/check-subscription/index.ts`
-   - `supabase/functions/check-admin-role/index.ts`
-   - `supabase/functions/create-checkout/index.ts`
-   - `supabase/functions/customer-portal/index.ts`
-   - `supabase/functions/admin-users/index.ts` (para não quebrar o painel admin também)
-
-3) **Padronizar respostas de “não autenticado”**
-   - Preferência para respostas previsíveis:
-     - Retornar JSON com `{ error: "...", code: "unauthenticated" }`
-     - Evitar 401 quando isso estiver causando “barulho”/tratamento ruim no client; ou manter 401 mas tratar no front (decisão no momento da implementação, priorizando UX e ausência de erros).
-   - Importante: o `check-subscription` deve retornar um payload claro que o frontend consiga interpretar para forçar re-login quando necessário.
-
-4) **No frontend: tratamento de sessão inválida**
-   Em `src/hooks/useSubscription.tsx` e `src/hooks/useAdminRole.tsx`:
-   - Criar uma função interna tipo `getFreshAccessToken()` que:
-     - Tenta `supabase.auth.getSession()`
-     - Se não houver token válido, tenta `supabase.auth.refreshSession()`
-     - Se ainda falhar, faz `signOut()` e exibe mensagem amigável (“Sua sessão expirou, entre novamente.”)
-   - Isso evita o estado “usuário logado mas tudo dá 401”.
-
-5) **Melhorar UX no paywall para destravar o usuário**
-   - Em `SubscriptionPaywall`, incluir botão “Sair / Entrar novamente” caso a sessão esteja inválida, para o usuário conseguir se recuperar sem ficar preso.
+### Lógica Simplificada:
+```typescript
+// Se não existe assinatura, cria trial
+// Se status = 'trial' e dias > 0 → subscribed = true
+// Se status = 'active' → subscribed = true
+// Se status = 'expired' ou 'canceled' → subscribed = false
+```
 
 ---
 
-### Frente B — Revisar e corrigir todos os botões de assinatura (mobile/desktop)
-1) **Criar um helper de navegação “safe” para abrir checkout/portal**
-   Ex.: `src/lib/open-external.ts` com algo como:
-   - Se for mobile: navegar no **mesmo tab** (`window.location.assign(url)`)
-   - Se for desktop: abrir nova aba, mas **abrindo uma aba vazia antes do await**:
-     - `const w = window.open('', '_blank')` (sincrono no clique)
-     - depois do await: `w.location.href = url`
-     - se falhar: `w.close()`
+## Parte 2: Exibir Informações do Stripe no Admin
 
-2) **Aplicar esse helper em todos os lugares que hoje fazem `window.open` após await**
-   Atualizar handlers `handleUpgrade` para usar o helper:
-   - `src/components/subscription/SubscriptionPaywall.tsx`
-   - `src/components/subscription/SubscriptionBanner.tsx`
-   - `src/components/subscription/SubscriptionSettings.tsx`
-   - `src/components/dashboard/DashboardHome.tsx`
+### Novo Recurso
+Adicionar uma seção no painel admin que mostra dados **em tempo real do Stripe** para cada usuário:
 
-3) **Ajustar também “Gerenciar” (Customer Portal)**
-   - Hoje `openCustomerPortal()` abre `window.open` dentro do hook depois do await → pode ser bloqueado no celular.
-   - Mudança proposta:
-     - `openCustomerPortal()` passa a **retornar a URL** (como `createCheckout`) e o componente usa o helper para navegar; ou
-     - `openCustomerPortal()` já faz o “pre-open” da aba antes de chamar a função.
+- Status real da assinatura no Stripe
+- Data de próxima cobrança
+- Valor do plano
+- Histórico de pagamentos recentes
 
-4) **Adicionar feedback visual e mensagens**
-   - Em cada botão de upgrade/gerenciar:
-     - Estado `isProcessing` para desabilitar botão + mostrar spinner
-     - Toast/alerta quando:
-       - `createCheckout()` retornar null
-       - função responder “already_subscribed”
-       - sessão expirar e for necessário re-login
+### Arquivos a Modificar
+
+#### 1. Backend: `supabase/functions/admin-users/index.ts`
+Adicionar nova action: `getStripeInfo`
+
+```typescript
+case "getStripeInfo": {
+  const { email, stripeCustomerId } = params;
+  
+  // Busca cliente no Stripe pelo email ou ID
+  // Retorna:
+  //   - customer: { id, email, created, default_payment_method }
+  //   - subscriptions: [{ id, status, current_period_end, plan }]
+  //   - invoices: [{ id, status, amount_paid, created }] (últimas 5)
+}
+```
+
+#### 2. Frontend: `src/components/admin/UserDetailsModal.tsx`
+Adicionar nova aba: **"Stripe"** com as informações buscadas
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Detalhes do Usuário                      │
+│  ┌────────┐ ┌────────────┐ ┌────────┐ ┌─────────┐          │
+│  │ Perfil │ │ Assinatura │ │  Dados │ │ Stripe  │          │
+│  └────────┘ └────────────┘ └────────┘ └─────────┘          │
+│                                                              │
+│  ═══════════════════════════════════════════════════════    │
+│  Aba "Stripe" (nova):                                        │
+│                                                              │
+│  Status no Stripe              [ 🟢 active ]                │
+│  Customer ID                   cus_TriKmfFI5gUrCD           │
+│  Subscription ID               sub_1Stytr...                │
+│                                                              │
+│  ─────────────────────────────────────────────────────────  │
+│  Próxima Cobrança              26/02/2026                   │
+│  Valor                         R$ 49,90                      │
+│                                                              │
+│  ─────────────────────────────────────────────────────────  │
+│  Últimos Pagamentos:                                         │
+│  • 26/01/2026 - R$ 49,90 - ✅ Pago                          │
+│                                                              │
+│  ─────────────────────────────────────────────────────────  │
+│  [ 🔗 Abrir no Stripe Dashboard ]                           │
+│                                                              │
+│  [ 🔄 Sincronizar Status ]                                  │
+│  (Copia status do Stripe para o banco de dados)             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 3. Botão "Sincronizar Status"
+Permite que o admin force a sincronização:
+- Busca o status atual no Stripe
+- Atualiza a tabela `subscriptions` no banco
+- Atualiza `stripe_customer_id`, `stripe_subscription_id`, `status`, `subscription_end`
 
 ---
 
-## Checklist de testes (após implementar)
-1) **No desktop**
-   - Logar
-   - Verificar que não aparecem erros 401 repetidos no console
-   - Clicar “Assinar Premium” em:
-     - Banner
-     - Dashboard
-     - Página de assinatura (Settings)
-     - Paywall
-   - Confirmar que o checkout abre corretamente
-   - Voltar com `?checkout=success` e validar que o status muda para ativo
+## Parte 3: Melhorias no EditSubscriptionDialog
 
-2) **No celular (ou em modo responsivo do navegador)**
-   - Repetir os mesmos cliques
-   - Confirmar que agora o checkout abre (sem popup bloqueado)
-   - Testar “Gerenciar Assinatura” (portal do cliente)
+### Arquivo: `src/components/admin/EditSubscriptionDialog.tsx`
 
-3) **Robustez**
-   - Forçar cenário de sessão inválida (ex.: logout/login, recarregar página) e confirmar que:
-     - O app não fica preso em erro silencioso
-     - Existe caminho claro para “Entrar novamente”
+Adicionar campos para editar os IDs do Stripe manualmente:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Editar Assinatura                          │
+│                                                              │
+│  Status:           [ Active ▼ ]                             │
+│                                                              │
+│  Fim do Trial:     [ 26/01/2026 📅 ]                        │
+│  Fim Assinatura:   [ 26/02/2026 📅 ]                        │
+│                                                              │
+│  ─────────────────────────────────────────────────────────  │
+│  IDs do Stripe (opcional):                                  │
+│                                                              │
+│  Customer ID:      [ cus_TriKmfFI5gUrCD ]                   │
+│  Subscription ID:  [ sub_1Stytr1UfMJqJ1ycJbNT665X ]         │
+│  Product ID:       [ prod_TrfaAKNLqC8XfO ]                  │
+│                                                              │
+│             [ Cancelar ]  [ Salvar ]                        │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Arquivos que serão alterados (resumo)
-### Backend (funções)
-- `supabase/functions/_shared/auth.ts` (novo helper)
-- `supabase/functions/check-subscription/index.ts`
-- `supabase/functions/check-admin-role/index.ts`
-- `supabase/functions/create-checkout/index.ts`
-- `supabase/functions/customer-portal/index.ts`
-- `supabase/functions/admin-users/index.ts`
+## Resumo das Alterações
+
+### Backend (Edge Functions)
+| Arquivo | Alteração |
+|---------|-----------|
+| `check-subscription/index.ts` | Remover consulta ao Stripe, usar apenas banco |
+| `admin-users/index.ts` | Adicionar action `getStripeInfo` e `syncFromStripe` |
 
 ### Frontend
-- `src/hooks/useSubscription.tsx`
-- `src/hooks/useAdminRole.tsx`
-- `src/components/subscription/SubscriptionPaywall.tsx`
-- `src/components/subscription/SubscriptionBanner.tsx`
-- `src/components/subscription/SubscriptionSettings.tsx`
-- `src/components/dashboard/DashboardHome.tsx`
-- `src/lib/...` (helper novo para navegação segura)
+| Arquivo | Alteração |
+|---------|-----------|
+| `UserDetailsModal.tsx` | Adicionar aba "Stripe" com dados em tempo real |
+| `EditSubscriptionDialog.tsx` | Adicionar campos para IDs do Stripe |
 
 ---
 
-## Resultado esperado
-- “Session expired / Auth session missing” deixa de acontecer como erro recorrente e, quando a sessão realmente expirar, o usuário é guiado para re-login sem travar o app.
-- Todos os botões de “Assinar Premium” e “Gerenciar” passam a funcionar no celular e no desktop.
+## Benefícios da Solução
+
+1. **Simplicidade**: O sistema não depende mais da sincronização automática Stripe-banco
+2. **Controle Total**: Admin pode ver e editar todos os dados manualmente
+3. **Visibilidade**: Informações do Stripe ficam acessíveis diretamente no painel
+4. **Sem Erros de Sincronização**: Elimina os problemas de `RangeError` e webhooks falhando
+5. **Recuperação Fácil**: Botão "Sincronizar" permite corrigir inconsistências rapidamente
+
+---
+
+## Fluxo de Trabalho do Admin (após implementação)
+
+1. Cliente compra assinatura no Stripe
+2. Admin acessa o painel → Aba Usuários
+3. Busca o cliente pelo email
+4. Clica em "Ver Detalhes" → Aba "Stripe"
+5. Visualiza status real no Stripe
+6. Clica em "Sincronizar Status" para atualizar o banco
+7. Cliente agora tem acesso liberado
+
+Ou alternativamente:
+1. Admin edita a assinatura manualmente
+2. Define status = "active" e datas corretas
+3. Salva → cliente tem acesso imediato
+
