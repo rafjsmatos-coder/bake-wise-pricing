@@ -254,7 +254,7 @@ export function UserDetailsModal({ userId, open, onOpenChange }: UserDetailsModa
                 <CreditCard className="h-4 w-4 mr-2" />
                 Assinatura
               </TabsTrigger>
-              <TabsTrigger value="stripe" onClick={() => !stripeInfo && fetchStripeInfo()}>
+              <TabsTrigger value="stripe" onClick={fetchStripeInfo}>
                 <CreditCard className="h-4 w-4 mr-2" />
                 Stripe
               </TabsTrigger>
@@ -533,11 +533,16 @@ export function UserDetailsModal({ userId, open, onOpenChange }: UserDetailsModa
                     <div className="text-center py-8 text-muted-foreground">
                       <p>Cliente não encontrado no Stripe.</p>
                       <p className="text-sm mt-1">O usuário ainda não realizou nenhum pagamento.</p>
+                      <Button onClick={fetchStripeInfo} variant="outline" className="gap-2 mt-4">
+                        <RefreshCw className="h-4 w-4" />
+                        Tentar novamente
+                      </Button>
                     </div>
                   )}
                 </>
               ) : (
                 <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">Clique para buscar dados em tempo real do Stripe.</p>
                   <Button onClick={fetchStripeInfo} className="gap-2">
                     <RefreshCw className="h-4 w-4" />
                     Carregar dados do Stripe

@@ -88,12 +88,17 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
     setIsSigningOut(true);
     try {
       await signOut();
-      // Force page reload to ensure clean state
-      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
-      // Force reload even on error
-      window.location.href = '/';
+    } finally {
+      // Force full page reload with cache bypass for Safari compatibility
+      // Use setTimeout to ensure signOut completes before redirect
+      setTimeout(() => {
+        // Clear any cached state
+        window.localStorage.removeItem('sb-ektodtogznnlwvcsawgu-auth-token');
+        // Force hard reload - works better on Safari/iOS
+        window.location.replace('/');
+      }, 100);
     }
   };
 

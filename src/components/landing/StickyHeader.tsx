@@ -10,6 +10,12 @@ interface StickyHeaderProps {
 export function StickyHeader({ onGetStarted }: StickyHeaderProps) {
   const [isVisible, setIsVisible] = useState(false);
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onGetStarted();
+  };
+
   useEffect(() => {
     const handleScroll = () => {
       // Show sticky header after scrolling 400px
@@ -35,7 +41,7 @@ export function StickyHeader({ onGetStarted }: StickyHeaderProps) {
             </div>
             <span className="font-semibold text-foreground hidden sm:inline">PreciBake</span>
           </div>
-          <Button onClick={onGetStarted} size="sm" className="gap-2 shadow-md">
+          <Button onClick={handleClick} size="sm" className="gap-2 shadow-md" type="button">
             Teste Grátis
             <ArrowRight className="w-4 h-4" />
           </Button>
