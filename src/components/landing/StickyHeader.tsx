@@ -41,10 +41,21 @@ export function StickyHeader({ onGetStarted }: StickyHeaderProps) {
             </div>
             <span className="font-semibold text-foreground hidden sm:inline">PreciBake</span>
           </div>
-          <Button onClick={handleClick} size="sm" className="gap-2 shadow-md" type="button">
-            Teste Grátis
-            <ArrowRight className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleClick} size="sm" className="gap-2 shadow-md" type="button">
+              Teste Grátis
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleClick}
+              className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
+              type="button"
+            >
+              Entrar
+            </Button>
+          </div>
         </div>
       </div>
     </div>

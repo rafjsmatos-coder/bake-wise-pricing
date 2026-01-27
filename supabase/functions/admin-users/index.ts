@@ -586,11 +586,40 @@ serve(async (req) => {
             updateData.stripe_subscription_id = sub.id;
             updateData.stripe_product_id = sub.items.data[0]?.price?.product || null;
             updateData.subscription_start = new Date(sub.current_period_start * 1000).toISOString();
+            // current_period_end is the next billing date
             updateData.subscription_end = new Date(sub.current_period_end * 1000).toISOString();
+            
+            logStep("Next billing date saved", { 
+              next_billing_date: updateData.subscription_end,
+              subscription_id: sub.id 
+            });
           } else {
-            // No active subscription
-            updateData.status = "expired";
-            updateData.stripe_subscription_id = null;
+            // Check for any subscription (not just active)
+            const allSubsResult = await stripe.subscriptions.list({
+              customer: activeCustomer.id,
+              limit: 1,
+            });
+            
+            if (allSubsResult.data.length > 0) {
+              const sub = allSubsResult.data[0];
+              updateData.stripe_subscription_id = sub.id;
+              updateData.stripe_product_id = sub.items.data[0]?.price?.product || null;
+              
+              // Map Stripe status to our status
+              if (sub.status === 'canceled' || sub.status === 'unpaid') {
+                updateData.status = 'canceled';
+              } else if (sub.status === 'past_due') {
+                updateData.status = 'expired';
+              } else {
+                updateData.status = sub.status;
+              }
+              
+              updateData.subscription_end = new Date(sub.current_period_end * 1000).toISOString();
+            } else {
+              // No subscription at all
+              updateData.status = "expired";
+              updateData.stripe_subscription_id = null;
+            }
           }
 
           const { error: updateError } = await supabaseAdmin
