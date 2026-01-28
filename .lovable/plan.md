@@ -1,189 +1,203 @@
 
-
-# Plano: Simplificação do Sistema de Assinaturas + Stripe no Admin
+# Plano: Limpeza Total do Sistema de Assinaturas + Separação Admin/Usuário
 
 ## Objetivo
-1. **Remover verificação de trial/assinatura via Stripe** - confiar apenas no status do banco de dados (que o admin gerencia)
-2. **Adicionar informações do Stripe no painel admin** - exibir dados atualizados diretamente do Stripe para facilitar o gerenciamento manual
+1. Remover todas as Edge Functions relacionadas a assinatura/Stripe
+2. Limpar a Edge Function `admin-users` de referências a assinatura/Stripe
+3. Separar o painel Admin do painel de Usuário (experiências diferentes)
+4. Configurar Rafael como Admin e Pamella como Usuário
 
 ---
 
-## Parte 1: Simplificar Verificação de Assinatura
+## Parte 1: Remoção de Edge Functions
 
-### Mudança Principal
-Remover a verificação contra a API do Stripe na função `check-subscription`. O sistema passará a confiar **apenas no status do banco de dados**, que pode ser gerenciado pelo admin.
+### Edge Functions a Deletar:
+| Função | Descrição | Ação |
+|--------|-----------|------|
+| `check-subscription/` | Verifica status de assinatura | Deletar |
+| `create-checkout/` | Cria checkout do Stripe | Deletar |
+| `customer-portal/` | Portal de billing do Stripe | Deletar |
+| `stripe-webhook/` | Processa webhooks do Stripe | Deletar |
 
-### Arquivo: `supabase/functions/check-subscription/index.ts`
+### Comando de Remoção:
+Usar a ferramenta `supabase--delete_edge_functions` para remover:
+- `check-subscription`
+- `create-checkout`
+- `customer-portal`
+- `stripe-webhook`
 
-**Antes (atual):**
-- Busca assinatura no banco
-- Se tiver `stripe_subscription_id`, consulta o Stripe
-- Atualiza o banco baseado no status do Stripe
-- Retorna o status
+---
 
-**Depois (simplificado):**
-- Busca assinatura no banco
-- Retorna diretamente o status do banco
-- Não consulta o Stripe (elimina o erro `RangeError`)
+## Parte 2: Limpeza da Edge Function admin-users
 
+### Ações a Remover:
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│           Fluxo Simplificado de Verificação                 │
+│  Ações Atuais do admin-users:                               │
 │                                                              │
-│   1. Usuário acessa o app                                   │
-│   2. Frontend chama check-subscription                       │
-│   3. Função busca status no banco                           │
-│   4. Retorna: subscribed=true se status='trial'/'active'    │
-│   5. Se status='expired'/'canceled' → mostra paywall        │
-│                                                              │
-│   Admin pode alterar o status manualmente a qualquer momento│
+│  ✅ list           → Manter (sem subscription data)         │
+│  ❌ stats          → Remover (usa subscriptions)            │
+│  ✅ toggleAdmin    → Manter                                  │
+│  ✅ getUserDetails → Manter (sem subscription)               │
+│  ❌ updateSubscription → Remover                             │
+│  ❌ extendTrial    → Remover                                 │
+│  ✅ deleteUser     → Manter                                  │
+│  ❌ getStripeInfo  → Remover                                 │
+│  ❌ syncFromStripe → Remover                                 │
+│  NEW updateProfile → Adicionar (editar nome/negócio)        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Lógica Simplificada:
-```typescript
-// Se não existe assinatura, cria trial
-// Se status = 'trial' e dias > 0 → subscribed = true
-// Se status = 'active' → subscribed = true
-// Se status = 'expired' ou 'canceled' → subscribed = false
-```
+### Mudanças no Código:
+1. Remover import do Stripe
+2. Remover referências à tabela `subscriptions`
+3. Remover ações: `stats`, `updateSubscription`, `extendTrial`, `getStripeInfo`, `syncFromStripe`
+4. Adicionar ação: `updateProfile` (editar nome/negócio do usuário)
+5. Simplificar `list` e `getUserDetails` para não incluir dados de assinatura
 
 ---
 
-## Parte 2: Exibir Informações do Stripe no Admin
+## Parte 3: Separação Admin vs Usuário
 
-### Novo Recurso
-Adicionar uma seção no painel admin que mostra dados **em tempo real do Stripe** para cada usuário:
-
-- Status real da assinatura no Stripe
-- Data de próxima cobrança
-- Valor do plano
-- Histórico de pagamentos recentes
-
-### Arquivos a Modificar
-
-#### 1. Backend: `supabase/functions/admin-users/index.ts`
-Adicionar nova action: `getStripeInfo`
-
-```typescript
-case "getStripeInfo": {
-  const { email, stripeCustomerId } = params;
-  
-  // Busca cliente no Stripe pelo email ou ID
-  // Retorna:
-  //   - customer: { id, email, created, default_payment_method }
-  //   - subscriptions: [{ id, status, current_period_end, plan }]
-  //   - invoices: [{ id, status, amount_paid, created }] (últimas 5)
-}
-```
-
-#### 2. Frontend: `src/components/admin/UserDetailsModal.tsx`
-Adicionar nova aba: **"Stripe"** com as informações buscadas
+### Arquitetura Proposta:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Detalhes do Usuário                      │
-│  ┌────────┐ ┌────────────┐ ┌────────┐ ┌─────────┐          │
-│  │ Perfil │ │ Assinatura │ │  Dados │ │ Stripe  │          │
-│  └────────┘ └────────────┘ └────────┘ └─────────┘          │
+│                     ADMIN (Rafael)                          │
 │                                                              │
-│  ═══════════════════════════════════════════════════════    │
-│  Aba "Stripe" (nova):                                        │
-│                                                              │
-│  Status no Stripe              [ 🟢 active ]                │
-│  Customer ID                   cus_TriKmfFI5gUrCD           │
-│  Subscription ID               sub_1Stytr...                │
-│                                                              │
-│  ─────────────────────────────────────────────────────────  │
-│  Próxima Cobrança              26/02/2026                   │
-│  Valor                         R$ 49,90                      │
-│                                                              │
-│  ─────────────────────────────────────────────────────────  │
-│  Últimos Pagamentos:                                         │
-│  • 26/01/2026 - R$ 49,90 - ✅ Pago                          │
-│                                                              │
-│  ─────────────────────────────────────────────────────────  │
-│  [ 🔗 Abrir no Stripe Dashboard ]                           │
-│                                                              │
-│  [ 🔄 Sincronizar Status ]                                  │
-│  (Copia status do Stripe para o banco de dados)             │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │                 Painel Admin                         │    │
+│  │                                                      │    │
+│  │  • Lista de Usuários                                 │    │
+│  │  • Ver detalhes do usuário                          │    │
+│  │  • Editar nome/negócio                              │    │
+│  │  • Alterar roles (admin/user)                       │    │
+│  │  • Excluir usuário                                  │    │
+│  │  • Gerenciar tickets de suporte                     │    │
+│  │                                                      │    │
+│  │  NÃO TEM: Receitas, Produtos, Ingredientes, etc.   │    │
+│  └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
-```
 
-#### 3. Botão "Sincronizar Status"
-Permite que o admin force a sincronização:
-- Busca o status atual no Stripe
-- Atualiza a tabela `subscriptions` no banco
-- Atualiza `stripe_customer_id`, `stripe_subscription_id`, `status`, `subscription_end`
-
----
-
-## Parte 3: Melhorias no EditSubscriptionDialog
-
-### Arquivo: `src/components/admin/EditSubscriptionDialog.tsx`
-
-Adicionar campos para editar os IDs do Stripe manualmente:
-
-```
 ┌─────────────────────────────────────────────────────────────┐
-│                   Editar Assinatura                          │
+│                   USUÁRIO (Pamella)                         │
 │                                                              │
-│  Status:           [ Active ▼ ]                             │
-│                                                              │
-│  Fim do Trial:     [ 26/01/2026 📅 ]                        │
-│  Fim Assinatura:   [ 26/02/2026 📅 ]                        │
-│                                                              │
-│  ─────────────────────────────────────────────────────────  │
-│  IDs do Stripe (opcional):                                  │
-│                                                              │
-│  Customer ID:      [ cus_TriKmfFI5gUrCD ]                   │
-│  Subscription ID:  [ sub_1Stytr1UfMJqJ1ycJbNT665X ]         │
-│  Product ID:       [ prod_TrfaAKNLqC8XfO ]                  │
-│                                                              │
-│             [ Cancelar ]  [ Salvar ]                        │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │               Dashboard PreciBake                    │    │
+│  │                                                      │    │
+│  │  • Dashboard com estatísticas                        │    │
+│  │  • Produtos e categorias                            │    │
+│  │  • Receitas e categorias                            │    │
+│  │  • Ingredientes e categorias                        │    │
+│  │  • Decorações e categorias                          │    │
+│  │  • Embalagens e categorias                          │    │
+│  │  • Configurações de precificação                    │    │
+│  │  • Perfil pessoal                                   │    │
+│  │  • Suporte (criar tickets)                          │    │
+│  │                                                      │    │
+│  │  NÃO TEM: Painel Admin                              │    │
+│  └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
+```
+
+### Mudanças no Frontend:
+
+#### src/pages/Index.tsx
+- Verificar se usuário é admin após login
+- Admin → redirecionar para painel admin dedicado
+- Usuário → redirecionar para Dashboard normal
+
+#### src/pages/Dashboard.tsx
+- Manter apenas para usuários normais
+- Admin não acessa este componente
+
+#### Novo: src/pages/AdminDashboard.tsx
+- Dashboard exclusivo para admins
+- Contém apenas: UserManagement + SupportManagement
+- Layout simplificado sem menu de produtos/receitas
+
+#### src/components/layout/AppLayout.tsx
+- Remover item "Admin" do menu (será separado)
+- Continua servindo apenas usuários normais
+
+#### Novo: src/components/layout/AdminLayout.tsx
+- Layout exclusivo para admins
+- Menu com: Usuários, Suporte, Sair
+- Sem acesso a funções de precificação
+
+---
+
+## Parte 4: Configuração de Roles no Banco
+
+### Estado Atual:
+| Usuário | Email | ID | Role Atual |
+|---------|-------|-----|------------|
+| Rafael | rafaeljuniorpis@gmail.com | 881da8e6-... | Nenhum |
+| Pamella | p.souza1794@gmail.com | 26e1d0f1-... | admin |
+
+### Estado Desejado:
+| Usuário | Email | ID | Role Novo |
+|---------|-------|-----|-----------|
+| Rafael | rafaeljuniorpis@gmail.com | 881da8e6-... | **admin** |
+| Pamella | p.souza1794@gmail.com | 26e1d0f1-... | **user** (remover admin) |
+
+### SQL para Atualizar:
+```sql
+-- Remover role de admin da Pamella
+DELETE FROM user_roles 
+WHERE user_id = '26e1d0f1-f02d-4d52-9821-ca8d19d7662f' 
+AND role = 'admin';
+
+-- Adicionar role de admin ao Rafael
+INSERT INTO user_roles (user_id, role)
+VALUES ('881da8e6-e4af-4e25-9138-1094c0c25e71', 'admin')
+ON CONFLICT (user_id, role) DO NOTHING;
 ```
 
 ---
 
-## Resumo das Alterações
+## Parte 5: Limpeza de Componentes Frontend
 
-### Backend (Edge Functions)
-| Arquivo | Alteração |
-|---------|-----------|
-| `check-subscription/index.ts` | Remover consulta ao Stripe, usar apenas banco |
-| `admin-users/index.ts` | Adicionar action `getStripeInfo` e `syncFromStripe` |
+### Arquivos a Modificar:
+| Arquivo | Ação |
+|---------|------|
+| `src/components/admin/UserManagement.tsx` | Remover referências a subscription status |
+| `src/components/admin/UserDetailsModal.tsx` | Remover aba de assinatura/Stripe |
+| `src/components/admin/AdminStats.tsx` | Remover ou adaptar (se existir) |
 
-### Frontend
-| Arquivo | Alteração |
-|---------|-----------|
-| `UserDetailsModal.tsx` | Adicionar aba "Stripe" com dados em tempo real |
-| `EditSubscriptionDialog.tsx` | Adicionar campos para IDs do Stripe |
+### Arquivos que podem ser removidos (verificar dependências):
+- Qualquer componente em `src/components/subscription/` que ainda exista
 
 ---
 
-## Benefícios da Solução
+## Resumo das Ações
 
-1. **Simplicidade**: O sistema não depende mais da sincronização automática Stripe-banco
-2. **Controle Total**: Admin pode ver e editar todos os dados manualmente
-3. **Visibilidade**: Informações do Stripe ficam acessíveis diretamente no painel
-4. **Sem Erros de Sincronização**: Elimina os problemas de `RangeError` e webhooks falhando
-5. **Recuperação Fácil**: Botão "Sincronizar" permite corrigir inconsistências rapidamente
+### Backend:
+1. Deletar 4 Edge Functions de assinatura
+2. Reescrever `admin-users/index.ts` sem Stripe/assinatura
+3. Executar SQL para configurar roles
+
+### Frontend:
+1. Criar `AdminDashboard.tsx` - dashboard exclusivo admin
+2. Criar `AdminLayout.tsx` - layout exclusivo admin
+3. Modificar `Index.tsx` - separar fluxo admin vs usuário
+4. Limpar `UserManagement.tsx` e `UserDetailsModal.tsx`
+5. Remover item "Admin" do menu de usuários
 
 ---
 
-## Fluxo de Trabalho do Admin (após implementação)
+## Fluxo Final
 
-1. Cliente compra assinatura no Stripe
-2. Admin acessa o painel → Aba Usuários
-3. Busca o cliente pelo email
-4. Clica em "Ver Detalhes" → Aba "Stripe"
-5. Visualiza status real no Stripe
-6. Clica em "Sincronizar Status" para atualizar o banco
-7. Cliente agora tem acesso liberado
-
-Ou alternativamente:
-1. Admin edita a assinatura manualmente
-2. Define status = "active" e datas corretas
-3. Salva → cliente tem acesso imediato
-
+```
+Usuário faz Login
+       │
+       ▼
+  É Admin?
+    │    │
+   SIM   NÃO
+    │     │
+    ▼     ▼
+AdminDashboard  Dashboard
+(Gerenciar     (Precificar
+ Usuários)      Produtos)
+```
