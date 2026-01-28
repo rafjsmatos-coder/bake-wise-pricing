@@ -1,7 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { useAdminRole } from '@/hooks/useAdminRole';
 import { useSidebarControl } from '@/hooks/useSidebarControl';
 import { useSupport } from '@/hooks/useSupport';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,6 @@ import {
   ChevronDown,
   LayoutDashboard,
   User,
-  Shield,
   Headphones,
   Loader2
 } from 'lucide-react';
@@ -45,7 +43,6 @@ export type PageType =
   | 'product-categories' 
   | 'settings'
   | 'profile'
-  | 'admin'
   | 'support';
 
 interface NavItem {
@@ -65,7 +62,6 @@ interface AppLayoutProps {
 export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
-  const { isAdmin } = useAdminRole();
   const { sidebarOpen, setSidebarOpen } = useSidebarControl();
   const { pendingTicketsCount } = useSupport();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -89,12 +85,8 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
     } catch (error) {
       console.error('Error signing out:', error);
     } finally {
-      // Force full page reload with cache bypass for Safari compatibility
-      // Use setTimeout to ensure signOut completes before redirect
       setTimeout(() => {
-        // Clear any cached state
         window.localStorage.removeItem('sb-ektodtogznnlwvcsawgu-auth-token');
-        // Force hard reload - works better on Safari/iOS
         window.location.replace('/');
       }, 100);
     }
@@ -145,7 +137,6 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
     { id: 'support', label: 'Suporte', icon: Headphones, badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined },
     { id: 'settings', label: 'Configurações', icon: Settings },
     { id: 'profile', label: 'Meu Perfil', icon: User },
-    ...(isAdmin ? [{ id: 'admin' as PageType, label: 'Admin', icon: Shield }] : []),
   ];
 
   // Map nav item IDs to tour data attributes
