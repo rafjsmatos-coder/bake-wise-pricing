@@ -31,6 +31,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import {
   Search,
   Loader2,
   Shield,
@@ -40,12 +49,22 @@ import {
   MoreHorizontal,
   Eye,
   Trash2,
+  Clock,
+  CreditCard,
+  RefreshCw,
+  Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { UserDetailsModal } from './UserDetailsModal';
 import { DeleteUserDialog } from './DeleteUserDialog';
+
+interface Subscription {
+  status: string;
+  trialEndsAt: string | null;
+  subscriptionEndsAt: string | null;
+}
 
 interface User {
   id: string;
@@ -55,7 +74,53 @@ interface User {
   createdAt: string;
   roles: string[];
   isAdmin: boolean;
+  subscription: Subscription | null;
 }
+
+const getSubscriptionBadge = (subscription: Subscription | null) => {
+  if (!subscription) {
+    return <Badge variant="outline" className="text-muted-foreground">Sem assinatura</Badge>;
+  }
+
+  switch (subscription.status) {
+    case 'trial':
+      const trialEnd = subscription.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
+      const daysLeft = trialEnd ? Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0;
+      return (
+        <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+          <Clock className="h-3 w-3 mr-1" />
+          Trial ({daysLeft}d)
+        </Badge>
+      );
+    case 'active':
+      return (
+        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+          <CreditCard className="h-3 w-3 mr-1" />
+          Premium
+        </Badge>
+      );
+    case 'expired':
+      return (
+        <Badge variant="destructive">
+          Expirado
+        </Badge>
+      );
+    case 'canceled':
+      return (
+        <Badge variant="outline" className="text-muted-foreground">
+          Cancelado
+        </Badge>
+      );
+    case 'pending':
+      return (
+        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+          Pendente
+        </Badge>
+      );
+    default:
+      return <Badge variant="outline">{subscription.status}</Badge>;
+  }
+};
 
 export function UserManagement() {
   const { session } = useAuth();
@@ -81,6 +146,13 @@ export function UserManagement() {
     open: boolean;
     user: User | null;
   }>({ open: false, user: null });
+
+  const [subscriptionDialog, setSubscriptionDialog] = useState<{
+    open: boolean;
+    user: User | null;
+    action: 'extend' | 'activate' | 'sync';
+    days: number;
+  }>({ open: false, user: null, action: 'extend', days: 7 });
 
   const perPage = 20;
 
@@ -155,6 +227,58 @@ export function UserManagement() {
     }
   };
 
+  const handleSubscriptionAction = async () => {
+    if (!subscriptionDialog.user || !session?.access_token) return;
+
+    try {
+      let actionName = '';
+      let body: Record<string, unknown> = { userId: subscriptionDialog.user.id };
+
+      switch (subscriptionDialog.action) {
+        case 'extend':
+          actionName = 'extendTrial';
+          body.action = 'extendTrial';
+          body.days = subscriptionDialog.days;
+          break;
+        case 'activate':
+          actionName = 'updateSubscription';
+          body.action = 'updateSubscription';
+          body.status = 'active';
+          body.daysToAdd = 30;
+          break;
+        case 'sync':
+          actionName = 'syncFromStripe';
+          body.action = 'syncFromStripe';
+          break;
+      }
+
+      const { error } = await supabase.functions.invoke('admin-users', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body,
+      });
+
+      if (error) {
+        toast.error('Erro ao atualizar assinatura');
+        return;
+      }
+
+      const messages: Record<string, string> = {
+        extend: `Trial estendido em ${subscriptionDialog.days} dias`,
+        activate: 'Assinatura ativada por 30 dias',
+        sync: 'Sincronizado com Stripe',
+      };
+      toast.success(messages[subscriptionDialog.action]);
+      fetchUsers();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao atualizar assinatura');
+    } finally {
+      setSubscriptionDialog({ open: false, user: null, action: 'extend', days: 7 });
+    }
+  };
+
   const totalPages = Math.ceil(total / perPage);
 
   return (
@@ -193,7 +317,7 @@ export function UserManagement() {
                     <TableRow>
                       <TableHead>Email</TableHead>
                       <TableHead>Nome</TableHead>
-                      <TableHead>Data de Cadastro</TableHead>
+                      <TableHead>Assinatura</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
@@ -211,7 +335,7 @@ export function UserManagement() {
                           <TableCell className="font-medium">{user.email}</TableCell>
                           <TableCell>{user.fullName || '-'}</TableCell>
                           <TableCell>
-                            {format(new Date(user.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                            {getSubscriptionBadge(user.subscription)}
                           </TableCell>
                           <TableCell>
                             {user.isAdmin ? (
@@ -237,6 +361,43 @@ export function UserManagement() {
                                   <Eye className="h-4 w-4 mr-2" />
                                   Ver Detalhes
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                
+                                {/* Subscription Actions */}
+                                <DropdownMenuItem
+                                  onClick={() => setSubscriptionDialog({ 
+                                    open: true, 
+                                    user, 
+                                    action: 'extend',
+                                    days: 7 
+                                  })}
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Estender Trial
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setSubscriptionDialog({ 
+                                    open: true, 
+                                    user, 
+                                    action: 'activate',
+                                    days: 30 
+                                  })}
+                                >
+                                  <CreditCard className="h-4 w-4 mr-2" />
+                                  Ativar Premium (30d)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setSubscriptionDialog({ 
+                                    open: true, 
+                                    user, 
+                                    action: 'sync',
+                                    days: 0 
+                                  })}
+                                >
+                                  <RefreshCw className="h-4 w-4 mr-2" />
+                                  Sincronizar Stripe
+                                </DropdownMenuItem>
+                                
                                 <DropdownMenuSeparator />
                                 {user.isAdmin ? (
                                   <DropdownMenuItem
@@ -352,6 +513,66 @@ export function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Subscription Action Dialog */}
+      <Dialog
+        open={subscriptionDialog.open}
+        onOpenChange={(open) =>
+          !open && setSubscriptionDialog({ open: false, user: null, action: 'extend', days: 7 })
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {subscriptionDialog.action === 'extend' && 'Estender Trial'}
+              {subscriptionDialog.action === 'activate' && 'Ativar Premium'}
+              {subscriptionDialog.action === 'sync' && 'Sincronizar com Stripe'}
+            </DialogTitle>
+            <DialogDescription>
+              {subscriptionDialog.action === 'extend' && 
+                `Adicionar dias ao trial de ${subscriptionDialog.user?.email}`}
+              {subscriptionDialog.action === 'activate' && 
+                `Ativar assinatura premium por 30 dias para ${subscriptionDialog.user?.email}`}
+              {subscriptionDialog.action === 'sync' && 
+                `Sincronizar dados de assinatura do Stripe para ${subscriptionDialog.user?.email}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {subscriptionDialog.action === 'extend' && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="days" className="text-right">
+                  Dias
+                </Label>
+                <Input
+                  id="days"
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={subscriptionDialog.days}
+                  onChange={(e) => setSubscriptionDialog(prev => ({
+                    ...prev,
+                    days: parseInt(e.target.value) || 7
+                  }))}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setSubscriptionDialog({ open: false, user: null, action: 'extend', days: 7 })}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleSubscriptionAction}>
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
