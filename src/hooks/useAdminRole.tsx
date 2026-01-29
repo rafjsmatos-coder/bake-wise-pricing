@@ -36,18 +36,21 @@ async function getFreshAccessToken(): Promise<string | null> {
 export function AdminRoleProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastCheckedUserId, setLastCheckedUserId] = useState<string | null>(null);
 
   const checkAdminRole = useCallback(async () => {
+    setIsLoading(true);
+    
     const freshToken = await getFreshAccessToken();
 
     if (!freshToken) {
       setIsAdmin(false);
       setIsLoading(false);
+      setLastCheckedUserId(null);
       return;
     }
 
     try {
-      setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('check-admin-role', {
         headers: {
           Authorization: `Bearer ${freshToken}`,
@@ -62,6 +65,7 @@ export function AdminRoleProvider({ children }: { children: ReactNode }) {
         setIsAdmin(false);
       } else {
         setIsAdmin(data?.isAdmin || false);
+        setLastCheckedUserId(data?.userId || null);
       }
     } catch (err) {
       console.error('[useAdminRole] Exception:', err);
@@ -71,9 +75,26 @@ export function AdminRoleProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Listen for auth state changes to re-check admin role
   useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user?.id !== lastCheckedUserId) {
+          // New user signed in, re-check admin role
+          await checkAdminRole();
+        } else if (event === 'SIGNED_OUT') {
+          setIsAdmin(false);
+          setIsLoading(false);
+          setLastCheckedUserId(null);
+        }
+      }
+    );
+
+    // Initial check
     checkAdminRole();
-  }, [checkAdminRole]);
+
+    return () => subscription.unsubscribe();
+  }, [checkAdminRole, lastCheckedUserId]);
 
   return (
     <AdminRoleContext.Provider value={{ isAdmin, isLoading, checkAdminRole }}>

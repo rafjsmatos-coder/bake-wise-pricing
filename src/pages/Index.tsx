@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { AuthForm } from '@/components/auth/AuthForm';
@@ -9,9 +9,17 @@ import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const { user, loading } = useAuth();
-  const { isAdmin, isLoading: isAdminLoading } = useAdminRole();
+  const { isAdmin, isLoading: isAdminLoading, checkAdminRole } = useAdminRole();
   const [showAuthForm, setShowAuthForm] = useState(false);
 
+  // Re-check admin role whenever user changes (login/logout)
+  useEffect(() => {
+    if (user) {
+      checkAdminRole();
+    }
+  }, [user, checkAdminRole]);
+
+  // Show loading while auth or admin role is being checked
   if (loading || (user && isAdminLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
