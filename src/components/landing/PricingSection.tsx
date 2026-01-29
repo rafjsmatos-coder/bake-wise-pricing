@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   ArrowRight,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  CreditCard,
+  Barcode
 } from 'lucide-react';
 
 interface PricingSectionProps {
@@ -27,20 +29,32 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Tudo que você precisa
+            Comece grátis, evolua quando quiser
           </h2>
           <p className="text-lg text-muted-foreground">
-            Ferramentas completas para precificar seus produtos
+            7 dias grátis para testar todas as funcionalidades
           </p>
         </div>
 
         <div className="max-w-md mx-auto">
           <Card className="border-accent/30 relative overflow-hidden shadow-xl">
-            <CardHeader className="text-center pb-2">
+            {/* Badge */}
+            <div className="absolute top-0 right-0 bg-accent text-accent-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
+              7 DIAS GRÁTIS
+            </div>
+            
+            <CardHeader className="text-center pb-2 pt-8">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Sparkles className="w-6 h-6 text-accent" />
-                <CardTitle className="text-2xl">Recursos Inclusos</CardTitle>
+                <CardTitle className="text-2xl">PreciBake Premium</CardTitle>
               </div>
+              <div className="mt-4">
+                <span className="text-4xl font-bold">R$ 49,90</span>
+                <span className="text-muted-foreground">/mês</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Após o período de teste
+              </p>
             </CardHeader>
             <CardContent className="pt-6">
               <ul className="space-y-3 mb-6">
@@ -51,10 +65,26 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
                   </li>
                 ))}
               </ul>
+              
               <Button onClick={onGetStarted} className="w-full gap-2 shadow-lg hover:shadow-xl transition-shadow" size="lg">
-                Começar Agora
+                Começar Teste Grátis
                 <ArrowRight className="w-4 h-4" />
               </Button>
+              
+              <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Cartão</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Barcode className="w-3.5 h-3.5" />
+                  <span>Boleto</span>
+                </div>
+              </div>
+              
+              <p className="text-xs text-center text-muted-foreground mt-3">
+                Cancele quando quiser. Sem compromisso.
+              </p>
             </CardContent>
           </Card>
         </div>

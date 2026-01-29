@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdminRoleProvider } from "@/hooks/useAdminRole";
+import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { SidebarControlProvider, useSidebarControl } from "@/hooks/useSidebarControl";
 import { TourWrapper } from "@/components/tour/TourProvider";
 import Index from "./pages/Index";
@@ -12,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import { SubscriptionSuccess } from "@/components/subscription/SubscriptionSuccess";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,8 @@ function AppContent() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Index />} />
+            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/privacidade" element={<PrivacyPolicy />} />
             <Route path="/termos" element={<TermsOfService />} />
@@ -42,9 +46,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <AdminRoleProvider>
-        <SidebarControlProvider>
-          <AppContent />
-        </SidebarControlProvider>
+        <SubscriptionProvider>
+          <SidebarControlProvider>
+            <AppContent />
+          </SidebarControlProvider>
+        </SubscriptionProvider>
       </AdminRoleProvider>
     </AuthProvider>
   </QueryClientProvider>

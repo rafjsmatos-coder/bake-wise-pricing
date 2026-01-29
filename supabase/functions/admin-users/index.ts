@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { validateAuth, createAdminClient } from "../_shared/auth.ts";
 
@@ -77,10 +78,16 @@ serve(async (req) => {
           .from("user_roles")
           .select("user_id, role");
 
+        // Get all subscriptions
+        const { data: subscriptions } = await supabaseAdmin
+          .from("subscriptions")
+          .select("user_id, status, trial_ends_at, subscription_ends_at");
+
         // Combine data
         let users = authUsers.users.map((authUser) => {
           const profile = profiles?.find((p) => p.user_id === authUser.id);
           const roles = userRoles?.filter((r) => r.user_id === authUser.id).map((r) => r.role) || [];
+          const subscription = subscriptions?.find((s) => s.user_id === authUser.id);
 
           return {
             id: authUser.id,
@@ -90,6 +97,11 @@ serve(async (req) => {
             createdAt: authUser.created_at,
             roles,
             isAdmin: roles.includes("admin"),
+            subscription: subscription ? {
+              status: subscription.status,
+              trialEndsAt: subscription.trial_ends_at,
+              subscriptionEndsAt: subscription.subscription_ends_at,
+            } : null,
           };
         });
 
@@ -124,7 +136,7 @@ serve(async (req) => {
         // Get total user count from auth
         const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers({
           page: 1,
-          perPage: 1000, // Get up to 1000 users for stats
+          perPage: 1000,
         });
 
         if (listError) {
@@ -132,6 +144,25 @@ serve(async (req) => {
         }
 
         const totalUsers = authUsers.users.length;
+
+        // Get subscription stats
+        const { data: subscriptions } = await supabaseAdmin
+          .from("subscriptions")
+          .select("status");
+
+        const subscriptionStats = {
+          trial: 0,
+          active: 0,
+          expired: 0,
+          canceled: 0,
+          pending: 0,
+        };
+
+        subscriptions?.forEach((sub) => {
+          if (sub.status in subscriptionStats) {
+            subscriptionStats[sub.status as keyof typeof subscriptionStats]++;
+          }
+        });
 
         // Get users created per month (last 6 months)
         const sixMonthsAgo = new Date();
@@ -151,6 +182,7 @@ serve(async (req) => {
 
         const stats = {
           total: totalUsers,
+          subscriptions: subscriptionStats,
         };
 
         logStep("Stats retrieved", stats);
@@ -235,6 +267,13 @@ serve(async (req) => {
           .select("role")
           .eq("user_id", userId);
 
+        // Get subscription
+        const { data: subscription } = await supabaseAdmin
+          .from("subscriptions")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+
         // Get data counts
         const [
           { count: ingredientsCount },
@@ -262,6 +301,7 @@ serve(async (req) => {
             },
             profile,
             roles: roles?.map((r) => r.role) || [],
+            subscription,
             dataCounts: {
               ingredients: ingredientsCount || 0,
               recipes: recipesCount || 0,
@@ -298,6 +338,206 @@ serve(async (req) => {
         }
 
         logStep("Profile updated", { userId, ...updateData });
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+
+      case "updateSubscription": {
+        const { userId, status, daysToAdd } = params;
+
+        if (!userId) {
+          throw new Error("User ID is required");
+        }
+
+        const updateData: Record<string, unknown> = {};
+        
+        if (status) {
+          updateData.status = status;
+        }
+
+        if (status === 'active' && daysToAdd) {
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + daysToAdd);
+          updateData.subscription_ends_at = endDate.toISOString();
+        }
+
+        if (status === 'trial' && daysToAdd) {
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + daysToAdd);
+          updateData.trial_ends_at = endDate.toISOString();
+        }
+
+        // Check if subscription exists
+        const { data: existingSub } = await supabaseAdmin
+          .from("subscriptions")
+          .select("id")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (existingSub) {
+          const { error: updateError } = await supabaseAdmin
+            .from("subscriptions")
+            .update(updateData)
+            .eq("user_id", userId);
+
+          if (updateError) {
+            throw new Error(`Failed to update subscription: ${updateError.message}`);
+          }
+        } else {
+          // Create new subscription
+          const trialEndsAt = new Date();
+          trialEndsAt.setDate(trialEndsAt.getDate() + (daysToAdd || 7));
+          
+          const { error: insertError } = await supabaseAdmin
+            .from("subscriptions")
+            .insert({
+              user_id: userId,
+              status: status || 'trial',
+              trial_ends_at: trialEndsAt.toISOString(),
+              ...updateData,
+            });
+
+          if (insertError) {
+            throw new Error(`Failed to create subscription: ${insertError.message}`);
+          }
+        }
+
+        logStep("Subscription updated", { userId, ...updateData });
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+
+      case "extendTrial": {
+        const { userId, days } = params;
+
+        if (!userId || !days) {
+          throw new Error("User ID and days are required");
+        }
+
+        // Get current subscription
+        const { data: subscription } = await supabaseAdmin
+          .from("subscriptions")
+          .select("trial_ends_at, status")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        let newTrialEnd: Date;
+        
+        if (subscription?.trial_ends_at) {
+          const currentEnd = new Date(subscription.trial_ends_at);
+          // Se a data já passou, começar de agora
+          if (currentEnd < new Date()) {
+            newTrialEnd = new Date();
+          } else {
+            newTrialEnd = currentEnd;
+          }
+        } else {
+          newTrialEnd = new Date();
+        }
+        
+        newTrialEnd.setDate(newTrialEnd.getDate() + days);
+
+        const { error: updateError } = await supabaseAdmin
+          .from("subscriptions")
+          .update({ 
+            trial_ends_at: newTrialEnd.toISOString(),
+            status: 'trial',
+          })
+          .eq("user_id", userId);
+
+        if (updateError) {
+          throw new Error(`Failed to extend trial: ${updateError.message}`);
+        }
+
+        logStep("Trial extended", { userId, days, newTrialEnd: newTrialEnd.toISOString() });
+
+        return new Response(
+          JSON.stringify({ success: true, newTrialEnd: newTrialEnd.toISOString() }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+
+      case "syncFromStripe": {
+        const { userId } = params;
+
+        if (!userId) {
+          throw new Error("User ID is required");
+        }
+
+        const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+        if (!stripeKey) {
+          throw new Error("STRIPE_SECRET_KEY is not set");
+        }
+
+        // Get user email
+        const { data: authUser, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (authUserError || !authUser.user?.email) {
+          throw new Error("User not found or no email");
+        }
+
+        const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+
+        // Find customer in Stripe
+        const customers = await stripe.customers.list({ email: authUser.user.email, limit: 1 });
+        
+        if (customers.data.length === 0) {
+          return new Response(
+            JSON.stringify({ success: true, message: "No Stripe customer found" }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            }
+          );
+        }
+
+        const customerId = customers.data[0].id;
+
+        // Get active subscriptions
+        const subscriptions = await stripe.subscriptions.list({
+          customer: customerId,
+          status: 'active',
+          limit: 1,
+        });
+
+        if (subscriptions.data.length > 0) {
+          const sub = subscriptions.data[0];
+          const endDate = new Date(sub.current_period_end * 1000);
+
+          await supabaseAdmin
+            .from("subscriptions")
+            .update({
+              status: 'active',
+              stripe_customer_id: customerId,
+              stripe_subscription_id: sub.id,
+              subscription_ends_at: endDate.toISOString(),
+            })
+            .eq("user_id", userId);
+
+          logStep("Synced active subscription from Stripe", { userId, subscriptionId: sub.id });
+        } else {
+          // No active subscription, update customer ID only
+          await supabaseAdmin
+            .from("subscriptions")
+            .update({ stripe_customer_id: customerId })
+            .eq("user_id", userId);
+
+          logStep("Synced customer ID from Stripe (no active subscription)", { userId, customerId });
+        }
 
         return new Response(
           JSON.stringify({ success: true }),

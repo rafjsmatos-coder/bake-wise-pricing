@@ -14,26 +14,48 @@ import { ProductCategoriesList } from '@/components/product-categories/ProductCa
 import { UserSettings } from '@/components/settings/UserSettings';
 import { ProfileSettings } from '@/components/settings/ProfileSettings';
 import { SupportPage } from '@/components/support/SupportPage';
+import { TrialBanner } from '@/components/subscription/TrialBanner';
+import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
+import { useSubscription } from '@/hooks/useSubscription';
+import { Loader2 } from 'lucide-react';
 
 export function Dashboard() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
+  const { canAccess, isLoading } = useSubscription();
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  // Paywall for expired users
+  if (!canAccess) {
+    return <SubscriptionPaywall />;
+  }
 
   return (
-    <AppLayout currentPage={currentPage} onPageChange={setCurrentPage}>
-      {currentPage === 'dashboard' && <DashboardHome onNavigate={(page) => setCurrentPage(page as PageType)} />}
-      {currentPage === 'products' && <ProductsList />}
-      {currentPage === 'product-categories' && <ProductCategoriesList />}
-      {currentPage === 'recipes' && <RecipesList />}
-      {currentPage === 'recipe-categories' && <RecipeCategoriesList />}
-      {currentPage === 'ingredients' && <IngredientsList />}
-      {currentPage === 'categories' && <CategoriesList />}
-      {currentPage === 'decorations' && <DecorationsList />}
-      {currentPage === 'decoration-categories' && <DecorationCategoriesList />}
-      {currentPage === 'packaging' && <PackagingList />}
-      {currentPage === 'packaging-categories' && <PackagingCategoriesList />}
-      {currentPage === 'settings' && <UserSettings />}
-      {currentPage === 'profile' && <ProfileSettings />}
-      {currentPage === 'support' && <SupportPage />}
-    </AppLayout>
+    <>
+      <TrialBanner />
+      <AppLayout currentPage={currentPage} onPageChange={setCurrentPage}>
+        {currentPage === 'dashboard' && <DashboardHome onNavigate={(page) => setCurrentPage(page as PageType)} />}
+        {currentPage === 'products' && <ProductsList />}
+        {currentPage === 'product-categories' && <ProductCategoriesList />}
+        {currentPage === 'recipes' && <RecipesList />}
+        {currentPage === 'recipe-categories' && <RecipeCategoriesList />}
+        {currentPage === 'ingredients' && <IngredientsList />}
+        {currentPage === 'categories' && <CategoriesList />}
+        {currentPage === 'decorations' && <DecorationsList />}
+        {currentPage === 'decoration-categories' && <DecorationCategoriesList />}
+        {currentPage === 'packaging' && <PackagingList />}
+        {currentPage === 'packaging-categories' && <PackagingCategoriesList />}
+        {currentPage === 'settings' && <UserSettings />}
+        {currentPage === 'profile' && <ProfileSettings />}
+        {currentPage === 'support' && <SupportPage />}
+      </AppLayout>
+    </>
   );
 }

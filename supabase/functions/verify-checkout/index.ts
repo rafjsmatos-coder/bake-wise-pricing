@@ -1,0 +1,139 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { validateAuth, createAdminClient } from "../_shared/auth.ts";
+
+const logStep = (step: string, details?: Record<string, unknown>) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[VERIFY-CHECKOUT] ${step}${detailsStr}`);
+};
+
+serve(async (req) => {
+  const corsResponse = handleCorsPreflightRequest(req);
+  if (corsResponse) return corsResponse;
+
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
+  try {
+    logStep("Function started");
+
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      throw new Error("STRIPE_SECRET_KEY is not set");
+    }
+
+    const { user, error: authError } = await validateAuth(req);
+    
+    if (authError || !user) {
+      logStep("Authentication failed", { error: authError });
+      return new Response(
+        JSON.stringify({ error: authError || "Authentication failed" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        }
+      );
+    }
+
+    const { session_id } = await req.json();
+    
+    if (!session_id) {
+      throw new Error("session_id is required");
+    }
+
+    logStep("Verifying checkout session", { sessionId: session_id, userId: user.id });
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const supabaseAdmin = createAdminClient();
+
+    // Buscar sessão de checkout
+    const session = await stripe.checkout.sessions.retrieve(session_id, {
+      expand: ['subscription'],
+    });
+
+    logStep("Session retrieved", { 
+      status: session.status, 
+      paymentStatus: session.payment_status,
+      customerId: session.customer,
+    });
+
+    if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
+      // Pagamento ainda pendente (ex: boleto)
+      if (session.payment_status === 'unpaid') {
+        // Atualizar status para pending
+        await supabaseAdmin
+          .from("subscriptions")
+          .update({
+            status: 'pending',
+            stripe_customer_id: session.customer as string,
+          })
+          .eq("user_id", user.id);
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            status: 'pending',
+            message: 'Aguardando confirmação do pagamento',
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+      
+      throw new Error("Payment not completed");
+    }
+
+    // Pagamento confirmado
+    const subscription = session.subscription as Stripe.Subscription;
+    const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+
+    logStep("Payment confirmed, updating subscription", {
+      subscriptionId: subscription.id,
+      currentPeriodEnd: currentPeriodEnd.toISOString(),
+    });
+
+    // Atualizar assinatura no banco
+    const { error: updateError } = await supabaseAdmin
+      .from("subscriptions")
+      .update({
+        status: 'active',
+        stripe_customer_id: session.customer as string,
+        stripe_subscription_id: subscription.id,
+        subscription_ends_at: currentPeriodEnd.toISOString(),
+      })
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      logStep("Error updating subscription", { error: updateError.message });
+      throw new Error(`Failed to update subscription: ${updateError.message}`);
+    }
+
+    logStep("Subscription activated successfully");
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: 'active',
+        subscriptionEndsAt: currentPeriodEnd.toISOString(),
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep("ERROR", { message: errorMessage });
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
+  }
+});
