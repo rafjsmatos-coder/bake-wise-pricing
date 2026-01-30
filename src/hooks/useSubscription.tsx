@@ -47,19 +47,21 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   });
 
   const checkSubscription = useCallback(async () => {
+    // Se não há usuário, definir isLoading: false (não há nada para verificar)
     if (!user) {
-      // Manter isLoading: true enquanto aguarda auth resolver
-      setState(prev => ({
-        ...prev,
+      setState({
         status: 'loading',
         canAccess: false,
         trialEndsAt: null,
         subscriptionEndsAt: null,
         daysRemaining: null,
-        isLoading: true,
-      }));
+        isLoading: false,
+      });
       return;
     }
+
+    // Iniciar loading antes da chamada
+    setState(prev => ({ ...prev, isLoading: true }));
 
     try {
       const token = await getFreshAccessToken();
@@ -144,10 +146,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   // Check subscription on mount and when user/auth changes
   useEffect(() => {
-    // Só verificar subscription após auth estar resolvido
-    if (!authLoading) {
-      checkSubscription();
+    // Aguardar auth resolver antes de fazer qualquer coisa
+    if (authLoading) {
+      setState(prev => ({ ...prev, isLoading: true }));
+      return;
     }
+    
+    // Auth resolvido - verificar subscription (ou limpar se não há usuário)
+    checkSubscription();
   }, [checkSubscription, authLoading]);
 
   // Polling every minute
