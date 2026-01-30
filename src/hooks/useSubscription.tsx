@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
+// Hook para gerenciar estado de assinatura com sincronização de auth
+
 type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'canceled' | 'pending' | 'loading';
 
 interface SubscriptionState {
@@ -34,7 +36,7 @@ async function getFreshAccessToken(): Promise<string | null> {
 }
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [state, setState] = useState<SubscriptionState>({
     status: 'loading',
     canAccess: false,
@@ -46,14 +48,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const checkSubscription = useCallback(async () => {
     if (!user) {
-      setState({
+      // Manter isLoading: true enquanto aguarda auth resolver
+      setState(prev => ({
+        ...prev,
         status: 'loading',
         canAccess: false,
         trialEndsAt: null,
         subscriptionEndsAt: null,
         daysRemaining: null,
-        isLoading: false,
-      });
+        isLoading: true,
+      }));
       return;
     }
 
@@ -138,10 +142,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Check subscription on mount and when user changes
+  // Check subscription on mount and when user/auth changes
   useEffect(() => {
-    checkSubscription();
-  }, [checkSubscription]);
+    // Só verificar subscription após auth estar resolvido
+    if (!authLoading) {
+      checkSubscription();
+    }
+  }, [checkSubscription, authLoading]);
 
   // Polling every minute
   useEffect(() => {
