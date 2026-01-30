@@ -9,18 +9,30 @@ import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const { user, loading } = useAuth();
-  const { isAdmin, isLoading: isAdminLoading, checkAdminRole } = useAdminRole();
+  const { isAdmin, isLoading: isAdminLoading } = useAdminRole();
   const [showAuthForm, setShowAuthForm] = useState(false);
+  const [adminGateTimedOut, setAdminGateTimedOut] = useState(false);
 
-  // Re-check admin role whenever user changes (login/logout)
+  // Evita travar no loading do admin (ex: CORS/rede). Após um pequeno timeout,
+  // seguimos como usuário comum e, se isAdmin virar true depois, alterna para o painel.
   useEffect(() => {
-    if (user) {
-      checkAdminRole();
+    if (!user) {
+      setAdminGateTimedOut(false);
+      return;
     }
-  }, [user, checkAdminRole]);
+
+    if (!isAdminLoading) {
+      setAdminGateTimedOut(false);
+      return;
+    }
+
+    setAdminGateTimedOut(false);
+    const t = window.setTimeout(() => setAdminGateTimedOut(true), 1500);
+    return () => window.clearTimeout(t);
+  }, [user, isAdminLoading]);
 
   // Show loading while auth or admin role is being checked
-  if (loading || (user && isAdminLoading)) {
+  if (loading || (user && isAdminLoading && !adminGateTimedOut)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-accent" />
