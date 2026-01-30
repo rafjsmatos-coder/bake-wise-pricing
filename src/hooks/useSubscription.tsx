@@ -60,9 +60,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Iniciar loading antes da chamada
-    setState(prev => ({ ...prev, isLoading: true }));
-
     try {
       const token = await getFreshAccessToken();
       if (!token) {
