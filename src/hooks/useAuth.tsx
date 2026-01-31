@@ -127,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider (check duplicate imports: use \'@/hooks/useAuth\' everywhere)');
   }
   return context;
 }
