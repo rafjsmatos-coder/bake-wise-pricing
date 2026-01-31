@@ -1,221 +1,112 @@
 
-# Plano: Correção do Loading Infinito e Responsividade do Banner
+Objetivo
+- Eliminar o “carregamento infinito” (spinner) ao atualizar com F5 (principalmente no domínio precibake.com.br).
+- Garantir que, mesmo se houver falha/atraso de rede na autenticação ou na verificação de assinatura, a UI nunca fique travada para sempre.
+- Ajustar o banner de trial para realmente ficar “mobile-first” (botão e layout sem cortar).
 
-## Problemas Identificados
+O que eu observei no código atual (causa provável)
+1) Há um caminho em src/hooks/useSubscription.tsx que pode deixar o estado travado em isLoading=true:
+   - O estado inicial do provider começa com isLoading: true.
+   - Quando authLoading vira false e user existe, checkSubscription() roda.
+   - Se o token vier null (getFreshAccessToken() falhar), o código faz:
+     console.error('[useSubscription] No token available');
+     return;
+     E NÃO seta isLoading=false nesse retorno.
+   - Resultado: o Dashboard fica preso no spinner (porque Dashboard.tsx renderiza loader quando isLoading é true).
 
-### Problema 1: Dashboard não carrega após F5 (refresh)
+2) Há também risco de travar no loader do AuthProvider (src/hooks/useAuth.tsx) se getSession falhar/travar:
+   - O useAuth não tem try/catch/finally nem timeout de segurança; se por algum motivo getSession não resolver e nenhum evento de auth ocorrer, loading pode ficar true para sempre.
 
-**Causa raiz:** Race condition entre os providers de autenticação e assinatura.
+Do I know what the issue is?
+- Sim, parcialmente: o bug mais forte e consistente é o “early return” em useSubscription quando token é null sem finalizar isLoading.
+- Há um segundo risco (menos comum, mas possível) no useAuth: ausência de tratamento de erro/timeout pode prender loading=true.
 
-Quando a página é atualizada com F5:
-1. `useAuth` ainda está carregando (`loading = true`)
-2. `useSubscription` tenta verificar assinatura mas não tem `user` ainda
-3. Quando não tem usuário, o hook define `status: 'loading'` e `isLoading: false`
-4. O `Dashboard.tsx` vê `isLoading: false` e `canAccess: false` (porque status é 'loading', não 'active')
-5. Isso faz aparecer o `SubscriptionPaywall` incorretamente
+Estratégia de correção (sem depender de “sorte” do tempo de rede)
+A ideia é transformar Auth + Subscription em um “boot flow” resiliente:
+- Nenhuma verificação pode terminar com “return” sem garantir que o estado global saia de loading ou assuma um estado de erro/retry.
+- Em caso de falha, mostramos um estado de “erro com botão de tentar novamente”, e não um spinner infinito.
 
-**Código problemático em `useSubscription.tsx` (linhas 47-58):**
-```typescript
-const checkSubscription = useCallback(async () => {
-  if (!user) {
-    setState({
-      status: 'loading',  // <-- Define status como 'loading'
-      canAccess: false,   // <-- Define canAccess como false
-      // ...
-      isLoading: false,   // <-- Define isLoading como false MESMO SEM USUÁRIO
-    });
-    return;
-  }
-  // ...
-}, [user]);
-```
+Plano de implementação (código)
+1) Ajuste no AuthProvider (src/hooks/useAuth.tsx)
+   1.1) Colocar a inicialização do getSession em um bloco com try/catch/finally
+   - Garantir setLoading(false) no finally, mesmo se houver erro.
+   - Logar um erro claro no console se getSession falhar.
 
-**Solução:**
-Quando não há usuário, manter `isLoading: true` para que o Dashboard aguarde a autenticação ser resolvida antes de decidir o que mostrar.
+   1.2) Adicionar um “failsafe timeout” (ex.: 2500–4000ms)
+   - Se por algum motivo loading continuar true após esse tempo, forçar setLoading(false).
+   - Motivo: impedir UX travada para sempre em ambientes específicos (browser/privacidade/rede).
 
----
+   1.3) Evitar atualizações duplicadas e “flapping”
+   - Usar um flag local (ex.: didInitRef) para garantir que o primeiro boot finalize de forma consistente.
 
-### Problema 2: Banner de Trial não se adapta em mobile/desktop
+2) Ajuste no SubscriptionProvider (src/hooks/useSubscription.tsx)
+   2.1) Nunca retornar sem finalizar o loading
+   - No caso “token não disponível”, antes do return:
+     - setState(prev => ({ ...prev, isLoading: false, error: 'TOKEN_MISSING' }))
+     - opcional: tentar um refresh adicional e, se falhar, fazer signOut para limpar sessão quebrada.
 
-**Causa raiz:** O banner usa layout horizontal (`flex items-center justify-between`) sem breakpoints responsivos.
+   2.2) Separar “loading bloqueante inicial” de “refresh em background”
+   - Adicionar ao state:
+     - initialized: boolean (ou hasCheckedOnce)
+     - error: string | null
+   - Regra:
+     - No boot: initialized=false → Dashboard pode mostrar spinner.
+     - Depois da primeira conclusão (sucesso ou erro): initialized=true → nunca mais spinner infinito; se der erro, mostrar tela de erro com Retry.
 
-**Código atual em `TrialBanner.tsx` (linhas 32-67):**
-```typescript
-<div className="flex items-center justify-between gap-4 px-4 py-2.5 text-sm">
-  <div className="flex items-center gap-2">
-    // Texto
-  </div>
-  <div className="flex items-center gap-2">
-    // Botão e X
-  </div>
-</div>
-```
+   2.3) Timeout da verificação de assinatura (failsafe)
+   - Quando iniciar o check de assinatura no boot, iniciar um timer (ex.: 4000–6000ms).
+   - Se o timer estourar, setState({ isLoading:false, initialized:true, error:'TIMEOUT' }).
+   - O usuário vê uma tela “Não foi possível validar sua assinatura agora” com botão “Tentar novamente”.
 
-**Problemas:**
-- Em mobile, o texto e botão ficam apertados ou cortados
-- Não há quebra de linha para telas pequenas
-- Botão pode ficar muito pequeno para tocar
+   2.4) Manter comportamento atual de não “piscar” a UI em polling
+   - O polling de 60s deve continuar sem setar isLoading=true (para não “piscar” a tela).
+   - Apenas atualiza status/canAccess silenciosamente.
+   - Mas se o polling falhar, não deve derrubar o usuário para paywall automaticamente; apenas registrar erro e tentar novamente depois.
 
-**Solução:**
-- Usar `flex-col` em mobile e `flex-row` em desktop (`lg:flex-row`)
-- Centralizar elementos em mobile
-- Ajustar tamanhos de texto e botão
-- Garantir touch target mínimo de 44px
+3) Ajuste no Dashboard (src/pages/Dashboard.tsx)
+   3.1) Tratar explicitamente estados: loading vs erro vs paywall vs ok
+   - Consumir do useSubscription também:
+     - error
+     - initialized (ou hasCheckedOnce)
+     - checkSubscription (para botão de retry)
+   - Fluxo sugerido:
+     - Se isLoading && !initialized → spinner
+     - Se error != null → “Tela de erro” com:
+       - Botão “Tentar novamente” (chama checkSubscription)
+       - Botão “Sair” (signOut) opcional
+     - Se initialized && !canAccess → paywall
+     - Se canAccess → dashboard normal
 
----
+   3.2) Isso evita o pior caso: “ficar girando para sempre”.
 
-## Mudanças Necessárias
+4) Ajustes finais no TrialBanner (src/components/subscription/TrialBanner.tsx)
+   - O layout já está melhor, mas para garantir em telas pequenas:
+     - Deixar o botão como w-full no mobile e sm:w-auto no desktop.
+     - Garantir que o texto possa quebrar linha (sem cortar) usando classes como break-words/leading-normal se necessário.
+   - Validar no modo mobile (320–390px) e no desktop.
 
-### Arquivo 1: `src/hooks/useSubscription.tsx`
+5) Check geral (rápido) de pontos que causam “loading infinito”
+   - Procurar outros hooks/providers com padrão “return;” antes de setar estado final (loading false / erro).
+   - Especialmente em hooks que rodam no boot e bloqueiam tela (auth, role, subscription).
 
-**Mudança:** Manter `isLoading: true` quando não há usuário autenticado
+Critérios de aceite (o que deve acontecer depois)
+- Logado:
+  - Abrir /dashboard e apertar F5 → no máximo alguns segundos e o dashboard aparece (sem spinner eterno).
+  - Se a verificação falhar por rede, aparece uma tela de erro com “Tentar novamente”, não um spinner infinito.
+- Deslogado:
+  - F5 em / ou /dashboard → landing page aparece normalmente (sem spinner eterno).
+- Mobile:
+  - Banner de trial não corta texto e o botão não fica espremido (fica empilhado e clicável).
 
-```typescript
-// Antes (linha 48-57):
-if (!user) {
-  setState({
-    status: 'loading',
-    canAccess: false,
-    trialEndsAt: null,
-    subscriptionEndsAt: null,
-    daysRemaining: null,
-    isLoading: false,  // <-- PROBLEMA
-  });
-  return;
-}
+Notas importantes (produção vs preview)
+- O print que você mandou é do domínio precibake.com.br (produção). Depois de aplicar essas correções no projeto, é necessário publicar para que o domínio público receba o código atualizado (senão você continua vendo o bug antigo em produção).
 
-// Depois:
-if (!user) {
-  setState(prev => ({
-    ...prev,
-    status: 'loading',
-    canAccess: false,
-    trialEndsAt: null,
-    subscriptionEndsAt: null,
-    daysRemaining: null,
-    isLoading: true,  // <-- CORREÇÃO: Manter loading enquanto aguarda auth
-  }));
-  return;
-}
-```
+Implementação (o que eu vou editar)
+- src/hooks/useAuth.tsx (resiliência + timeout + try/catch)
+- src/hooks/useSubscription.tsx (state machine: initialized/error + finalizar loading em todos os caminhos + timeout)
+- src/pages/Dashboard.tsx (UI para error/retry + lógica de render)
+- src/components/subscription/TrialBanner.tsx (ajustes finais de responsividade)
 
-**Adicionar:** Sincronização com estado de autenticação do `useAuth`
-
-```typescript
-// Adicionar verificação do loading de auth
-const { user, loading: authLoading } = useAuth();
-
-// No useEffect, só verificar subscription após auth estar resolvido
-useEffect(() => {
-  if (!authLoading) {
-    checkSubscription();
-  }
-}, [checkSubscription, authLoading]);
-```
-
----
-
-### Arquivo 2: `src/components/subscription/TrialBanner.tsx`
-
-**Mudança:** Layout responsivo com breakpoints
-
-```typescript
-// Antes (linha 33-39):
-<div className={`
-  flex items-center justify-between gap-4 px-4 py-2.5 text-sm
-  ${isUrgent 
-    ? 'bg-destructive/10 border-b border-destructive/20' 
-    : 'bg-accent/10 border-b border-accent/20'
-  }
-`}>
-
-// Depois:
-<div className={`
-  flex flex-col sm:flex-row items-center justify-between 
-  gap-2 sm:gap-4 px-4 py-3 text-sm
-  ${isUrgent 
-    ? 'bg-destructive/10 border-b border-destructive/20' 
-    : 'bg-accent/10 border-b border-accent/20'
-  }
-`}>
-```
-
-**Mudança:** Ajustar elementos internos
-
-```typescript
-// Texto - centralizado em mobile
-<div className="flex items-center gap-2 text-center sm:text-left">
-
-// Container do botão - largura completa em mobile
-<div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
-
-// Botão - altura mínima para touch
-<Button 
-  variant={isUrgent ? "destructive" : "default"}
-  size="sm"
-  onClick={handleSubscribe}
-  disabled={isLoading}
-  className="min-h-[44px] flex-shrink-0"
->
-
-// Botão X - área de toque maior
-<button 
-  onClick={() => setIsDismissed(true)}
-  className="p-2 hover:bg-background/50 rounded min-w-[44px] min-h-[44px] flex items-center justify-center"
->
-```
-
----
-
-## Diagrama do Fluxo Corrigido
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    F5 (Refresh)                         │
-└─────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│  useAuth: loading = true                                │
-│  useSubscription: isLoading = true (AGUARDA)            │
-│                                                         │
-│  Index.tsx: Mostra Loader ✓                             │
-└─────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│  useAuth: loading = false, user = {...}                 │
-│  useSubscription: Verifica assinatura                   │
-│                                                         │
-│  Index.tsx: Ainda mostra Loader                         │
-└─────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│  useSubscription: isLoading = false, canAccess = true   │
-│                                                         │
-│  Index.tsx: Mostra Dashboard ✓                          │
-└─────────────────────────────────────────────────────────┘
-```
-
----
-
-## Resumo Técnico
-
-| Arquivo | Mudança | Impacto |
-|---------|---------|---------|
-| `useSubscription.tsx` | Manter `isLoading: true` sem usuário | Corrige loading infinito |
-| `useSubscription.tsx` | Aguardar `authLoading` resolver | Sincroniza com auth |
-| `TrialBanner.tsx` | `flex-col sm:flex-row` | Responsivo mobile |
-| `TrialBanner.tsx` | `min-h-[44px]` nos botões | Touch targets corretos |
-| `TrialBanner.tsx` | Centralização em mobile | Melhor UX |
-
----
-
-## Nota sobre Qualidade
-
-Não há nada impedindo a programação correta. Os problemas identificados são:
-1. **Race condition** - Comum em apps React com múltiplos providers assíncronos
-2. **Falta de breakpoints** - Componente foi criado sem considerar mobile
-
-Ambos são problemas de implementação normais que serão corrigidos com as mudanças acima.
+Riscos e mitigação
+- Risco: Em um cenário raro de auth instável, o timeout do AuthProvider pode “destravar” mostrando landing enquanto a sessão ainda está recuperando.
+  - Mitigação: o user pode logar normalmente; e ao recuperar sessão, a UI corrige; e teremos botão de retry na assinatura.
