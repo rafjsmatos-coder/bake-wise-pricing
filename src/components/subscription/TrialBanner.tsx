@@ -31,8 +31,8 @@ export function TrialBanner() {
 
   return (
     <div className={`
-      flex flex-col sm:flex-row items-center justify-between 
-      gap-2 sm:gap-4 px-4 py-3 text-sm
+      flex flex-col gap-3 px-4 py-3 text-sm
+      sm:flex-row sm:items-center sm:justify-between sm:gap-4
       ${isUrgent 
         ? 'bg-destructive/10 border-b border-destructive/20' 
         : 'bg-accent/10 border-b border-accent/20'
@@ -40,7 +40,7 @@ export function TrialBanner() {
     `}>
       <div className="flex items-center gap-2 text-center sm:text-left">
         <Clock className={`w-4 h-4 flex-shrink-0 ${isUrgent ? 'text-destructive' : 'text-accent'}`} />
-        <span className="text-foreground">
+        <span className="text-foreground leading-normal break-words">
           {isUrgent ? (
             <strong>Restam apenas {daysText} do seu teste grátis!</strong>
           ) : (
@@ -49,19 +49,20 @@ export function TrialBanner() {
         </span>
       </div>
       
-      <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
+      <div className="flex items-center gap-2 w-full sm:w-auto">
         <Button 
           variant={isUrgent ? "destructive" : "default"}
           size="sm"
           onClick={handleSubscribe}
           disabled={isLoading}
-          className="min-h-[44px] flex-shrink-0"
+          className="min-h-[44px] w-full sm:w-auto flex-1 sm:flex-initial"
         >
           {isLoading ? 'Carregando...' : 'Assinar por R$ 49,90'}
         </Button>
         <button 
           onClick={() => setIsDismissed(true)}
-          className="p-2 hover:bg-background/50 rounded min-w-[44px] min-h-[44px] flex items-center justify-center"
+          className="p-2 hover:bg-background/50 rounded min-w-[44px] min-h-[44px] flex items-center justify-center flex-shrink-0"
+          aria-label="Fechar banner"
         >
           <X className="w-4 h-4 text-muted-foreground" />
         </button>

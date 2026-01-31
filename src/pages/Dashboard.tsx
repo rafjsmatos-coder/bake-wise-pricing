@@ -17,14 +17,31 @@ import { SupportPage } from '@/components/support/SupportPage';
 import { TrialBanner } from '@/components/subscription/TrialBanner';
 import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
 import { useSubscription } from '@/hooks/useSubscription';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Loader2, AlertCircle, RefreshCw, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function Dashboard() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
-  const { canAccess, isLoading } = useSubscription();
+  const { canAccess, isLoading, initialized, error, checkSubscription } = useSubscription();
+  const { signOut } = useAuth();
+  const [isRetrying, setIsRetrying] = useState(false);
 
-  // Loading state
-  if (isLoading) {
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    try {
+      await checkSubscription();
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  // Loading state - only show spinner before first initialization
+  if (isLoading && !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-accent" />
@@ -32,8 +49,70 @@ export function Dashboard() {
     );
   }
 
+  // Error state - show retry UI
+  if (error && !canAccess) {
+    const errorMessages: Record<string, { title: string; description: string }> = {
+      TOKEN_MISSING: {
+        title: 'Sessão expirada',
+        description: 'Sua sessão expirou. Tente novamente ou faça login novamente.',
+      },
+      NETWORK_ERROR: {
+        title: 'Erro de conexão',
+        description: 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.',
+      },
+      TIMEOUT: {
+        title: 'Tempo esgotado',
+        description: 'A verificação demorou mais que o esperado. Tente novamente.',
+      },
+    };
+
+    const errorInfo = errorMessages[error] || {
+      title: 'Erro inesperado',
+      description: 'Ocorreu um erro ao verificar sua assinatura.',
+    };
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-destructive" />
+          </div>
+          
+          <div className="space-y-2">
+            <h1 className="text-xl font-semibold text-foreground">{errorInfo.title}</h1>
+            <p className="text-muted-foreground">{errorInfo.description}</p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              onClick={handleRetry}
+              disabled={isRetrying}
+              className="min-h-[44px]"
+            >
+              {isRetrying ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              Tentar novamente
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={handleSignOut}
+              className="min-h-[44px]"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Paywall for expired users
-  if (!canAccess) {
+  if (initialized && !canAccess) {
     return <SubscriptionPaywall />;
   }
 

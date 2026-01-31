@@ -1,10 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
 // Hook para gerenciar estado de assinatura com sincronização de auth
 
 type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'canceled' | 'pending' | 'loading';
+type SubscriptionError = 'TOKEN_MISSING' | 'NETWORK_ERROR' | 'TIMEOUT' | null;
 
 interface SubscriptionState {
   status: SubscriptionStatus;
@@ -13,6 +14,8 @@ interface SubscriptionState {
   subscriptionEndsAt: Date | null;
   daysRemaining: number | null;
   isLoading: boolean;
+  initialized: boolean;
+  error: SubscriptionError;
 }
 
 interface SubscriptionContextType extends SubscriptionState {
@@ -23,16 +26,24 @@ interface SubscriptionContextType extends SubscriptionState {
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
+// Failsafe timeout for subscription check (ms)
+const SUBSCRIPTION_CHECK_TIMEOUT = 6000;
+
 // Helper para obter token fresco
 async function getFreshAccessToken(): Promise<string | null> {
-  const { data: sessionData } = await supabase.auth.getSession();
-  
-  if (!sessionData.session?.access_token) {
-    const { data: refreshData } = await supabase.auth.refreshSession();
-    return refreshData.session?.access_token || null;
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    
+    if (!sessionData.session?.access_token) {
+      const { data: refreshData } = await supabase.auth.refreshSession();
+      return refreshData.session?.access_token || null;
+    }
+    
+    return sessionData.session.access_token;
+  } catch (err) {
+    console.error('[useSubscription] Token fetch error:', err);
+    return null;
   }
-  
-  return sessionData.session.access_token;
 }
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
@@ -44,10 +55,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     subscriptionEndsAt: null,
     daysRemaining: null,
     isLoading: true,
+    initialized: false,
+    error: null,
   });
+  
+  const isPollingRef = useRef(false);
 
-  const checkSubscription = useCallback(async () => {
-    // Se não há usuário, definir isLoading: false (não há nada para verificar)
+  const checkSubscription = useCallback(async (isPolling = false) => {
+    // Se não há usuário, limpar estado e sair do loading
     if (!user) {
       setState({
         status: 'loading',
@@ -56,26 +71,72 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         subscriptionEndsAt: null,
         daysRemaining: null,
         isLoading: false,
+        initialized: true,
+        error: null,
       });
       return;
     }
 
+    // Se é polling, não setar isLoading para evitar "flash" na UI
+    if (!isPolling) {
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+    }
+
+    // Timeout failsafe
+    const timeoutPromise = new Promise<{ timeout: true }>((resolve) => {
+      setTimeout(() => resolve({ timeout: true }), SUBSCRIPTION_CHECK_TIMEOUT);
+    });
+
     try {
       const token = await getFreshAccessToken();
+      
       if (!token) {
         console.error('[useSubscription] No token available');
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          initialized: true,
+          error: 'TOKEN_MISSING',
+        }));
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('check-subscription', {
+      const fetchPromise = supabase.functions.invoke('check-subscription', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+
+      // Check if it was a timeout
+      if ('timeout' in result) {
+        console.error('[useSubscription] Check timed out');
+        // Se é polling, não modificar estado para não derrubar usuário
+        if (!isPolling) {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            initialized: true,
+            error: 'TIMEOUT',
+          }));
+        }
+        return;
+      }
+
+      const { data, error } = result;
+
       if (error) {
         console.error('[useSubscription] Error:', error);
-        setState(prev => ({ ...prev, isLoading: false }));
+        // Se é polling, não modificar estado para não derrubar usuário
+        if (!isPolling) {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            initialized: true,
+            error: 'NETWORK_ERROR',
+          }));
+        }
         return;
       }
 
@@ -86,10 +147,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         subscriptionEndsAt: data.subscriptionEndsAt ? new Date(data.subscriptionEndsAt) : null,
         daysRemaining: data.daysRemaining,
         isLoading: false,
+        initialized: true,
+        error: null,
       });
     } catch (err) {
       console.error('[useSubscription] Exception:', err);
-      setState(prev => ({ ...prev, isLoading: false }));
+      // Se é polling, não modificar estado para não derrubar usuário
+      if (!isPolling) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          initialized: true,
+          error: 'NETWORK_ERROR',
+        }));
+      }
     }
   }, [user]);
 
@@ -150,25 +221,35 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
     
     // Auth resolvido - verificar subscription (ou limpar se não há usuário)
-    checkSubscription();
+    checkSubscription(false);
   }, [checkSubscription, authLoading]);
 
-  // Polling every minute
+  // Polling every minute (silent refresh, no loading state change)
   useEffect(() => {
     if (!user) return;
 
     const interval = setInterval(() => {
-      checkSubscription();
+      if (!isPollingRef.current) {
+        isPollingRef.current = true;
+        checkSubscription(true).finally(() => {
+          isPollingRef.current = false;
+        });
+      }
     }, 60000);
 
     return () => clearInterval(interval);
   }, [user, checkSubscription]);
 
+  // Wrapper para expor checkSubscription sem parâmetro
+  const publicCheckSubscription = useCallback(async () => {
+    await checkSubscription(false);
+  }, [checkSubscription]);
+
   return (
     <SubscriptionContext.Provider
       value={{
         ...state,
-        checkSubscription,
+        checkSubscription: publicCheckSubscription,
         startCheckout,
         openCustomerPortal,
       }}
