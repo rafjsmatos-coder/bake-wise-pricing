@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AdminRoleContextType {
@@ -9,34 +9,50 @@ interface AdminRoleContextType {
 
 const AdminRoleContext = createContext<AdminRoleContextType | undefined>(undefined);
 
+// Timeout de segurança para evitar loading infinito
+const ADMIN_CHECK_TIMEOUT = 5000;
+
 /**
- * Helper to get a fresh access token
+ * Helper to get a fresh access token with timeout
  */
 async function getFreshAccessToken(): Promise<string | null> {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  
-  if (sessionData?.session?.access_token) {
-    return sessionData.session.access_token;
-  }
+  const timeoutPromise = new Promise<null>((resolve) => {
+    setTimeout(() => resolve(null), ADMIN_CHECK_TIMEOUT);
+  });
 
-  // Try refresh if no session
-  if (sessionError || !sessionData?.session) {
-    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-    
-    if (refreshError || !refreshData?.session?.access_token) {
+  const tokenPromise = (async () => {
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionData?.session?.access_token) {
+        return sessionData.session.access_token;
+      }
+
+      // Try refresh if no session
+      if (sessionError || !sessionData?.session) {
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshData?.session?.access_token) {
+          return null;
+        }
+        
+        return refreshData.session.access_token;
+      }
+
+      return null;
+    } catch {
       return null;
     }
-    
-    return refreshData.session.access_token;
-  }
+  })();
 
-  return null;
+  return Promise.race([tokenPromise, timeoutPromise]);
 }
 
 export function AdminRoleProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [lastCheckedUserId, setLastCheckedUserId] = useState<string | null>(null);
+  // Usar useRef ao invés de useState para evitar re-renders que causam loop infinito
+  const lastCheckedUserIdRef = useRef<string | null>(null);
 
   const checkAdminRole = useCallback(async () => {
     setIsLoading(true);
@@ -46,7 +62,7 @@ export function AdminRoleProvider({ children }: { children: ReactNode }) {
     if (!freshToken) {
       setIsAdmin(false);
       setIsLoading(false);
-      setLastCheckedUserId(null);
+      lastCheckedUserIdRef.current = null;
       return;
     }
 
@@ -65,7 +81,7 @@ export function AdminRoleProvider({ children }: { children: ReactNode }) {
         setIsAdmin(false);
       } else {
         setIsAdmin(data?.isAdmin || false);
-        setLastCheckedUserId(data?.userId || null);
+        lastCheckedUserIdRef.current = data?.userId || null;
       }
     } catch (err) {
       console.error('[useAdminRole] Exception:', err);
@@ -79,13 +95,13 @@ export function AdminRoleProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user?.id !== lastCheckedUserId) {
+        if (event === 'SIGNED_IN' && session?.user?.id !== lastCheckedUserIdRef.current) {
           // New user signed in, re-check admin role
           await checkAdminRole();
         } else if (event === 'SIGNED_OUT') {
           setIsAdmin(false);
           setIsLoading(false);
-          setLastCheckedUserId(null);
+          lastCheckedUserIdRef.current = null;
         }
       }
     );
@@ -94,7 +110,7 @@ export function AdminRoleProvider({ children }: { children: ReactNode }) {
     checkAdminRole();
 
     return () => subscription.unsubscribe();
-  }, [checkAdminRole, lastCheckedUserId]);
+  }, [checkAdminRole]); // SEM lastCheckedUserId nas dependências
 
   return (
     <AdminRoleContext.Provider value={{ isAdmin, isLoading, checkAdminRole }}>
