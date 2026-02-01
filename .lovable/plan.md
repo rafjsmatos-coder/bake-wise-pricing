@@ -1,184 +1,149 @@
 
-# Plano de Correção: Loop de Carregamento Infinito
 
-## Diagnóstico Final
+# Plano: Separar Login do Admin dos Usuários
 
-Após análise profunda do código, identifiquei os seguintes problemas:
+## Objetivo
 
-### Problema Principal: Loop Infinito no `useAdminRole`
+Criar um portal de login exclusivo para administradores em uma rota separada (`/admin`), completamente isolado do login de usuários normais. Isso aumenta a segurança ao:
 
-No arquivo `src/hooks/useAdminRole.tsx`, linha 97:
-
-```typescript
-useEffect(() => {
-  // ...
-  checkAdminRole();
-  return () => subscription.unsubscribe();
-}, [checkAdminRole, lastCheckedUserId]); // ← PROBLEMA AQUI
-```
-
-O `lastCheckedUserId` é uma dependência do `useEffect`, mas é alterado dentro do `checkAdminRole`:
-
-1. `useEffect` executa → chama `checkAdminRole()`
-2. `checkAdminRole()` chama `setLastCheckedUserId(data?.userId)`
-3. `lastCheckedUserId` muda → `useEffect` re-executa
-4. Volta ao passo 1 → **Loop infinito**
-
-### Problema Secundário: Sincronização Auth/Admin
-
-O `useAdminRole` e o `useAuth` ambos usam `onAuthStateChange`, o que pode causar condições de corrida durante a inicialização.
+1. Esconder a existência do painel admin de usuários comuns
+2. Evitar que usuários normais tentem acessar funcionalidades de admin
+3. Simplificar o fluxo - sem necessidade de verificar role no login principal
 
 ---
 
-## Solução Proposta
+## Arquitetura Proposta
 
-### 1. Corrigir o loop infinito no `useAdminRole`
+```text
+ROTAS:
+┌─────────────────────────────────────────────────────────────┐
+│  /                  → Landing Page (público)                │
+│  /                  → Dashboard (usuário logado)            │
+│  /dashboard         → Dashboard (usuário logado)            │
+│                                                             │
+│  /admin             → Login Admin (porta de entrada)        │
+│  /admin             → Admin Panel (admin logado)            │
+└─────────────────────────────────────────────────────────────┘
 
-**Arquivo:** `src/hooks/useAdminRole.tsx`
+FLUXO USUÁRIO NORMAL:
+Landing → Clica "Começar" → AuthForm → Dashboard
 
-Remover `lastCheckedUserId` das dependências do `useEffect` e usar uma ref para rastrear o último usuário verificado:
-
-```typescript
-const lastCheckedUserIdRef = useRef<string | null>(null);
-
-const checkAdminRole = useCallback(async () => {
-  setIsLoading(true);
-  
-  const freshToken = await getFreshAccessToken();
-
-  if (!freshToken) {
-    setIsAdmin(false);
-    setIsLoading(false);
-    lastCheckedUserIdRef.current = null;
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase.functions.invoke('check-admin-role', {
-      headers: { Authorization: `Bearer ${freshToken}` },
-    });
-
-    if (error) {
-      setIsAdmin(false);
-    } else if (data?.code === 'unauthenticated') {
-      setIsAdmin(false);
-    } else {
-      setIsAdmin(data?.isAdmin || false);
-      lastCheckedUserIdRef.current = data?.userId || null;
-    }
-  } catch (err) {
-    setIsAdmin(false);
-  } finally {
-    setIsLoading(false);
-  }
-}, []);
-
-useEffect(() => {
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user?.id !== lastCheckedUserIdRef.current) {
-        await checkAdminRole();
-      } else if (event === 'SIGNED_OUT') {
-        setIsAdmin(false);
-        setIsLoading(false);
-        lastCheckedUserIdRef.current = null;
-      }
-    }
-  );
-
-  // Initial check
-  checkAdminRole();
-
-  return () => subscription.unsubscribe();
-}, [checkAdminRole]); // ← SEM lastCheckedUserId
-```
-
-### 2. Adicionar timeout de segurança no `useAdminRole`
-
-Para garantir que nunca fique travado:
-
-```typescript
-const ADMIN_CHECK_TIMEOUT = 5000; // 5 segundos
-
-const checkAdminRole = useCallback(async () => {
-  setIsLoading(true);
-  
-  // Timeout failsafe
-  const timeoutPromise = new Promise<null>((resolve) => {
-    setTimeout(() => resolve(null), ADMIN_CHECK_TIMEOUT);
-  });
-
-  const freshToken = await Promise.race([
-    getFreshAccessToken(),
-    timeoutPromise
-  ]);
-
-  if (!freshToken) {
-    setIsAdmin(false);
-    setIsLoading(false);
-    return;
-  }
-  // ... resto do código
-}, []);
-```
-
-### 3. Verificar/Manter a versão do SDK nas Edge Functions
-
-Os logs mostram que `getClaims` está funcionando. Manter como está, mas adicionar fallback para `getUser` caso falhe:
-
-**Arquivo:** `supabase/functions/_shared/auth.ts`
-
-```typescript
-try {
-  // Try getClaims first (newer method)
-  const { data, error } = await supabase.auth.getClaims(token);
-  
-  if (!error && data?.claims) {
-    const userId = data.claims.sub as string;
-    const email = data.claims.email as string;
-    return { user: { id: userId, email: email || '' }, error: null };
-  }
-  
-  // Fallback to getUser if getClaims fails
-  logStep("getClaims failed, trying getUser");
-  const { data: userData, error: userError } = await supabase.auth.getUser(token);
-  
-  if (userError || !userData.user) {
-    return { user: null, error: userError?.message || "Authentication failed" };
-  }
-  
-  return {
-    user: { id: userData.user.id, email: userData.user.email || '' },
-    error: null,
-  };
-} catch (err) {
-  // ... error handling
-}
+FLUXO ADMIN:
+/admin → AdminAuthForm → Verifica role → AdminDashboard
+                         └→ Se não for admin: "Acesso negado"
 ```
 
 ---
 
-## Arquivos a Serem Modificados
+## O Que Muda
 
-1. **`src/hooks/useAdminRole.tsx`** - Corrigir loop infinito removendo `lastCheckedUserId` das dependências do useEffect, usando useRef
-2. **`supabase/functions/_shared/auth.ts`** - Adicionar fallback de `getUser` para `getClaims`
+### 1. Novo Componente: `AdminAuthForm.tsx`
+
+Formulário de login exclusivo para admins:
+- Visual diferenciado (cores escuras, ícone de cadeado)
+- Apenas login (sem cadastro - admins são criados manualmente)
+- Após login, verifica se é admin antes de permitir acesso
+- Se não for admin: mostra mensagem "Acesso restrito" e faz logout
+
+### 2. Nova Página: `AdminPortal.tsx`
+
+Página que gerencia o fluxo `/admin`:
+- Se não logado → mostra `AdminAuthForm`
+- Se logado + é admin → mostra `AdminDashboard`
+- Se logado + NÃO é admin → mostra "Acesso negado" + botão sair
+
+### 3. Atualização: `Index.tsx`
+
+Simplificar para nunca mostrar `AdminDashboard`:
+- Remove verificação de `isAdmin` e `useAdminRole`
+- Usuários normais vão direto para Dashboard
+- Admins precisam acessar `/admin` separadamente
+
+### 4. Atualização: `App.tsx`
+
+Adicionar nova rota:
+- `/admin` → `AdminPortal`
+
+### 5. Otimização: Remover `AdminRoleProvider` do contexto global
+
+Como a verificação de admin só acontece na rota `/admin`:
+- Mover o provider para dentro do `AdminPortal` apenas
+- Reduz overhead no carregamento para usuários normais
 
 ---
 
-## Critérios de Aceite
+## Benefícios de Segurança
 
-Após as correções:
-
-1. ✅ Acessar `/` deslogado → Landing page aparece (sem spinner infinito)
-2. ✅ Acessar `/` logado → Dashboard carrega em até 5 segundos (sem spinner infinito)
-3. ✅ Pressionar F5 em qualquer estado → Página recarrega corretamente
-4. ✅ Se houver erro de rede → Tela de erro com botão "Tentar novamente" aparece (não spinner infinito)
+1. **Obscuridade**: Usuários normais não sabem que `/admin` existe
+2. **Isolamento**: Código de admin não é carregado para usuários normais
+3. **Velocidade**: Sem verificação de role no boot para usuários normais
+4. **Clareza**: Dois fluxos distintos, fáceis de manter
 
 ---
 
-## Ordem de Implementação
+## Arquivos a Serem Criados/Modificados
 
-1. Primeiro: Corrigir `useAdminRole.tsx` (problema principal do loop)
-2. Segundo: Atualizar `auth.ts` com fallback (defesa em profundidade)
-3. Terceiro: Testar no preview
-4. Quarto: Publicar para produção
+### Novos arquivos:
+- `src/components/auth/AdminAuthForm.tsx` - Formulário de login admin
+- `src/pages/AdminPortal.tsx` - Página que gerencia `/admin`
+
+### Arquivos modificados:
+- `src/App.tsx` - Adicionar rota `/admin`
+- `src/pages/Index.tsx` - Remover lógica de admin
+
+---
+
+## Detalhes Técnicos
+
+### AdminAuthForm.tsx
+
+```typescript
+// Componente com:
+// - Input de email e senha
+// - Após login, chama checkAdminRole()
+// - Se não for admin: toast de erro + signOut
+// - Visual escuro para diferenciar
+```
+
+### AdminPortal.tsx
+
+```typescript
+// Fluxo:
+// 1. Se !user → mostra AdminAuthForm
+// 2. Se user && isLoading → spinner
+// 3. Se user && !isAdmin → "Acesso negado"
+// 4. Se user && isAdmin → AdminDashboard
+```
+
+### Index.tsx (simplificado)
+
+```typescript
+// Remove: useAdminRole, isAdmin, isAdminLoading
+// Apenas:
+// - !user → Landing/AuthForm
+// - user → Dashboard
+```
+
+---
+
+## Resultado Final
+
+**Para usuários normais:**
+- Acessa `/` → vê landing → faz login → vê dashboard
+- Nunca vê nada relacionado a admin
+- Carregamento mais rápido (sem checar role)
+
+**Para admin (você):**
+- Acessa `/admin` → login especial → painel administrativo
+- Rota secreta, totalmente separada
+- Se tentar logar com conta normal: "Acesso negado"
+
+---
+
+## Próximos Passos Após Implementação
+
+1. Testar login como usuário normal em `/`
+2. Testar login como admin em `/admin`
+3. Testar tentativa de login como usuário normal em `/admin` (deve negar)
+4. Publicar para produção
+
