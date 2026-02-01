@@ -4,11 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { AdminRoleProvider } from "@/hooks/useAdminRole";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { SidebarControlProvider, useSidebarControl } from "@/hooks/useSidebarControl";
 import { TourWrapper } from "@/components/tour/TourProvider";
 import Index from "./pages/Index";
+import { AdminPortal } from "./pages/AdminPortal";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -29,6 +29,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Index />} />
+            <Route path="/admin" element={<AdminPortal />} />
             <Route path="/subscription-success" element={<SubscriptionSuccess />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/privacidade" element={<PrivacyPolicy />} />
@@ -45,13 +46,11 @@ function AppContent() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <AdminRoleProvider>
-        <SubscriptionProvider>
-          <SidebarControlProvider>
-            <AppContent />
-          </SidebarControlProvider>
-        </SubscriptionProvider>
-      </AdminRoleProvider>
+      <SubscriptionProvider>
+        <SidebarControlProvider>
+          <AppContent />
+        </SidebarControlProvider>
+      </SubscriptionProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
