@@ -16,6 +16,7 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
 /**
  * Validates a JWT token and returns the user information.
  * Uses getClaims() which is more reliable in Edge Functions than getUser().
+ * Falls back to getUser() if getClaims fails.
  */
 export async function validateAuth(req: Request): Promise<AuthResult> {
   const authHeader = req.headers.get("Authorization");
@@ -53,33 +54,51 @@ export async function validateAuth(req: Request): Promise<AuthResult> {
   });
 
   try {
-    // Use getClaims which is more reliable in Edge Functions
+    // Try getClaims first (newer method, more reliable in Edge Functions)
     const { data, error } = await supabase.auth.getClaims(token);
     
-    if (error) {
-      logStep("getClaims error", { error: error.message });
-      return { user: null, error: `Authentication failed: ${error.message}` };
+    if (!error && data?.claims) {
+      const userId = data.claims.sub as string;
+      const email = data.claims.email as string;
+
+      if (userId) {
+        logStep("User authenticated via getClaims", { userId, email: email || 'N/A' });
+        return {
+          user: {
+            id: userId,
+            email: email || '',
+          },
+          error: null,
+        };
+      }
     }
 
-    if (!data?.claims) {
-      logStep("No claims in token");
-      return { user: null, error: "Invalid token claims" };
+    // Fallback to getUser if getClaims fails or returns no claims
+    logStep("getClaims failed or returned no claims, trying getUser", { 
+      getClaimsError: error?.message 
+    });
+    
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError) {
+      logStep("getUser error", { error: userError.message });
+      return { user: null, error: `Authentication failed: ${userError.message}` };
     }
 
-    const userId = data.claims.sub as string;
-    const email = data.claims.email as string;
-
-    if (!userId) {
-      logStep("No user ID in claims");
-      return { user: null, error: "Invalid token: no user ID" };
+    if (!userData?.user) {
+      logStep("No user in getUser response");
+      return { user: null, error: "Invalid token: no user found" };
     }
 
-    logStep("User authenticated via getClaims", { userId, email: email || 'N/A' });
+    logStep("User authenticated via getUser", { 
+      userId: userData.user.id, 
+      email: userData.user.email || 'N/A' 
+    });
 
     return {
       user: {
-        id: userId,
-        email: email || '',
+        id: userData.user.id,
+        email: userData.user.email || '',
       },
       error: null,
     };
