@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useAdminRole } from '@/hooks/useAdminRole';
 import { useToast } from '@/hooks/use-toast';
 
 export type TicketType = 'support' | 'suggestion';
@@ -45,9 +44,13 @@ export interface UpdateTicketData {
   priority?: TicketPriority;
 }
 
-export function useSupport() {
+interface UseSupportOptions {
+  isAdmin?: boolean;
+}
+
+export function useSupport(options: UseSupportOptions = {}) {
   const { user } = useAuth();
-  const { isAdmin } = useAdminRole();
+  const { isAdmin = false } = options;
   const { toast } = useToast();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [ticketsWithAdminStatus, setTicketsWithAdminStatus] = useState<Map<string, boolean>>(new Map());

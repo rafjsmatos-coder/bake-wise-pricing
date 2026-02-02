@@ -34,7 +34,7 @@ interface AdminLayoutProps {
 export function AdminLayout({ children, currentPage, onPageChange }: AdminLayoutProps) {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
-  const { pendingTicketsCount } = useSupport();
+  const { pendingTicketsCount } = useSupport({ isAdmin: true });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
