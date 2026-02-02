@@ -361,16 +361,27 @@ serve(async (req) => {
           updateData.status = status;
         }
 
-        if (status === 'active' && daysToAdd) {
-          const endDate = new Date();
-          endDate.setDate(endDate.getDate() + daysToAdd);
-          updateData.subscription_ends_at = endDate.toISOString();
+        // Se o admin está ativando premium manualmente, marca como override
+        if (status === 'active') {
+          updateData.manual_override = true;
+          if (daysToAdd) {
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + daysToAdd);
+            updateData.subscription_ends_at = endDate.toISOString();
+          }
         }
 
         if (status === 'trial' && daysToAdd) {
           const endDate = new Date();
           endDate.setDate(endDate.getDate() + daysToAdd);
           updateData.trial_ends_at = endDate.toISOString();
+          // Trial manual também é um override
+          updateData.manual_override = true;
+        }
+
+        // Se o status for expired ou canceled, remove o override
+        if (status === 'expired' || status === 'canceled') {
+          updateData.manual_override = false;
         }
 
         // Check if subscription exists
@@ -400,6 +411,7 @@ serve(async (req) => {
               user_id: userId,
               status: status || 'trial',
               trial_ends_at: trialEndsAt.toISOString(),
+              manual_override: status === 'active',
               ...updateData,
             });
 
@@ -490,14 +502,33 @@ serve(async (req) => {
           throw new Error("User not found or no email");
         }
 
+        // Get current subscription to check manual_override
+        const { data: currentSub } = await supabaseAdmin
+          .from("subscriptions")
+          .select("manual_override, status")
+          .eq("user_id", userId)
+          .maybeSingle();
+
         const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
         // Find customer in Stripe
         const customers = await stripe.customers.list({ email: authUser.user.email, limit: 1 });
         
         if (customers.data.length === 0) {
+          // Sem cliente no Stripe
+          if (currentSub?.manual_override) {
+            // Se foi ativado manualmente, mantém como está
+            logStep("No Stripe customer, but manual override is active - keeping current status", { userId });
+            return new Response(
+              JSON.stringify({ success: true, message: "Ativação manual mantida (sem cliente no Stripe)" }),
+              {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                status: 200,
+              }
+            );
+          }
           return new Response(
-            JSON.stringify({ success: true, message: "No Stripe customer found" }),
+            JSON.stringify({ success: true, message: "Nenhum cliente encontrado no Stripe" }),
             {
               headers: { ...corsHeaders, "Content-Type": "application/json" },
               status: 200,
@@ -518,6 +549,7 @@ serve(async (req) => {
           const sub = subscriptions.data[0];
           const endDate = new Date(sub.current_period_end * 1000);
 
+          // Assinatura ativa no Stripe - sincroniza e remove override manual
           await supabaseAdmin
             .from("subscriptions")
             .update({
@@ -525,27 +557,59 @@ serve(async (req) => {
               stripe_customer_id: customerId,
               stripe_subscription_id: sub.id,
               subscription_ends_at: endDate.toISOString(),
+              manual_override: false, // Agora é gerenciado pelo Stripe
             })
             .eq("user_id", userId);
 
           logStep("Synced active subscription from Stripe", { userId, subscriptionId: sub.id });
+          
+          return new Response(
+            JSON.stringify({ success: true, message: "Assinatura ativa sincronizada do Stripe" }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            }
+          );
         } else {
-          // No active subscription, update customer ID only
-          await supabaseAdmin
-            .from("subscriptions")
-            .update({ stripe_customer_id: customerId })
-            .eq("user_id", userId);
+          // Sem assinatura ativa no Stripe
+          if (currentSub?.manual_override) {
+            // Se foi ativado manualmente, mantém status mas atualiza customer ID
+            await supabaseAdmin
+              .from("subscriptions")
+              .update({ stripe_customer_id: customerId })
+              .eq("user_id", userId);
 
-          logStep("Synced customer ID from Stripe (no active subscription)", { userId, customerId });
-        }
+            logStep("No active Stripe subscription, but manual override - keeping status", { userId, customerId });
+            
+            return new Response(
+              JSON.stringify({ success: true, message: "Ativação manual mantida (sem assinatura ativa no Stripe)" }),
+              {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                status: 200,
+              }
+            );
+          } else {
+            // Sem override manual - reverte para expired
+            await supabaseAdmin
+              .from("subscriptions")
+              .update({ 
+                stripe_customer_id: customerId,
+                status: 'expired',
+                stripe_subscription_id: null,
+              })
+              .eq("user_id", userId);
 
-        return new Response(
-          JSON.stringify({ success: true }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
+            logStep("No active subscription in Stripe, reverted to expired", { userId, customerId });
+            
+            return new Response(
+              JSON.stringify({ success: true, message: "Sem assinatura ativa no Stripe - status alterado para expirado" }),
+              {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                status: 200,
+              }
+            );
           }
-        );
+        }
       }
 
       case "deleteUser": {
