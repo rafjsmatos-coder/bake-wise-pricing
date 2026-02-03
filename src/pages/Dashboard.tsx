@@ -40,8 +40,8 @@ export function Dashboard() {
     await signOut();
   };
 
-  // Loading state - only show spinner before first initialization
-  if (isLoading && !initialized) {
+  // Loading state - show spinner until fully initialized with valid access status
+  if (isLoading || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-accent" />

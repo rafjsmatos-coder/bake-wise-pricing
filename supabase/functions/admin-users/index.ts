@@ -502,12 +502,19 @@ serve(async (req) => {
           throw new Error("User not found or no email");
         }
 
-        // Get current subscription to check manual_override
+        // Get current subscription to check manual_override and trial status
         const { data: currentSub } = await supabaseAdmin
           .from("subscriptions")
-          .select("manual_override, status")
+          .select("manual_override, status, trial_ends_at")
           .eq("user_id", userId)
           .maybeSingle();
+        
+        // Helper: Check if user has active trial
+        const hasActiveTrial = (): boolean => {
+          if (currentSub?.status !== 'trial') return false;
+          if (!currentSub?.trial_ends_at) return false;
+          return new Date(currentSub.trial_ends_at) > new Date();
+        };
 
         const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
@@ -588,8 +595,24 @@ serve(async (req) => {
                 status: 200,
               }
             );
+          } else if (hasActiveTrial()) {
+            // User has active trial - preserve it, just update customer ID
+            await supabaseAdmin
+              .from("subscriptions")
+              .update({ stripe_customer_id: customerId })
+              .eq("user_id", userId);
+
+            logStep("No active Stripe subscription, but user has active trial - keeping trial", { userId, customerId });
+            
+            return new Response(
+              JSON.stringify({ success: true, message: "Trial ativo mantido (sem assinatura no Stripe)" }),
+              {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                status: 200,
+              }
+            );
           } else {
-            // Sem override manual - reverte para expired
+            // No override, no active trial - revert to expired
             await supabaseAdmin
               .from("subscriptions")
               .update({ 
@@ -599,7 +622,7 @@ serve(async (req) => {
               })
               .eq("user_id", userId);
 
-            logStep("No active subscription in Stripe, reverted to expired", { userId, customerId });
+            logStep("No active subscription in Stripe, no trial, reverted to expired", { userId, customerId });
             
             return new Response(
               JSON.stringify({ success: true, message: "Sem assinatura ativa no Stripe - status alterado para expirado" }),
