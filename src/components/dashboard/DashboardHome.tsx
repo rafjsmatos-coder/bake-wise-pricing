@@ -6,6 +6,7 @@ import { usePackaging } from '@/hooks/usePackaging';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StartTourButton } from '@/components/tour/StartTourButton';
+import { SubscriptionCard } from '@/components/subscription/SubscriptionCard';
 import { 
   ShoppingBag, 
   BookOpen, 
@@ -148,8 +149,12 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
         </CardContent>
       </Card>
 
-      {/* Info Cards */}
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* Subscription + Info Cards */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Subscription Card */}
+        <SubscriptionCard />
+
+        {/* Tips Card */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Dicas</CardTitle>
@@ -162,7 +167,8 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Settings Card */}
+        <Card className="md:col-span-2 lg:col-span-1">
           <CardHeader>
             <CardTitle className="text-lg">Configurações</CardTitle>
           </CardHeader>
@@ -171,7 +177,7 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
             <Button 
               variant="secondary" 
               size="sm" 
-              className="mt-2"
+              className="mt-2 min-h-[44px]"
               onClick={() => onNavigate('settings')}
             >
               Ir para Configurações
