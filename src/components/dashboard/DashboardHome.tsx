@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StartTourButton } from '@/components/tour/StartTourButton';
 import { SubscriptionCard } from '@/components/subscription/SubscriptionCard';
+import { StockAlertsCard } from '@/components/dashboard/StockAlertsCard';
+import { CostConfigCard } from '@/components/dashboard/CostConfigCard';
 import { 
   ShoppingBag, 
   BookOpen, 
@@ -149,8 +151,17 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
         </CardContent>
       </Card>
 
-      {/* Subscription + Info Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Important Cards Row */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Stock Alerts Card */}
+        <StockAlertsCard onNavigate={onNavigate} />
+        
+        {/* Cost Config Card */}
+        <CostConfigCard onNavigate={onNavigate} />
+      </div>
+
+      {/* Subscription + Tips Cards */}
+      <div className="grid md:grid-cols-2 gap-6">
         {/* Subscription Card */}
         <SubscriptionCard />
 
@@ -164,24 +175,6 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
             <p>• Crie <strong>receitas</strong> usando os ingredientes para calcular custos</p>
             <p>• Monte <strong>produtos</strong> combinando receitas, decorações e embalagens</p>
             <p>• Defina a <strong>margem de lucro</strong> para obter o preço de venda sugerido</p>
-          </CardContent>
-        </Card>
-
-        {/* Settings Card */}
-        <Card className="md:col-span-2 lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="text-lg">Configurações</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Configure custos de mão de obra, energia, gás e custo operacional nas <strong>Configurações</strong> para cálculos mais precisos.</p>
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              className="mt-2 min-h-[44px]"
-              onClick={() => onNavigate('settings')}
-            >
-              Ir para Configurações
-            </Button>
           </CardContent>
         </Card>
       </div>

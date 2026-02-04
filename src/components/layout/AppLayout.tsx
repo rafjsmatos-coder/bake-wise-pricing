@@ -18,7 +18,6 @@ import {
   Sparkles,
   ChevronDown,
   LayoutDashboard,
-  User,
   Headphones,
   Loader2
 } from 'lucide-react';
@@ -134,9 +133,8 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
         { id: 'packaging-categories', label: 'Categorias' }
       ]
     },
-    { id: 'support', label: 'Suporte', icon: Headphones, badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined },
     { id: 'settings', label: 'Configurações', icon: Settings },
-    { id: 'profile', label: 'Meu Perfil', icon: User },
+    { id: 'support', label: 'Suporte', icon: Headphones, badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined },
   ];
 
   // Map nav item IDs to tour data attributes
