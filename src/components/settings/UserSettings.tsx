@@ -7,17 +7,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useUserSettings } from '@/hooks/useUserSettings';
-import { Loader2, Percent, Flame, Zap, Save, User, HardHat, Info, Lightbulb } from 'lucide-react';
+import { Loader2, Percent, Zap, Save, User, HardHat, Info, Lightbulb } from 'lucide-react';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
+import { OvenCostSection } from './OvenCostSection';
 
 const settingsSchema = z.object({
   default_safety_margin: z.number().min(0).max(100),
+  oven_type: z.enum(['gas', 'electric', 'both']),
   include_gas_cost: z.boolean(),
   gas_cost_per_hour: z.number().min(0),
+  electric_oven_cost_per_hour: z.number().min(0),
+  default_oven_type: z.enum(['gas', 'electric']),
   include_energy_cost: z.boolean(),
   energy_cost_per_hour: z.number().min(0),
   include_labor_cost: z.boolean(),
@@ -87,8 +91,11 @@ export function UserSettings() {
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       default_safety_margin: 15,
+      oven_type: 'gas' as const,
       include_gas_cost: false,
       gas_cost_per_hour: 0,
+      electric_oven_cost_per_hour: 0,
+      default_oven_type: 'gas' as const,
       include_energy_cost: false,
       energy_cost_per_hour: 0,
       include_labor_cost: false,
@@ -101,8 +108,11 @@ export function UserSettings() {
     if (settings) {
       reset({
         default_safety_margin: Number(settings.default_safety_margin) || 15,
+        oven_type: settings.oven_type || 'gas',
         include_gas_cost: settings.include_gas_cost || false,
         gas_cost_per_hour: Number(settings.gas_cost_per_hour) || 0,
+        electric_oven_cost_per_hour: Number(settings.electric_oven_cost_per_hour) || 0,
+        default_oven_type: settings.default_oven_type || 'gas',
         include_energy_cost: settings.include_energy_cost || false,
         energy_cost_per_hour: Number(settings.energy_cost_per_hour) || 0,
         include_labor_cost: settings.include_labor_cost || false,
@@ -112,9 +122,12 @@ export function UserSettings() {
     }
   }, [settings, reset]);
 
-  const includeGasCost = watch('include_gas_cost');
   const includeEnergyCost = watch('include_energy_cost');
   const includeLaborCost = watch('include_labor_cost');
+  const ovenType = watch('oven_type');
+  const gasCostPerHour = watch('gas_cost_per_hour');
+  const electricOvenCostPerHour = watch('electric_oven_cost_per_hour');
+  const defaultOvenType = watch('default_oven_type');
 
   const onSubmit = async (data: SettingsFormData) => {
     await updateSettings.mutateAsync(data);
@@ -197,59 +210,24 @@ export function UserSettings() {
           </div>
         </div>
 
-        {/* Gas Cost / Gás do Forno */}
-        <div className="p-6 bg-card border border-border rounded-lg space-y-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
-              <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center shrink-0">
-                <Flame className="h-5 w-5 text-orange-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="font-semibold">Gás do Forno (R$/h)</h2>
-                <p className="text-sm text-muted-foreground">
-                  Aplicado apenas se o forno for a gás.
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={includeGasCost}
-              onCheckedChange={(checked) => setValue('include_gas_cost', checked, { shouldDirty: true })}
-            />
-          </div>
-
-          {includeGasCost && (
-            <div className="space-y-3 animate-fade-in">
-              <div className="space-y-2">
-                <Label htmlFor="gas_cost_per_hour">Valor por hora (R$)</Label>
-                <Input
-                  id="gas_cost_per_hour"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="2,00"
-                  {...register('gas_cost_per_hour', { valueAsNumber: true })}
-                />
-                {errors.gas_cost_per_hour && (
-                  <p className="text-sm text-destructive">
-                    {errors.gas_cost_per_hour.message}
-                  </p>
-                )}
-              </div>
-
-              <CalculationExample
-                formula="Valor do botijão ÷ horas de uso"
-                example="R$ 120 ÷ 60h"
-                result="R$ 2,00/h"
-              />
-
-              <MarketReference
-                items={[
-                  { label: 'Valor típico', range: 'R$ 1,50 a R$ 2,50/h' },
-                ]}
-              />
-            </div>
-          )}
-        </div>
+        {/* Oven Cost Section */}
+        <OvenCostSection
+          ovenType={ovenType}
+          gasCostPerHour={gasCostPerHour}
+          electricOvenCostPerHour={electricOvenCostPerHour}
+          defaultOvenType={defaultOvenType}
+          onOvenTypeChange={(value) => {
+            setValue('oven_type', value, { shouldDirty: true });
+            // Auto-enable gas cost if selecting gas or both
+            if (value === 'gas' || value === 'both') {
+              setValue('include_gas_cost', true, { shouldDirty: true });
+            }
+          }}
+          onGasCostChange={(value) => setValue('gas_cost_per_hour', value, { shouldDirty: true })}
+          onElectricCostChange={(value) => setValue('electric_oven_cost_per_hour', value, { shouldDirty: true })}
+          onDefaultOvenTypeChange={(value) => setValue('default_oven_type', value, { shouldDirty: true })}
+          errors={errors}
+        />
 
         {/* Energy Cost / Gasto com Energia */}
         <div className="p-6 bg-card border border-border rounded-lg space-y-4">
@@ -260,7 +238,7 @@ export function UserSettings() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-semibold">Gasto com Energia</h2>
+                  <h2 className="font-semibold">Equipamentos Elétricos</h2>
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <button type="button" className="text-muted-foreground hover:text-foreground">
@@ -269,14 +247,14 @@ export function UserSettings() {
                     </HoverCardTrigger>
                     <HoverCardContent className="w-80">
                       <p className="text-sm">
-                        Ative se seu forno principal for elétrico. O valor será aplicado 
-                        automaticamente baseado no tempo de preparo de cada receita.
+                        Custo de energia de equipamentos como batedeira, mixer e processador.
+                        Aplicado sobre o tempo de preparo de cada receita (não inclui forno).
                       </p>
                     </HoverCardContent>
                   </HoverCard>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Custo por hora do uso do forno elétrico.
+                  Batedeira, mixer, processador e outros equipamentos.
                 </p>
               </div>
             </div>
@@ -306,14 +284,15 @@ export function UserSettings() {
               </div>
 
               <CalculationExample
-                formula="Consumo do forno (kWh) × tarifa da energia"
-                example="2,0 kWh × R$ 0,90"
-                result="R$ 1,80/h"
+                formula="Consumo da batedeira (kWh) × tarifa da energia"
+                example="0,5 kWh × R$ 0,90"
+                result="R$ 0,45/h"
               />
 
               <MarketReference
                 items={[
-                  { label: 'Valor típico', range: 'R$ 1,50 a R$ 2,50/h' },
+                  { label: 'Batedeira/mixer doméstico', range: 'R$ 0,30 a R$ 0,60/h' },
+                  { label: 'Batedeira planetária', range: 'R$ 0,50 a R$ 1,00/h' },
                 ]}
               />
             </div>

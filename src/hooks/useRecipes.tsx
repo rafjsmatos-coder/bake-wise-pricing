@@ -30,6 +30,7 @@ export interface Recipe {
   yield_unit: string;
   prep_time_minutes: number;
   oven_time_minutes: number | null;
+  oven_type: 'gas' | 'electric' | null;
   instructions: string | null;
   safety_margin_percent: number | null;
   additional_costs: number;
@@ -57,6 +58,7 @@ export interface CreateRecipeData {
   yield_unit: string;
   prep_time_minutes: number;
   oven_time_minutes?: number | null;
+  oven_type?: 'gas' | 'electric' | null;
   instructions?: string | null;
   safety_margin_percent?: number | null;
   additional_costs?: number;

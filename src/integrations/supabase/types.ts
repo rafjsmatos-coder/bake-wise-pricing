@@ -727,6 +727,7 @@ export type Database = {
           name: string
           notes: string | null
           oven_time_minutes: number | null
+          oven_type: string | null
           prep_time_minutes: number
           safety_margin_percent: number | null
           updated_at: string
@@ -743,6 +744,7 @@ export type Database = {
           name: string
           notes?: string | null
           oven_time_minutes?: number | null
+          oven_type?: string | null
           prep_time_minutes: number
           safety_margin_percent?: number | null
           updated_at?: string
@@ -759,6 +761,7 @@ export type Database = {
           name?: string
           notes?: string | null
           oven_time_minutes?: number | null
+          oven_type?: string | null
           prep_time_minutes?: number
           safety_margin_percent?: number | null
           updated_at?: string
@@ -910,7 +913,9 @@ export type Database = {
       user_settings: {
         Row: {
           created_at: string
+          default_oven_type: string | null
           default_safety_margin: number | null
+          electric_oven_cost_per_hour: number | null
           energy_cost_per_hour: number | null
           gas_cost_per_hour: number | null
           id: string
@@ -919,12 +924,15 @@ export type Database = {
           include_labor_cost: boolean | null
           indirect_operational_cost_percent: number | null
           labor_cost_per_hour: number | null
+          oven_type: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          default_oven_type?: string | null
           default_safety_margin?: number | null
+          electric_oven_cost_per_hour?: number | null
           energy_cost_per_hour?: number | null
           gas_cost_per_hour?: number | null
           id?: string
@@ -933,12 +941,15 @@ export type Database = {
           include_labor_cost?: boolean | null
           indirect_operational_cost_percent?: number | null
           labor_cost_per_hour?: number | null
+          oven_type?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          default_oven_type?: string | null
           default_safety_margin?: number | null
+          electric_oven_cost_per_hour?: number | null
           energy_cost_per_hour?: number | null
           gas_cost_per_hour?: number | null
           id?: string
@@ -947,6 +958,7 @@ export type Database = {
           include_labor_cost?: boolean | null
           indirect_operational_cost_percent?: number | null
           labor_cost_per_hour?: number | null
+          oven_type?: string | null
           updated_at?: string
           user_id?: string
         }

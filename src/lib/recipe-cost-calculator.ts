@@ -14,7 +14,7 @@ export interface RecipeCostBreakdown {
   safetyMarginAmount: number;
   safetyMarginPercent: number;
   additionalCosts: number;
-  gasCost: number;
+  ovenCost: number;
   energyCost: number;
   laborCost: number;
   totalCost: number;
@@ -42,8 +42,11 @@ export interface RecipeIngredientInput {
 }
 
 export interface TimeBasedCostSettings {
+  ovenType: 'gas' | 'electric' | 'both';
   includeGasCost: boolean;
   gasCostPerHour: number;
+  electricOvenCostPerHour: number;
+  defaultOvenType: 'gas' | 'electric';
   includeEnergyCost: boolean;
   energyCostPerHour: number;
   includeLaborCost: boolean;
@@ -87,19 +90,34 @@ export function calculateIngredientCost(
 export function calculateTimeBasedCosts(
   prepTimeMinutes: number,
   ovenTimeMinutes: number,
-  settings: TimeBasedCostSettings
-): { gasCost: number; energyCost: number; laborCost: number } {
+  settings: TimeBasedCostSettings,
+  recipeOvenType?: 'gas' | 'electric' | null
+): { ovenCost: number; energyCost: number; laborCost: number } {
   const ovenHours = (ovenTimeMinutes || 0) / 60;
   const prepHours = (prepTimeMinutes || 0) / 60;
 
-  // Gás: calculado sobre tempo de forno (custo indireto - equipamento)
-  const gasCost = settings.includeGasCost ? ovenHours * settings.gasCostPerHour : 0;
+  // Determinar qual custo de forno usar baseado no tipo configurado
+  let ovenCost = 0;
+  if (ovenHours > 0) {
+    // Se o usuário tem ambos os fornos, verificar se a receita especifica qual usar
+    const effectiveOvenType = settings.ovenType === 'both' 
+      ? (recipeOvenType || settings.defaultOvenType)
+      : settings.ovenType;
+    
+    if (effectiveOvenType === 'electric') {
+      ovenCost = ovenHours * settings.electricOvenCostPerHour;
+    } else {
+      // gas
+      ovenCost = settings.includeGasCost ? ovenHours * settings.gasCostPerHour : 0;
+    }
+  }
+
   // Energia: calculado sobre tempo de preparo (equipamentos elétricos em uso)
   const energyCost = settings.includeEnergyCost ? prepHours * settings.energyCostPerHour : 0;
   // Mão de obra: calculado apenas sobre tempo de preparo (trabalho ativo)
   const laborCost = settings.includeLaborCost ? prepHours * settings.laborCostPerHour : 0;
 
-  return { gasCost, energyCost, laborCost };
+  return { ovenCost, energyCost, laborCost };
 }
 
 /**
@@ -114,7 +132,8 @@ export function calculateRecipeCost(
   additionalCosts: number = 0,
   prepTimeMinutes: number = 0,
   ovenTimeMinutes: number = 0,
-  timeSettings?: TimeBasedCostSettings
+  timeSettings?: TimeBasedCostSettings,
+  recipeOvenType?: 'gas' | 'electric' | null
 ): RecipeCostBreakdown {
   const ingredientCosts: RecipeIngredientCost[] = [];
   let totalIngredientsCost = 0;
@@ -146,22 +165,26 @@ export function calculateRecipeCost(
 
   // Calculate time-based costs
   const defaultTimeSettings: TimeBasedCostSettings = {
+    ovenType: 'gas',
     includeGasCost: false,
     gasCostPerHour: 0,
+    electricOvenCostPerHour: 0,
+    defaultOvenType: 'gas',
     includeEnergyCost: false,
     energyCostPerHour: 0,
     includeLaborCost: false,
     laborCostPerHour: 0,
   };
   const effectiveTimeSettings = timeSettings || defaultTimeSettings;
-  const { gasCost, energyCost, laborCost } = calculateTimeBasedCosts(
+  const { ovenCost, energyCost, laborCost } = calculateTimeBasedCosts(
     prepTimeMinutes,
     ovenTimeMinutes,
-    effectiveTimeSettings
+    effectiveTimeSettings,
+    recipeOvenType
   );
 
   const safetyMarginAmount = totalIngredientsCost * (safetyMarginPercent / 100);
-  const totalCost = totalIngredientsCost + safetyMarginAmount + additionalCosts + gasCost + energyCost + laborCost;
+  const totalCost = totalIngredientsCost + safetyMarginAmount + additionalCosts + ovenCost + energyCost + laborCost;
   const costPerUnit = yieldQuantity > 0 ? totalCost / yieldQuantity : 0;
 
   return {
@@ -169,7 +192,7 @@ export function calculateRecipeCost(
     safetyMarginAmount,
     safetyMarginPercent,
     additionalCosts,
-    gasCost,
+    ovenCost,
     energyCost,
     laborCost,
     totalCost,
@@ -191,8 +214,8 @@ export function formatCostBreakdown(breakdown: RecipeCostBreakdown): string {
     `Margem de segurança (${breakdown.safetyMarginPercent}%): R$ ${breakdown.safetyMarginAmount.toFixed(2)}`,
   ];
 
-  if (breakdown.gasCost > 0) {
-    lines.push(`Custo de gás: R$ ${breakdown.gasCost.toFixed(2)}`);
+  if (breakdown.ovenCost > 0) {
+    lines.push(`Custo do forno: R$ ${breakdown.ovenCost.toFixed(2)}`);
   }
 
   if (breakdown.energyCost > 0) {

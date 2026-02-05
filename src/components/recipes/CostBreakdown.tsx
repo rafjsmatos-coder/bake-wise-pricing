@@ -50,13 +50,13 @@ export function CostBreakdown({ breakdown, compact = false }: CostBreakdownProps
         </div>
 
         {/* Custo de Gás */}
-        {breakdown.gasCost > 0 && (
+        {breakdown.ovenCost > 0 && (
           <div className="flex justify-between items-center py-2 border-b border-border">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Flame className="h-4 w-4 text-orange-500" />
-              <span>Custo de gás ({breakdown.ovenTimeMinutes} min forno)</span>
+              <span>Custo do forno ({breakdown.ovenTimeMinutes} min)</span>
             </div>
-            <span className="font-medium">+ {formatCurrency(breakdown.gasCost)}</span>
+            <span className="font-medium">+ {formatCurrency(breakdown.ovenCost)}</span>
           </div>
         )}
 

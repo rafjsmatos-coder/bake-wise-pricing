@@ -62,13 +62,17 @@ export function ProductsList() {
         recipe.prep_time_minutes || 0,
         recipe.oven_time_minutes || 0,
         settings ? {
+          ovenType: settings.oven_type || 'gas',
           includeGasCost: settings.include_gas_cost || false,
           gasCostPerHour: settings.gas_cost_per_hour || 0,
+          electricOvenCostPerHour: settings.electric_oven_cost_per_hour || 0,
+          defaultOvenType: settings.default_oven_type || 'gas',
           includeEnergyCost: settings.include_energy_cost || false,
           energyCostPerHour: settings.energy_cost_per_hour || 0,
           includeLaborCost: settings.include_labor_cost || false,
           laborCostPerHour: settings.labor_cost_per_hour || 0,
-        } : undefined
+        } : undefined,
+        null // recipeOvenType - will be from recipe when needed
       );
       costs[recipe.id] = result.totalCost;
     }
