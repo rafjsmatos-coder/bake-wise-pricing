@@ -23,6 +23,19 @@ export function CostConfigCard({ onNavigate }: CostConfigCardProps) {
     return null;
   }
 
+  // Determinar se o custo do forno está configurado baseado no tipo
+  const getOvenConfigured = () => {
+    const ovenType = settings.oven_type || 'gas';
+    if (ovenType === 'gas') {
+      return settings.include_gas_cost && settings.gas_cost_per_hour > 0;
+    }
+    if (ovenType === 'electric') {
+      return (settings.electric_oven_cost_per_hour || 0) > 0;
+    }
+    // both
+    return settings.gas_cost_per_hour > 0 && (settings.electric_oven_cost_per_hour || 0) > 0;
+  };
+
   // Calculate configuration completeness
   const configItems = [
     { 
@@ -31,14 +44,9 @@ export function CostConfigCard({ onNavigate }: CostConfigCardProps) {
       configured: settings.include_labor_cost && settings.labor_cost_per_hour > 0 
     },
     { 
-      label: 'Energia', 
-      icon: Zap,
-      configured: settings.include_energy_cost && settings.energy_cost_per_hour > 0 
-    },
-    { 
-      label: 'Gás', 
+      label: 'Custo do forno', 
       icon: Flame,
-      configured: settings.include_gas_cost && settings.gas_cost_per_hour > 0 
+      configured: getOvenConfigured()
     },
     { 
       label: 'Custo operacional', 

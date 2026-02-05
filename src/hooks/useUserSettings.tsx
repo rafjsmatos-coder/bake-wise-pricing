@@ -7,8 +7,11 @@ export interface UserSettings {
   id: string;
   user_id: string;
   default_safety_margin: number;
+  oven_type: 'gas' | 'electric' | 'both';
   include_gas_cost: boolean;
   gas_cost_per_hour: number;
+  electric_oven_cost_per_hour: number;
+  default_oven_type: 'gas' | 'electric';
   include_energy_cost: boolean;
   energy_cost_per_hour: number;
   include_labor_cost: boolean;
@@ -20,8 +23,11 @@ export interface UserSettings {
 
 export interface UpdateUserSettingsData {
   default_safety_margin?: number;
+  oven_type?: 'gas' | 'electric' | 'both';
   include_gas_cost?: boolean;
   gas_cost_per_hour?: number;
+  electric_oven_cost_per_hour?: number;
+  default_oven_type?: 'gas' | 'electric';
   include_energy_cost?: boolean;
   energy_cost_per_hour?: number;
   include_labor_cost?: boolean;

@@ -27,7 +27,8 @@ import { IngredientSelector, type RecipeIngredientItem } from './IngredientSelec
 import { CostBreakdown } from './CostBreakdown';
 import { calculateRecipeCost, calculateIngredientCost, type IngredientData } from '@/lib/recipe-cost-calculator';
 import { type MeasurementUnit } from '@/lib/unit-conversion';
-import { Loader2, Clock, Flame, Settings2 } from 'lucide-react';
+import { Loader2, Clock, Flame, Settings2, Zap } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const recipeSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(200),
@@ -67,6 +68,10 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
   const { ingredients } = useIngredients();
   const [showOptional, setShowOptional] = useState(false);
   const [selectedIngredients, setSelectedIngredients] = useState<RecipeIngredientItem[]>([]);
+  const [selectedOvenType, setSelectedOvenType] = useState<'gas' | 'electric' | null>(null);
+
+  // Check if user has both oven types configured
+  const hasBothOvenTypes = settings?.oven_type === 'both';
 
   const {
     register,
@@ -132,6 +137,12 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
       }
 
       setShowOptional(!!recipe.oven_time_minutes || !!recipe.instructions || !!recipe.notes);
+      // Load oven type if user has both types
+      if (hasBothOvenTypes && (recipe as any).oven_type) {
+        setSelectedOvenType((recipe as any).oven_type);
+      } else {
+        setSelectedOvenType(null);
+      }
     } else {
       reset({
         name: '',
@@ -147,8 +158,9 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
       });
       setSelectedIngredients([]);
       setShowOptional(false);
+      setSelectedOvenType(null);
     }
-  }, [recipe, reset, open, ingredients]);
+  }, [recipe, reset, open, ingredients, hasBothOvenTypes]);
 
   const watchYieldQuantity = watch('yield_quantity');
   const watchYieldUnit = watch('yield_unit');
@@ -202,6 +214,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
       safety_margin_percent: data.safety_margin_percent ?? null,
       additional_costs: data.additional_costs ?? 0,
       notes: data.notes?.trim() || null,
+      oven_type: hasBothOvenTypes ? selectedOvenType : undefined,
       ingredients: selectedIngredients.map(si => ({
         ingredient_id: si.ingredient_id,
         quantity: si.quantity,
@@ -380,6 +393,32 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                   <span className="text-sm text-muted-foreground">min</span>
                 </div>
               </div>
+
+              {/* Tipo de Forno - só aparece se o usuário tem os dois tipos */}
+              {hasBothOvenTypes && (
+                <div className="space-y-2 animate-fade-in">
+                  <Label>Tipo de Forno para esta receita</Label>
+                  <RadioGroup
+                    value={selectedOvenType || settings?.default_oven_type || 'gas'}
+                    onValueChange={(value) => setSelectedOvenType(value as 'gas' | 'electric')}
+                    className="flex gap-4"
+                  >
+                    <label className="flex items-center gap-2 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer has-[:checked]:border-accent has-[:checked]:bg-accent/5">
+                      <RadioGroupItem value="gas" id="recipe-oven-gas" />
+                      <Flame className="h-4 w-4 text-orange-500" />
+                      <span className="text-sm">Gás</span>
+                    </label>
+                    <label className="flex items-center gap-2 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer has-[:checked]:border-accent has-[:checked]:bg-accent/5">
+                      <RadioGroupItem value="electric" id="recipe-oven-electric" />
+                      <Zap className="h-4 w-4 text-yellow-500" />
+                      <span className="text-sm">Elétrico</span>
+                    </label>
+                  </RadioGroup>
+                  <p className="text-xs text-muted-foreground">
+                    Padrão: {settings?.default_oven_type === 'electric' ? 'Elétrico' : 'Gás'}
+                  </p>
+                </div>
+              )}
 
               {/* Margem e Custos */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

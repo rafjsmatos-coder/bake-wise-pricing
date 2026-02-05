@@ -49,8 +49,11 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
     const additionalCosts = Number(recipe.additional_costs) || 0;
 
     const timeSettings: TimeBasedCostSettings = {
+      ovenType: (settings?.oven_type as 'gas' | 'electric' | 'both') || 'gas',
       includeGasCost: settings?.include_gas_cost || false,
       gasCostPerHour: Number(settings?.gas_cost_per_hour) || 0,
+      electricOvenCostPerHour: Number(settings?.electric_oven_cost_per_hour) || 0,
+      defaultOvenType: (settings?.default_oven_type as 'gas' | 'electric') || 'gas',
       includeEnergyCost: settings?.include_energy_cost || false,
       energyCostPerHour: Number(settings?.energy_cost_per_hour) || 0,
       includeLaborCost: settings?.include_labor_cost || false,
