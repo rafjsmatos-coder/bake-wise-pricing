@@ -309,6 +309,49 @@ export function useProducts() {
     },
   });
 
+  const duplicateProduct = useMutation({
+    mutationFn: async (product: Product) => {
+      if (!user?.id) throw new Error('Usuário não autenticado');
+      
+      const productData: ProductFormData = {
+        name: `${product.name} (cópia)`,
+        category_id: product.category_id,
+        decoration_time_minutes: product.decoration_time_minutes,
+        profit_margin_percent: product.profit_margin_percent,
+        additional_costs: product.additional_costs,
+        notes: product.notes,
+        recipes: product.product_recipes?.map(r => ({
+          recipe_id: r.recipe_id,
+          quantity: r.quantity,
+          unit: r.unit,
+        })) || [],
+        ingredients: product.product_ingredients?.map(i => ({
+          ingredient_id: i.ingredient_id,
+          quantity: i.quantity,
+          unit: i.unit,
+        })) || [],
+        decorations: product.product_decorations?.map(d => ({
+          decoration_id: d.decoration_id,
+          quantity: d.quantity,
+          unit: d.unit,
+        })) || [],
+        packaging: product.product_packaging?.map(p => ({
+          packaging_id: p.packaging_id,
+          quantity: p.quantity,
+        })) || [],
+      };
+
+      return createProduct.mutateAsync(productData);
+    },
+    onSuccess: () => {
+      toast.success('Produto duplicado com sucesso!');
+    },
+    onError: (error) => {
+      console.error('Erro ao duplicar produto:', error);
+      toast.error('Erro ao duplicar produto');
+    },
+  });
+
   return {
     products,
     isLoading,
@@ -316,5 +359,6 @@ export function useProducts() {
     createProduct,
     updateProduct,
     deleteProduct,
+    duplicateProduct,
   };
 }

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, Eye, Clock, TrendingUp } from 'lucide-react';
+import { Pencil, Trash2, Eye, Clock, TrendingUp, Copy } from 'lucide-react';
 import { formatCurrency } from '@/lib/product-cost-calculator';
 import type { Product } from '@/hooks/useProducts';
 
@@ -11,6 +11,7 @@ interface ProductCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onView: () => void;
+  onDuplicate: () => void;
 }
 
 export function ProductCard({ 
@@ -19,7 +20,8 @@ export function ProductCard({
   sellingPrice, 
   onEdit, 
   onDelete, 
-  onView 
+  onView,
+  onDuplicate 
 }: ProductCardProps) {
   const recipesCount = product.product_recipes?.length || 0;
   const ingredientsCount = product.product_ingredients?.length || 0;
@@ -49,13 +51,16 @@ export function ProductCard({
           <h3 className="font-semibold text-foreground truncate">{product.name}</h3>
         </div>
         <div className="flex gap-1 shrink-0">
-          <Button variant="ghost" size="icon" onClick={onView} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onView} className="h-8 w-8" title="Ver detalhes">
             <Eye className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onDuplicate} className="h-8 w-8" title="Duplicar">
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8" title="Editar">
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8" title="Excluir">
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import { Plus, Search, ShoppingBag, Loader2 } from 'lucide-react';
 import { useProducts, Product } from '@/hooks/useProducts';
+import { toast } from 'sonner';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { useProductCategories } from '@/hooks/useProductCategories';
@@ -30,7 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export function ProductsList() {
-  const { products, isLoading, deleteProduct } = useProducts();
+  const { products, isLoading, deleteProduct, duplicateProduct } = useProducts();
   const { recipes } = useRecipes();
   const { settings } = useUserSettings();
   const { categories } = useProductCategories();
@@ -120,6 +121,10 @@ export function ProductsList() {
       await deleteProduct.mutateAsync(deletingProduct.id);
       setDeletingProduct(null);
     }
+  };
+
+  const handleDuplicate = async (product: Product) => {
+    await duplicateProduct.mutateAsync(product);
   };
 
   const handleFormClose = (open: boolean) => {
@@ -218,6 +223,7 @@ export function ProductsList() {
               onEdit={() => handleEdit(product)}
               onDelete={() => setDeletingProduct(product)}
               onView={() => handleView(product)}
+              onDuplicate={() => handleDuplicate(product)}
             />
           ))}
         </div>

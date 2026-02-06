@@ -16,6 +16,7 @@ import { ProfileSettings } from '@/components/settings/ProfileSettings';
 import { SupportPage } from '@/components/support/SupportPage';
 import { TrialBanner } from '@/components/subscription/TrialBanner';
 import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2, AlertCircle, RefreshCw, LogOut } from 'lucide-react';
@@ -23,6 +24,7 @@ import { Button } from '@/components/ui/button';
 
 export function Dashboard() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
+  const [searchOpen, setSearchOpen] = useState(false);
   const { canAccess, isLoading, initialized, error, checkSubscription } = useSubscription();
   const { signOut } = useAuth();
   const [isRetrying, setIsRetrying] = useState(false);
@@ -116,9 +118,18 @@ export function Dashboard() {
     return <SubscriptionPaywall />;
   }
 
+  const handleSearchNavigate = (page: string) => {
+    setCurrentPage(page as PageType);
+  };
+
   return (
     <>
       <TrialBanner />
+      <GlobalSearch 
+        open={searchOpen} 
+        onOpenChange={setSearchOpen} 
+        onNavigate={handleSearchNavigate}
+      />
       <AppLayout currentPage={currentPage} onPageChange={setCurrentPage}>
         {currentPage === 'dashboard' && <DashboardHome onNavigate={(page) => setCurrentPage(page as PageType)} />}
         {currentPage === 'products' && <ProductsList />}

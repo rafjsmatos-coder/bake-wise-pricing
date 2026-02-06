@@ -18,10 +18,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { useCategories } from '@/hooks/useCategories';
 import { useIngredients, type Ingredient, type CreateIngredientData } from '@/hooks/useIngredients';
 import { UNITS, type MeasurementUnit, getCostPerUnit, formatCurrency } from '@/lib/unit-conversion';
-import { Loader2, Calculator } from 'lucide-react';
+import { PriceHistoryChart } from './PriceHistoryChart';
+import { Loader2, Calculator, History, ChevronDown } from 'lucide-react';
 
 const ingredientSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100),
@@ -48,6 +54,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
   const { categories } = useCategories();
   const { createIngredient, updateIngredient } = useIngredients();
   const [showOptional, setShowOptional] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const {
     register,
@@ -87,6 +94,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
         min_stock_alert: ingredient.min_stock_alert ? Number(ingredient.min_stock_alert) : null,
       });
       setShowOptional(!!ingredient.brand || !!ingredient.supplier || !!ingredient.expiry_date || !!ingredient.stock_quantity);
+      setShowHistory(false);
     } else {
       reset({
         name: '',
@@ -101,6 +109,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
         min_stock_alert: null,
       });
       setShowOptional(false);
+      setShowHistory(false);
     }
   }, [ingredient, reset, open]);
 
@@ -258,6 +267,36 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                 <span className="font-bold">{costInfo.formatted}</span>
               </div>
             </div>
+          )}
+
+          {/* Price History - only show when editing */}
+          {ingredient && (
+            <Collapsible open={showHistory} onOpenChange={setShowHistory}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-between min-h-[44px]"
+                >
+                  <div className="flex items-center gap-2">
+                    <History className="h-4 w-4" />
+                    <span>Histórico de Preços</span>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                <div className="border border-border rounded-lg p-4">
+                  <PriceHistoryChart
+                    ingredientId={ingredient.id}
+                    ingredientName={ingredient.name}
+                    currentPrice={Number(ingredient.purchase_price)}
+                    packageQuantity={Number(ingredient.package_quantity)}
+                    unit={ingredient.unit}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
 
           {/* Optional Fields Toggle */}
