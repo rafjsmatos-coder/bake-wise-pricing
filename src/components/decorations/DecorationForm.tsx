@@ -298,9 +298,9 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
                     type="number"
                     step="0.01"
                     min="0"
-                    placeholder="0"
+                    placeholder="Opcional"
                     className="min-h-[44px]"
-                    {...register('stock_quantity', { valueAsNumber: true })}
+                    {...register('stock_quantity', { setValueAs: (v: string) => v === '' || v === null || v === undefined ? null : Number(v) })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -310,9 +310,9 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
                     type="number"
                     step="0.01"
                     min="0"
-                    placeholder="0"
+                    placeholder="Opcional"
                     className="min-h-[44px]"
-                    {...register('min_stock_alert', { valueAsNumber: true })}
+                    {...register('min_stock_alert', { setValueAs: (v: string) => v === '' || v === null || v === undefined ? null : Number(v) })}
                   />
                 </div>
               </div>

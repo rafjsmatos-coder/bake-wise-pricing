@@ -4,12 +4,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ProductCostBreakdown } from './ProductCostBreakdown';
 import { calculateProductCost } from '@/lib/product-cost-calculator';
 import type { Product } from '@/hooks/useProducts';
-import { BookOpen, Package, Sparkles, Box, Clock, FileText } from 'lucide-react';
+import { BookOpen, Package, Sparkles, Box, Clock, FileText, Copy, Pencil } from 'lucide-react';
 
 interface ProductDetailsProps {
   open: boolean;
@@ -18,6 +19,8 @@ interface ProductDetailsProps {
   recipeCosts: Record<string, number>;
   laborCostPerHour: number;
   indirectOperationalCostPercent?: number;
+  onEdit?: () => void;
+  onDuplicate?: () => void;
 }
 
 export function ProductDetails({ 
@@ -27,6 +30,8 @@ export function ProductDetails({
   recipeCosts, 
   laborCostPerHour,
   indirectOperationalCostPercent = 5,
+  onEdit,
+  onDuplicate,
 }: ProductDetailsProps) {
   if (!product) return null;
 
@@ -41,20 +46,39 @@ export function ProductDetails({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            {product.category && (
-              <Badge 
-                variant="secondary"
-                style={{ 
-                  backgroundColor: `${product.category.color}20`,
-                  color: product.category.color || undefined,
-                }}
-              >
-                {product.category.name}
-              </Badge>
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle className="text-xl">{product.name}</DialogTitle>
+              {product.category && (
+                <Badge 
+                  variant="secondary"
+                  className="mt-2"
+                  style={{ 
+                    backgroundColor: `${product.category.color}20`,
+                    color: product.category.color || undefined,
+                  }}
+                >
+                  {product.category.name}
+                </Badge>
+              )}
+            </div>
+            {(onEdit || onDuplicate) && (
+              <div className="flex gap-2">
+                {onDuplicate && (
+                  <Button variant="outline" size="sm" onClick={onDuplicate}>
+                    <Copy className="h-4 w-4 mr-1" />
+                    Duplicar
+                  </Button>
+                )}
+                {onEdit && (
+                  <Button size="sm" onClick={onEdit}>
+                    <Pencil className="h-4 w-4 mr-1" />
+                    Editar
+                  </Button>
+                )}
+              </div>
             )}
           </div>
-          <DialogTitle className="text-xl">{product.name}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">

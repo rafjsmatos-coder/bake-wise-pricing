@@ -48,9 +48,10 @@ interface ProductFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product?: Product | null;
+  recipeCosts?: Record<string, number>;
 }
 
-export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
+export function ProductForm({ open, onOpenChange, product, recipeCosts = {} }: ProductFormProps) {
   const { createProduct, updateProduct } = useProducts();
   const { categories } = useProductCategories();
 
@@ -237,6 +238,7 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
             <RecipeSelector
               selectedRecipes={selectedRecipes}
               onRecipesChange={setSelectedRecipes}
+              recipeCosts={recipeCosts}
             />
 
             {/* Ingredient Selector */}

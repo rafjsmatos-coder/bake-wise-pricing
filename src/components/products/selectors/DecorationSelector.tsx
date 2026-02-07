@@ -27,6 +27,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useDecorations } from '@/hooks/useDecorations';
 import { Plus, X, Check, ChevronsUpDown, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatCurrency, convertUnit, getCostPerUnit } from '@/lib/unit-conversion';
 import type { Database } from '@/integrations/supabase/types';
 
 type MeasurementUnit = Database['public']['Enums']['measurement_unit'];
@@ -110,33 +111,48 @@ export function DecorationSelector({
     );
   };
 
+  const getItemCost = (item: SelectedDecoration): number | null => {
+    const dec = decorations.find(d => d.id === item.decoration_id);
+    if (!dec) return null;
+    const costPerUnit = Number(dec.purchase_price) / Number(dec.package_quantity);
+    const convertedQty = convertUnit(item.quantity, item.unit, dec.unit) ?? item.quantity;
+    return convertedQty * costPerUnit;
+  };
+
   const CommandContent = (
     <Command>
       <CommandInput placeholder="Buscar decoração..." />
       <CommandList>
         <CommandEmpty>Nenhuma decoração encontrada.</CommandEmpty>
         <CommandGroup>
-          {availableDecorations.map((decoration) => (
-            <CommandItem
-              key={decoration.id}
-              value={decoration.name}
-              onSelect={() => handleSelectDecoration(decoration)}
-              className="py-3"
-            >
-              <Check
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  selectedDecoration?.id === decoration.id ? "opacity-100" : "opacity-0"
-                )}
-              />
-              <div className="flex flex-col">
-                <span>{decoration.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {decoration.decoration_categories?.name || 'Sem categoria'}
-                </span>
-              </div>
-            </CommandItem>
-          ))}
+          {availableDecorations.map((decoration) => {
+            const costInfo = getCostPerUnit(
+              Number(decoration.purchase_price),
+              Number(decoration.package_quantity),
+              decoration.unit
+            );
+            return (
+              <CommandItem
+                key={decoration.id}
+                value={decoration.name}
+                onSelect={() => handleSelectDecoration(decoration)}
+                className="py-3"
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    selectedDecoration?.id === decoration.id ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <div className="flex flex-col flex-1">
+                  <span>{decoration.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {decoration.decoration_categories?.name || 'Sem categoria'} · {costInfo.formatted}
+                  </span>
+                </div>
+              </CommandItem>
+            );
+          })}
         </CommandGroup>
       </CommandList>
     </Command>
@@ -244,55 +260,63 @@ export function DecorationSelector({
       {/* Selected Decorations List */}
       {selectedDecorations.length > 0 ? (
         <div className="space-y-2">
-          {selectedDecorations.map((item) => (
-            <div
-              key={item.decoration_id}
-              className="flex flex-wrap items-center gap-2 p-3 border border-border rounded-lg bg-card"
-            >
-              <div className="flex-1 min-w-0 w-full sm:w-auto">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="font-medium truncate">{item.name}</span>
+          {selectedDecorations.map((item) => {
+            const itemCost = getItemCost(item);
+            return (
+              <div
+                key={item.decoration_id}
+                className="flex flex-wrap items-center gap-2 p-3 border border-border rounded-lg bg-card"
+              >
+                <div className="flex-1 min-w-0 w-full sm:w-auto">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="font-medium truncate">{item.name}</span>
+                  </div>
+                  {itemCost != null && (
+                    <p className="text-xs text-primary font-medium ml-6">
+                      {formatCurrency(itemCost)}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={item.quantity}
+                    onChange={(e) => handleUpdateQuantity(item.decoration_id, Number(e.target.value))}
+                    autoComplete="off"
+                    className="w-16 sm:w-20 min-h-[44px]"
+                  />
+                  <Select
+                    value={item.unit}
+                    onValueChange={(value) => handleUpdateUnit(item.decoration_id, value as MeasurementUnit)}
+                  >
+                    <SelectTrigger className="w-16 sm:w-20 min-h-[44px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[40vh]">
+                      {UNITS.map((u) => (
+                        <SelectItem key={u.value} value={u.value} className="py-3">
+                          {u.value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveDecoration(item.decoration_id)}
+                    className="shrink-0 text-muted-foreground hover:text-destructive min-h-[44px] min-w-[44px]"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={item.quantity}
-                  onChange={(e) => handleUpdateQuantity(item.decoration_id, Number(e.target.value))}
-                  autoComplete="off"
-                  className="w-16 sm:w-20 min-h-[44px]"
-                />
-                <Select
-                  value={item.unit}
-                  onValueChange={(value) => handleUpdateUnit(item.decoration_id, value as MeasurementUnit)}
-                >
-                  <SelectTrigger className="w-16 sm:w-20 min-h-[44px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[40vh]">
-                    {UNITS.map((u) => (
-                      <SelectItem key={u.value} value={u.value} className="py-3">
-                        {u.value}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveDecoration(item.decoration_id)}
-                  className="shrink-0 text-muted-foreground hover:text-destructive min-h-[44px] min-w-[44px]"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-lg">

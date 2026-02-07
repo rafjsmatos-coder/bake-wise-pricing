@@ -12,6 +12,7 @@ import {
   Clock, 
   Flame, 
   Eye,
+  Copy,
   TrendingUp
 } from 'lucide-react';
 
@@ -96,13 +97,16 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
           <h3 className="font-semibold text-foreground truncate">{recipe.name}</h3>
         </div>
         <div className="flex gap-1 shrink-0">
-          <Button variant="ghost" size="icon" onClick={onView} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onView} className="h-8 w-8" title="Ver detalhes">
             <Eye className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onDuplicate} className="h-8 w-8" title="Duplicar">
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8" title="Editar">
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8" title="Excluir">
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
