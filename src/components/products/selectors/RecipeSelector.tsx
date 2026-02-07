@@ -27,6 +27,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useRecipes } from '@/hooks/useRecipes';
 import { Plus, X, Check, ChevronsUpDown, ChefHat } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatCurrency, convertUnit, type MeasurementUnit } from '@/lib/unit-conversion';
 
 const UNITS = [
   { value: 'un', label: 'Unidade(s)' },
@@ -50,11 +51,13 @@ export interface SelectedRecipe {
 interface RecipeSelectorProps {
   selectedRecipes: SelectedRecipe[];
   onRecipesChange: (recipes: SelectedRecipe[]) => void;
+  recipeCosts?: Record<string, number>;
 }
 
 export function RecipeSelector({
   selectedRecipes,
   onRecipesChange,
+  recipeCosts = {},
 }: RecipeSelectorProps) {
   const { recipes } = useRecipes();
   const isMobile = useIsMobile();
@@ -121,33 +124,49 @@ export function RecipeSelector({
     );
   };
 
+  const getItemCost = (item: SelectedRecipe): number | null => {
+    const totalCost = recipeCosts[item.recipe_id];
+    if (totalCost == null) return null;
+    const convertedQty = convertUnit(
+      item.quantity,
+      item.unit as MeasurementUnit,
+      item.yield_unit as MeasurementUnit
+    ) ?? item.quantity;
+    const proportion = convertedQty / item.yield_quantity;
+    return totalCost * proportion;
+  };
+
   const CommandContent = (
     <Command>
       <CommandInput placeholder="Buscar receita..." />
       <CommandList>
         <CommandEmpty>Nenhuma receita encontrada.</CommandEmpty>
         <CommandGroup>
-          {availableRecipes.map((recipe) => (
-            <CommandItem
-              key={recipe.id}
-              value={recipe.name}
-              onSelect={() => handleSelectRecipe(recipe)}
-              className="py-3"
-            >
-              <Check
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  selectedRecipe?.id === recipe.id ? "opacity-100" : "opacity-0"
-                )}
-              />
-              <div className="flex flex-col">
-                <span>{recipe.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  Rende: {recipe.yield_quantity} {recipe.yield_unit}
-                </span>
-              </div>
-            </CommandItem>
-          ))}
+          {availableRecipes.map((recipe) => {
+            const cost = recipeCosts[recipe.id];
+            return (
+              <CommandItem
+                key={recipe.id}
+                value={recipe.name}
+                onSelect={() => handleSelectRecipe(recipe)}
+                className="py-3"
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    selectedRecipe?.id === recipe.id ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <div className="flex flex-col flex-1">
+                  <span>{recipe.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    Rende: {recipe.yield_quantity} {recipe.yield_unit}
+                    {cost != null && ` · ${formatCurrency(cost)}`}
+                  </span>
+                </div>
+              </CommandItem>
+            );
+          })}
         </CommandGroup>
       </CommandList>
     </Command>
@@ -263,6 +282,8 @@ export function RecipeSelector({
             else if (['L', 'ml'].includes(yieldUnit)) itemCompatibleUnits = UNITS.filter(u => ['L', 'ml'].includes(u.value));
             else if (['m', 'cm'].includes(yieldUnit)) itemCompatibleUnits = UNITS.filter(u => ['m', 'cm'].includes(u.value));
 
+            const itemCost = getItemCost(item);
+
             return (
               <div
                 key={item.recipe_id}
@@ -275,6 +296,9 @@ export function RecipeSelector({
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Rende: {item.yield_quantity} {item.yield_unit}
+                    {itemCost != null && (
+                      <span className="text-primary font-medium"> · {formatCurrency(itemCost)}</span>
+                    )}
                   </p>
                 </div>
 

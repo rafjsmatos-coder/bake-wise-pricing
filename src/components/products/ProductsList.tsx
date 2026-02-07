@@ -233,6 +233,7 @@ export function ProductsList() {
         open={formOpen}
         onOpenChange={handleFormClose}
         product={editingProduct}
+        recipeCosts={recipeCosts}
       />
 
       <ProductDetails
@@ -242,6 +243,18 @@ export function ProductsList() {
         recipeCosts={recipeCosts}
         laborCostPerHour={settings?.labor_cost_per_hour || 0}
         indirectOperationalCostPercent={settings?.indirect_operational_cost_percent || 5}
+        onEdit={() => {
+          if (viewingProduct) {
+            setViewingProduct(null);
+            handleEdit(viewingProduct);
+          }
+        }}
+        onDuplicate={() => {
+          if (viewingProduct) {
+            setViewingProduct(null);
+            handleDuplicate(viewingProduct);
+          }
+        }}
       />
 
       <AlertDialog open={!!deletingProduct} onOpenChange={() => setDeletingProduct(null)}>

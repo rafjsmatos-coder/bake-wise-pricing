@@ -27,6 +27,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useIngredients } from '@/hooks/useIngredients';
 import { Plus, X, Check, ChevronsUpDown, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatCurrency, convertUnit, getCostPerUnit } from '@/lib/unit-conversion';
 import type { Database } from '@/integrations/supabase/types';
 
 type MeasurementUnit = Database['public']['Enums']['measurement_unit'];
@@ -110,33 +111,48 @@ export function IngredientSelector({
     );
   };
 
+  const getItemCost = (item: SelectedIngredient): number | null => {
+    const ing = ingredients.find(i => i.id === item.ingredient_id);
+    if (!ing) return null;
+    const costPerUnit = Number(ing.purchase_price) / Number(ing.package_quantity);
+    const convertedQty = convertUnit(item.quantity, item.unit, ing.unit) ?? item.quantity;
+    return convertedQty * costPerUnit;
+  };
+
   const CommandContent = (
     <Command>
       <CommandInput placeholder="Buscar ingrediente..." />
       <CommandList>
         <CommandEmpty>Nenhum ingrediente encontrado.</CommandEmpty>
         <CommandGroup>
-          {availableIngredients.map((ingredient) => (
-            <CommandItem
-              key={ingredient.id}
-              value={ingredient.name}
-              onSelect={() => handleSelectIngredient(ingredient)}
-              className="py-3"
-            >
-              <Check
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  selectedIngredient?.id === ingredient.id ? "opacity-100" : "opacity-0"
-                )}
-              />
-              <div className="flex flex-col">
-                <span>{ingredient.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {ingredient.categories?.name || 'Sem categoria'}
-                </span>
-              </div>
-            </CommandItem>
-          ))}
+          {availableIngredients.map((ingredient) => {
+            const costInfo = getCostPerUnit(
+              Number(ingredient.purchase_price),
+              Number(ingredient.package_quantity),
+              ingredient.unit
+            );
+            return (
+              <CommandItem
+                key={ingredient.id}
+                value={ingredient.name}
+                onSelect={() => handleSelectIngredient(ingredient)}
+                className="py-3"
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    selectedIngredient?.id === ingredient.id ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <div className="flex flex-col flex-1">
+                  <span>{ingredient.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {ingredient.categories?.name || 'Sem categoria'} · {costInfo.formatted}
+                  </span>
+                </div>
+              </CommandItem>
+            );
+          })}
         </CommandGroup>
       </CommandList>
     </Command>
@@ -244,55 +260,63 @@ export function IngredientSelector({
       {/* Selected Ingredients List */}
       {selectedIngredients.length > 0 ? (
         <div className="space-y-2">
-          {selectedIngredients.map((item) => (
-            <div
-              key={item.ingredient_id}
-              className="flex flex-wrap items-center gap-2 p-3 border border-border rounded-lg bg-card"
-            >
-              <div className="flex-1 min-w-0 w-full sm:w-auto">
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="font-medium truncate">{item.name}</span>
+          {selectedIngredients.map((item) => {
+            const itemCost = getItemCost(item);
+            return (
+              <div
+                key={item.ingredient_id}
+                className="flex flex-wrap items-center gap-2 p-3 border border-border rounded-lg bg-card"
+              >
+                <div className="flex-1 min-w-0 w-full sm:w-auto">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="font-medium truncate">{item.name}</span>
+                  </div>
+                  {itemCost != null && (
+                    <p className="text-xs text-primary font-medium ml-6">
+                      {formatCurrency(itemCost)}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <Input
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    value={item.quantity}
+                    onChange={(e) => handleUpdateQuantity(item.ingredient_id, Number(e.target.value))}
+                    autoComplete="off"
+                    className="w-16 sm:w-20 min-h-[44px]"
+                  />
+                  <Select
+                    value={item.unit}
+                    onValueChange={(value) => handleUpdateUnit(item.ingredient_id, value as MeasurementUnit)}
+                  >
+                    <SelectTrigger className="w-16 sm:w-20 min-h-[44px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[40vh]">
+                      {UNITS.map((u) => (
+                        <SelectItem key={u.value} value={u.value} className="py-3">
+                          {u.value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveIngredient(item.ingredient_id)}
+                    className="shrink-0 text-muted-foreground hover:text-destructive min-h-[44px] min-w-[44px]"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <Input
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  value={item.quantity}
-                  onChange={(e) => handleUpdateQuantity(item.ingredient_id, Number(e.target.value))}
-                  autoComplete="off"
-                  className="w-16 sm:w-20 min-h-[44px]"
-                />
-                <Select
-                  value={item.unit}
-                  onValueChange={(value) => handleUpdateUnit(item.ingredient_id, value as MeasurementUnit)}
-                >
-                  <SelectTrigger className="w-16 sm:w-20 min-h-[44px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[40vh]">
-                    {UNITS.map((u) => (
-                      <SelectItem key={u.value} value={u.value} className="py-3">
-                        {u.value}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveIngredient(item.ingredient_id)}
-                  className="shrink-0 text-muted-foreground hover:text-destructive min-h-[44px] min-w-[44px]"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-lg">

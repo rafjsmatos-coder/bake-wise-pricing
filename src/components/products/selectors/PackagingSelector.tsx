@@ -20,6 +20,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { usePackaging } from '@/hooks/usePackaging';
 import { Plus, X, Check, ChevronsUpDown, Box } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/unit-conversion';
 
 export interface SelectedPackaging {
   packaging_id: string;
@@ -78,33 +79,43 @@ export function PackagingSelector({
     );
   };
 
+  const getItemCost = (item: SelectedPackaging): number | null => {
+    const pkg = packagingItems.find(p => p.id === item.packaging_id);
+    if (!pkg) return null;
+    const costPerUnit = Number(pkg.purchase_price) / Number(pkg.package_quantity);
+    return item.quantity * costPerUnit;
+  };
+
   const CommandContent = (
     <Command>
       <CommandInput placeholder="Buscar embalagem..." />
       <CommandList>
         <CommandEmpty>Nenhuma embalagem encontrada.</CommandEmpty>
         <CommandGroup>
-          {availablePackaging.map((pkg) => (
-            <CommandItem
-              key={pkg.id}
-              value={pkg.name}
-              onSelect={() => handleSelectPackaging(pkg)}
-              className="py-3"
-            >
-              <Check
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  selectedItem?.id === pkg.id ? "opacity-100" : "opacity-0"
-                )}
-              />
-              <div className="flex flex-col">
-                <span>{pkg.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {pkg.dimensions || pkg.category?.name || 'Sem categoria'}
-                </span>
-              </div>
-            </CommandItem>
-          ))}
+          {availablePackaging.map((pkg) => {
+            const costPerUnit = Number(pkg.purchase_price) / Number(pkg.package_quantity);
+            return (
+              <CommandItem
+                key={pkg.id}
+                value={pkg.name}
+                onSelect={() => handleSelectPackaging(pkg)}
+                className="py-3"
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    selectedItem?.id === pkg.id ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <div className="flex flex-col flex-1">
+                  <span>{pkg.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {pkg.dimensions || pkg.category?.name || 'Sem categoria'} · {formatCurrency(costPerUnit)}/un
+                  </span>
+                </div>
+              </CommandItem>
+            );
+          })}
         </CommandGroup>
       </CommandList>
     </Command>
@@ -197,41 +208,49 @@ export function PackagingSelector({
       {/* Selected Packaging List */}
       {selectedPackaging.length > 0 ? (
         <div className="space-y-2">
-          {selectedPackaging.map((item) => (
-            <div
-              key={item.packaging_id}
-              className="flex flex-wrap items-center gap-2 p-3 border border-border rounded-lg bg-card"
-            >
-              <div className="flex-1 min-w-0 w-full sm:w-auto">
-                <div className="flex items-center gap-2">
-                  <Box className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="font-medium truncate">{item.name}</span>
+          {selectedPackaging.map((item) => {
+            const itemCost = getItemCost(item);
+            return (
+              <div
+                key={item.packaging_id}
+                className="flex flex-wrap items-center gap-2 p-3 border border-border rounded-lg bg-card"
+              >
+                <div className="flex-1 min-w-0 w-full sm:w-auto">
+                  <div className="flex items-center gap-2">
+                    <Box className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="font-medium truncate">{item.name}</span>
+                  </div>
+                  {itemCost != null && (
+                    <p className="text-xs text-primary font-medium ml-6">
+                      {formatCurrency(itemCost)}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <Input
+                    type="number"
+                    step="1"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => handleUpdateQuantity(item.packaging_id, Number(e.target.value))}
+                    autoComplete="off"
+                    className="w-16 sm:w-20 min-h-[44px]"
+                  />
+                  <span className="text-sm text-muted-foreground">un</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemovePackaging(item.packaging_id)}
+                    className="shrink-0 text-muted-foreground hover:text-destructive min-h-[44px] min-w-[44px]"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <Input
-                  type="number"
-                  step="1"
-                  min="1"
-                  value={item.quantity}
-                  onChange={(e) => handleUpdateQuantity(item.packaging_id, Number(e.target.value))}
-                  autoComplete="off"
-                  className="w-16 sm:w-20 min-h-[44px]"
-                />
-                <span className="text-sm text-muted-foreground">un</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemovePackaging(item.packaging_id)}
-                  className="shrink-0 text-muted-foreground hover:text-destructive min-h-[44px] min-w-[44px]"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-lg">

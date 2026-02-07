@@ -351,9 +351,9 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                     type="number"
                     step="0.001"
                     min="0"
-                    placeholder="0"
+                    placeholder="Opcional"
                     className="min-h-[44px]"
-                    {...register('stock_quantity', { valueAsNumber: true })}
+                    {...register('stock_quantity', { setValueAs: (v: string) => v === '' || v === null || v === undefined ? null : Number(v) })}
                   />
                 </div>
               </div>
@@ -365,9 +365,9 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                   type="number"
                   step="0.001"
                   min="0"
-                  placeholder="0"
+                  placeholder="Opcional"
                   className="min-h-[44px]"
-                  {...register('min_stock_alert', { valueAsNumber: true })}
+                  {...register('min_stock_alert', { setValueAs: (v: string) => v === '' || v === null || v === undefined ? null : Number(v) })}
                 />
               </div>
             </div>
