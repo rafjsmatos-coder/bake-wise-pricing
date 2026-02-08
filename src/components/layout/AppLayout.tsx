@@ -19,8 +19,10 @@ import {
   ChevronDown,
   LayoutDashboard,
   Headphones,
+  Newspaper,
   Loader2
 } from 'lucide-react';
+import { useSystemUpdates } from '@/hooks/useSystemUpdates';
 import { cn } from '@/lib/utils';
 import {
   Collapsible,
@@ -42,7 +44,8 @@ export type PageType =
   | 'product-categories' 
   | 'settings'
   | 'profile'
-  | 'support';
+  | 'support'
+  | 'updates';
 
 interface NavItem {
   id: PageType;
@@ -63,6 +66,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
   const { profile } = useProfile();
   const { sidebarOpen, setSidebarOpen } = useSidebarControl();
   const { pendingTicketsCount } = useSupport();
+  const { unseenCount } = useSystemUpdates();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const getInitials = () => {
@@ -134,6 +138,7 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
       ]
     },
     { id: 'settings', label: 'Configurações', icon: Settings },
+    { id: 'updates', label: 'Novidades', icon: Newspaper, badge: unseenCount > 0 ? unseenCount : undefined },
     { id: 'support', label: 'Suporte', icon: Headphones, badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined },
   ];
 

@@ -155,6 +155,14 @@ export function SubscriptionCard() {
               <p className="text-sm text-muted-foreground mt-1">
                 Acesso completo a todas as ferramentas
               </p>
+              <ul className="text-xs text-muted-foreground mt-3 space-y-1.5">
+                <li>✓ Ingredientes, receitas e produtos ilimitados</li>
+                <li>✓ Cálculo automático de custos e preços</li>
+                <li>✓ Controle de estoque com alertas</li>
+                <li>✓ Decorações e embalagens</li>
+                <li>✓ Suporte prioritário</li>
+                <li>✓ Todas as atualizações futuras</li>
+              </ul>
             </div>
             
             <Button 

@@ -889,6 +889,42 @@ export type Database = {
         }
         Relationships: []
       }
+      system_updates: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          is_published: boolean
+          published_at: string | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -960,6 +996,27 @@ export type Database = {
           labor_cost_per_hour?: number | null
           oven_type?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_update_views: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
           user_id?: string
         }
         Relationships: []

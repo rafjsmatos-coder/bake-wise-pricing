@@ -15,6 +15,9 @@ export function SupportPage() {
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
 
+  const hasActiveTicket = supportTickets.some(t => t.status === 'open' || t.status === 'in_progress');
+  const hasActiveSuggestion = suggestions.some(s => s.status === 'open' || s.status === 'in_progress');
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -98,8 +101,15 @@ export function SupportPage() {
         </div>
 
         <TabsContent value="tickets" className="space-y-4">
-          <div className="flex justify-end">
-            <Button onClick={() => setShowTicketForm(true)}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            {hasActiveTicket ? (
+              <p className="text-sm text-muted-foreground">
+                Você já tem um ticket em aberto. Aguarde a resolução antes de abrir outro.
+              </p>
+            ) : (
+              <div />
+            )}
+            <Button onClick={() => setShowTicketForm(true)} disabled={hasActiveTicket}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Ticket
             </Button>
@@ -113,8 +123,15 @@ export function SupportPage() {
         </TabsContent>
 
         <TabsContent value="suggestions" className="space-y-4">
-          <div className="flex justify-end">
-            <Button onClick={() => setShowSuggestionForm(true)}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            {hasActiveSuggestion ? (
+              <p className="text-sm text-muted-foreground">
+                Você já tem uma sugestão em aberto. Aguarde a resposta antes de enviar outra.
+              </p>
+            ) : (
+              <div />
+            )}
+            <Button onClick={() => setShowSuggestionForm(true)} disabled={hasActiveSuggestion}>
               <Plus className="h-4 w-4 mr-2" />
               Nova Sugestão
             </Button>
