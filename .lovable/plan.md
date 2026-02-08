@@ -1,139 +1,180 @@
 
+# Melhorias Gerais do PreciBake - Pacote Completo
 
-# Padronizacao de Cards, Formularios e Valores nos Seletores
+## 1. Parar a pagina de atualizar ao trocar de aba
 
-## Problemas Identificados
+**Problema**: Quando o usuario troca de aba no navegador e volta, a pagina recarrega os dados e perde o que estava sendo preenchido.
 
-### 1. Botao "Duplicar" inconsistente entre Receitas e Produtos
-- **Produtos**: o card ja mostra os 4 botoes (Ver, Duplicar, Editar, Excluir) + a visualizacao tambem tem botoes de acao
-- **Receitas**: o card so mostra 3 botoes (Ver, Editar, Excluir) -- o "Duplicar" so aparece dentro da visualizacao (RecipeDetails)
+**Causa**: O React Query (gerenciador de dados) esta configurado sem opcoes customizadas, usando o comportamento padrao que recarrega automaticamente os dados quando a janela ganha foco.
 
-### 2. Visualizacao de Produtos (ProductDetails) sem botoes de acao
-- O dialog de detalhes do produto nao tem botoes de "Editar" e "Duplicar" no header, diferente da visualizacao de receitas (RecipeDetails) que tem
+**Solucao**: Desativar o `refetchOnWindowFocus` no `QueryClient` em `src/App.tsx`. Isso impede que os dados sejam buscados novamente toda vez que o usuario voltar para a aba.
 
-### 3. Campos pre-preenchidos com zero
-- Alguns formularios usam `valueAsNumber: true` com `register()` que converte campos vazios para `0` ao inves de manter vazio
-- Formularios que usam `z.coerce.number()` com o componente `Form` (shadcn) tratam `field.value ?? ''` corretamente, mas os que usam `register` direto nao
-- Campos afetados: `stock_quantity`, `min_stock_alert` nos formularios de ingredientes e decoracoes (usando `register('field', { valueAsNumber: true })`)
-
-### 4. Seletores do produto nao mostram valores/custos
-- **Receitas (IngredientSelector)**: mostra custo por unidade na lista, preview de custo ao digitar quantidade, e total ao final -- funciona bem
-- **Produtos (RecipeSelector)**: mostra apenas "Rende: X un" mas nao mostra o custo total da receita
-- **Produtos (IngredientSelector)**: nao mostra custo por unidade nem custo estimado
-- **Produtos (DecorationSelector)**: nao mostra custo por unidade nem custo estimado
-- **Produtos (PackagingSelector)**: nao mostra custo por unidade nem custo estimado
-
----
-
-## Solucao Proposta
-
-### Parte 1: Padronizar botoes no card de Receita
-
-Adicionar o botao "Duplicar" (icone Copy) ao `RecipeCard.tsx`, entre os botoes "Ver" e "Editar", igual ao padrao do `ProductCard.tsx`.
-
-Arquivos: `src/components/recipes/RecipeCard.tsx`
-
-### Parte 2: Adicionar botoes de acao na visualizacao de Produtos
-
-Adicionar botoes "Duplicar" e "Editar" no header do `ProductDetails.tsx`, igual ao padrao do `RecipeDetails.tsx`. Isso requer passar as callbacks `onEdit` e `onDuplicate` como props.
-
-Arquivos: `src/components/products/ProductDetails.tsx`, `src/components/products/ProductsList.tsx`
-
-### Parte 3: Corrigir campos pre-preenchidos com zero
-
-Nos formularios de ingredientes e decoracoes, os campos `stock_quantity` e `min_stock_alert` usam `register('field', { valueAsNumber: true })` que converte string vazia para `NaN` mas com o `placeholder="0"` pode confundir. O problema real esta no `setValueAs` -- preciso garantir que campos opcionais numericos usem o pattern `setValueAs: (v) => v === '' ? null : Number(v)` ao inves de `valueAsNumber: true` para campos que devem aceitar nulo.
-
-Tambem corrigir o placeholder de "0" para algo mais descritivo como "Opcional" nos campos de estoque.
-
-Arquivos: `src/components/ingredients/IngredientForm.tsx`, `src/components/decorations/DecorationForm.tsx`
-
-### Parte 4: Mostrar valores nos seletores do formulario de Produto
-
-Enriquecer os 4 seletores do formulario de produto com informacoes de custo:
-
-**RecipeSelector**: Ao listar receitas disponiveis, mostrar o custo total da receita. Na lista de receitas selecionadas, mostrar o custo proporcional baseado na quantidade usada.
-
-**IngredientSelector (produtos)**: Ao listar ingredientes, mostrar custo por unidade. Na lista de selecionados, mostrar custo calculado da quantidade. Ao final, mostrar total.
-
-**DecorationSelector**: Mesmo padrao -- mostrar custo unitario na lista e custo total da quantidade selecionada.
-
-**PackagingSelector**: Mostrar custo unitario na lista e custo total da quantidade selecionada.
-
-Arquivos:
-- `src/components/products/selectors/RecipeSelector.tsx`
-- `src/components/products/selectors/IngredientSelector.tsx`
-- `src/components/products/selectors/DecorationSelector.tsx`
-- `src/components/products/selectors/PackagingSelector.tsx`
-
----
-
-## Detalhes Tecnicos
-
-### RecipeCard - Adicionar botao Duplicar
-
-Importar o icone `Copy` e adicionar um botao entre `Eye` e `Pencil`:
-```tsx
-<Button variant="ghost" size="icon" onClick={onDuplicate} className="h-8 w-8" title="Duplicar">
-  <Copy className="h-4 w-4" />
-</Button>
-```
-
-### ProductDetails - Adicionar botoes de acao
-
-Adicionar props `onEdit` e `onDuplicate` ao componente e renderizar botoes no header, similar ao RecipeDetails:
-```tsx
-<div className="flex gap-2">
-  <Button variant="outline" size="sm" onClick={onDuplicate}>
-    <Copy className="h-4 w-4 mr-1" /> Duplicar
-  </Button>
-  <Button size="sm" onClick={onEdit}>
-    <Edit className="h-4 w-4 mr-1" /> Editar
-  </Button>
-</div>
-```
-
-### Campos numericos opcionais
-
-Substituir `register('stock_quantity', { valueAsNumber: true })` por:
-```tsx
-register('stock_quantity', { 
-  setValueAs: (v) => v === '' || v === null || v === undefined ? null : Number(v)
-})
-```
-
-### Seletores com custos
-
-Para o **RecipeSelector**, receber `recipeCosts` como prop e calcular o custo proporcional:
-```tsx
-// Na lista de receitas disponiveis:
-<span className="text-xs text-muted-foreground">
-  Custo: R$ {formatCurrency(recipeCosts[recipe.id])}
-</span>
-
-// Na lista de selecionadas:
-const recipeTotalCost = recipeCosts[item.recipe_id] || 0;
-const proportion = item.quantity / item.yield_quantity;
-const costForQuantity = recipeTotalCost * proportion;
-```
-
-Para **IngredientSelector**, **DecorationSelector** e **PackagingSelector**, calcular custo com base no `cost_per_unit`:
-```tsx
-const cost = ingredient.cost_per_unit * convertedQuantity;
+```text
+Arquivo: src/App.tsx
+Antes:  const queryClient = new QueryClient();
+Depois: const queryClient = new QueryClient({
+          defaultOptions: {
+            queries: {
+              refetchOnWindowFocus: false,
+              staleTime: 5 * 60 * 1000, // 5 minutos
+            }
+          }
+        });
 ```
 
 ---
 
-## Resumo das Alteracoes
+## 2. Card de Produto responsivo no mobile
+
+**Problema**: No celular, o card de produto nao se adapta bem e o nome da categoria fica cortado.
+
+**Solucao**: Ajustar o `ProductCard.tsx`:
+- Aumentar o `max-w` do badge da categoria de `100px` para `150px` (ou remover o limite para usar o espaco disponivel)
+- Reorganizar o layout do header do card para empilhar os botoes de acao abaixo do titulo em telas pequenas
+- Usar `flex-wrap` nos botoes de acao para que nao comprimam o conteudo
+- Garantir que o bloco de custos use `text-base` ao inves de `text-lg` em mobile
+
+Arquivo: `src/components/products/ProductCard.tsx`
+
+---
+
+## 3. Revisar Dicas do Dashboard
+
+**Dicas atuais**:
+1. Comece cadastrando seus ingredientes com precos atualizados
+2. Crie receitas usando os ingredientes para calcular custos
+3. Monte produtos combinando receitas, decoracoes e embalagens
+4. Defina a margem de lucro para obter o preco de venda sugerido
+
+**Analise**: A ordem esta correta e condiz com o fluxo do sistema. Porem, falta mencionar o passo de configurar custos operacionais (que e importante para calculos precisos).
+
+**Dicas revisadas**:
+1. Configure seus **custos operacionais** nas Configuracoes (forno, energia, mao de obra)
+2. Cadastre seus **ingredientes** com precos atualizados
+3. Crie **receitas** usando os ingredientes para calcular custos automaticamente
+4. Cadastre **decoracoes** e **embalagens** que voce utiliza
+5. Monte **produtos** combinando receitas, decoracoes e embalagens com sua margem de lucro
+
+Arquivo: `src/components/dashboard/DashboardHome.tsx`
+
+---
+
+## 4. Revisar Acoes Rapidas
+
+**Acoes atuais**: Novo Produto, Nova Receita, Novo Ingrediente
+
+**Analise**: Faltam atalhos para Decoracoes e Embalagens, que sao igualmente usados com frequencia. Tambem falta um atalho para as Configuracoes de custo.
+
+**Acoes revisadas**: Adicionar "Nova Decoracao", "Nova Embalagem" e "Configurar Custos"
+
+Arquivo: `src/components/dashboard/DashboardHome.tsx`
+
+---
+
+## 5. Dashboard - informacoes adequadas
+
+**Analise**: O dashboard ja possui:
+- Cards de resumo (quantidades de cada modulo)
+- Acoes rapidas
+- Alertas de estoque
+- Card de configuracao de custos (progresso)
+- Card de assinatura
+- Dicas
+
+**Avaliacao**: Para o momento esta bem completo. Nao ha necessidade de adicionar mais informacoes agora.
+
+---
+
+## 6. Sessao de Assinatura
+
+**Analise do card atual**: Esta funcional e mostra status, data de expiracao, botao para assinar/gerenciar, e opcao de verificar pagamento via boleto.
+
+**Melhorias propostas**:
+- Adicionar lista resumida dos beneficios do plano Premium dentro do card (para trial e expirado)
+- Melhorar o texto informativo sobre o que o plano inclui
+
+Arquivo: `src/components/subscription/SubscriptionCard.tsx`
+
+---
+
+## 7. Modulo de Suporte - Limitar a 1 ticket aberto por tipo
+
+**Problema**: O usuario pode abrir multiplos tickets de suporte e sugestoes sem limite.
+
+**Solucao**:
+- No `SupportPage.tsx`, verificar se ja existe um ticket de suporte **aberto** ou **em andamento** antes de mostrar o botao "Novo Ticket"
+- Se ja existir, desabilitar o botao e mostrar uma mensagem: "Voce ja tem um ticket aberto. Aguarde a resolucao antes de abrir outro."
+- Mesma logica para sugestoes
+- A verificacao e feita no frontend usando os dados ja carregados (`supportTickets` e `suggestions` filtrados por status)
+
+Arquivo: `src/components/support/SupportPage.tsx`
+
+---
+
+## 8. Nova sessao: Atualizacoes e Melhorias do Sistema
+
+**Descricao**: Criar uma sessao onde os usuarios possam ver as ultimas novidades, atualizacoes e melhorias do sistema. No admin, criar uma interface para gerenciar esses comunicados.
+
+### Banco de Dados
+Nova tabela `system_updates`:
+- `id` (uuid, PK)
+- `title` (text) - titulo da atualizacao
+- `content` (text) - descricao detalhada (markdown simples)
+- `type` (text) - "feature", "improvement", "fix"
+- `published_at` (timestamptz) - data de publicacao
+- `created_by` (uuid) - admin que criou
+- `created_at` (timestamptz)
+- `is_published` (boolean) - controle de visibilidade
+
+RLS: Admins podem CRUD; usuarios autenticados podem apenas ler registros publicados.
+
+### Frontend - Usuario
+- Novo item no menu lateral: "Novidades" (icone Megaphone/Newspaper)
+- Pagina listando as atualizacoes em ordem cronologica inversa
+- Cards com icone por tipo (feature = estrela, improvement = seta pra cima, fix = ferramenta)
+- Badge "Novo" para atualizacoes dos ultimos 7 dias
+- Badge de notificacao no menu indicando atualizacoes nao vistas
+
+Nova tabela `user_update_views` para rastrear quais atualizacoes cada usuario ja viu:
+- `user_id` (uuid)
+- `last_seen_at` (timestamptz)
+- Unique constraint em `user_id`
+
+### Frontend - Admin
+- Nova aba "Novidades" no painel administrativo
+- Formulario para criar/editar atualizacoes (titulo, conteudo, tipo, publicado/rascunho)
+- Lista de atualizacoes com opcoes de editar, excluir e alternar publicacao
+
+### Arquivos envolvidos:
+- Migracao SQL para tabelas `system_updates` e `user_update_views`
+- `src/hooks/useSystemUpdates.tsx` (novo hook)
+- `src/components/updates/UpdatesPage.tsx` (pagina do usuario)
+- `src/components/updates/UpdateCard.tsx` (card de atualizacao)
+- `src/components/admin/UpdatesManagement.tsx` (gestao admin)
+- `src/components/admin/UpdateForm.tsx` (formulario admin)
+- `src/components/layout/AppLayout.tsx` (novo item no menu)
+- `src/components/layout/AdminLayout.tsx` (nova aba)
+- `src/pages/Dashboard.tsx` (adicionar rota)
+- `src/pages/AdminDashboard.tsx` (adicionar aba)
+
+---
+
+## Resumo de Alteracoes por Arquivo
 
 | Arquivo | Alteracao |
 |---------|-----------|
-| `RecipeCard.tsx` | Adicionar botao Duplicar + title nos botoes |
-| `ProductDetails.tsx` | Adicionar botoes Editar/Duplicar no header |
-| `ProductsList.tsx` | Passar callbacks onEdit/onDuplicate para ProductDetails |
-| `IngredientForm.tsx` | Corrigir setValueAs nos campos stock_quantity/min_stock_alert |
-| `DecorationForm.tsx` | Corrigir setValueAs nos campos stock_quantity/min_stock_alert |
-| `RecipeSelector.tsx` | Mostrar custo das receitas na lista e custo proporcional |
-| `IngredientSelector.tsx` (produtos) | Mostrar custo unitario e custo por item selecionado |
-| `DecorationSelector.tsx` | Mostrar custo unitario e custo por item selecionado |
-| `PackagingSelector.tsx` | Mostrar custo unitario e custo por item selecionado |
-
+| `src/App.tsx` | Desativar refetchOnWindowFocus no QueryClient |
+| `src/components/products/ProductCard.tsx` | Melhorar responsividade mobile e badge de categoria |
+| `src/components/dashboard/DashboardHome.tsx` | Revisar dicas e adicionar acoes rapidas |
+| `src/components/subscription/SubscriptionCard.tsx` | Adicionar beneficios do plano |
+| `src/components/support/SupportPage.tsx` | Limitar 1 ticket aberto por tipo |
+| Nova migracao SQL | Tabelas system_updates e user_update_views |
+| `src/hooks/useSystemUpdates.tsx` | Novo hook para atualizacoes |
+| `src/components/updates/UpdatesPage.tsx` | Nova pagina de novidades |
+| `src/components/updates/UpdateCard.tsx` | Card de atualizacao |
+| `src/components/admin/UpdatesManagement.tsx` | Gestao de novidades (admin) |
+| `src/components/admin/UpdateForm.tsx` | Formulario de novidade (admin) |
+| `src/components/layout/AppLayout.tsx` | Novo item "Novidades" no menu + badge |
+| `src/components/layout/AdminLayout.tsx` | Nova aba "Novidades" |
+| `src/pages/Dashboard.tsx` | Registrar pagina de novidades |
+| `src/pages/AdminDashboard.tsx` | Registrar aba de novidades |
