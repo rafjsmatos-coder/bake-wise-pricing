@@ -17,7 +17,8 @@ import {
   Box,
   Plus,
   Loader2,
-  Cake
+  Cake,
+  Settings
 } from 'lucide-react';
 
 interface DashboardHomeProps {
@@ -80,6 +81,9 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
     { label: 'Novo Produto', icon: ShoppingBag, page: 'products' },
     { label: 'Nova Receita', icon: BookOpen, page: 'recipes' },
     { label: 'Novo Ingrediente', icon: Package, page: 'ingredients' },
+    { label: 'Nova Decoração', icon: Sparkles, page: 'decorations' },
+    { label: 'Nova Embalagem', icon: Box, page: 'packaging' },
+    { label: 'Configurar Custos', icon: Settings, page: 'settings' },
   ];
 
   if (isLoading) {
@@ -171,10 +175,11 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
             <CardTitle className="text-lg">Dicas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>• Comece cadastrando seus <strong>ingredientes</strong> com preços atualizados</p>
-            <p>• Crie <strong>receitas</strong> usando os ingredientes para calcular custos</p>
-            <p>• Monte <strong>produtos</strong> combinando receitas, decorações e embalagens</p>
-            <p>• Defina a <strong>margem de lucro</strong> para obter o preço de venda sugerido</p>
+            <p>1. Configure seus <strong>custos operacionais</strong> nas Configurações (forno, energia, mão de obra)</p>
+            <p>2. Cadastre seus <strong>ingredientes</strong> com preços atualizados</p>
+            <p>3. Crie <strong>receitas</strong> usando os ingredientes para calcular custos automaticamente</p>
+            <p>4. Cadastre <strong>decorações</strong> e <strong>embalagens</strong> que você utiliza</p>
+            <p>5. Monte <strong>produtos</strong> combinando receitas, decorações e embalagens com sua margem de lucro</p>
           </CardContent>
         </Card>
       </div>

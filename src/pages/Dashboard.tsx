@@ -14,6 +14,7 @@ import { ProductCategoriesList } from '@/components/product-categories/ProductCa
 import { UserSettings } from '@/components/settings/UserSettings';
 import { ProfileSettings } from '@/components/settings/ProfileSettings';
 import { SupportPage } from '@/components/support/SupportPage';
+import { UpdatesPage } from '@/components/updates/UpdatesPage';
 import { TrialBanner } from '@/components/subscription/TrialBanner';
 import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
@@ -145,6 +146,7 @@ export function Dashboard() {
         {currentPage === 'settings' && <UserSettings />}
         {currentPage === 'profile' && <ProfileSettings />}
         {currentPage === 'support' && <SupportPage />}
+        {currentPage === 'updates' && <UpdatesPage />}
       </AppLayout>
     </>
   );

@@ -15,7 +15,14 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import { SubscriptionSuccess } from "@/components/subscription/SubscriptionSuccess";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  }
+});
 
 function AppContent() {
   const { setSidebarOpen } = useSidebarControl();
