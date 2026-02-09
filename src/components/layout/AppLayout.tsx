@@ -20,7 +20,9 @@ import {
   LayoutDashboard,
   Headphones,
   Newspaper,
-  Loader2
+  Loader2,
+  Users,
+  ClipboardList
 } from 'lucide-react';
 import { useSystemUpdates } from '@/hooks/useSystemUpdates';
 import { cn } from '@/lib/utils';
@@ -42,6 +44,8 @@ export type PageType =
   | 'packaging-categories' 
   | 'products' 
   | 'product-categories' 
+  | 'clients'
+  | 'orders'
   | 'settings'
   | 'profile'
   | 'support'
@@ -113,6 +117,8 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
         { id: 'recipe-categories', label: 'Categorias' }
       ]
     },
+    { id: 'clients', label: 'Clientes', icon: Users },
+    { id: 'orders', label: 'Pedidos', icon: ClipboardList },
     { 
       id: 'ingredients', 
       label: 'Ingredientes', 

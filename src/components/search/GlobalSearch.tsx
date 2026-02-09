@@ -14,13 +14,15 @@ import { useRecipes } from '@/hooks/useRecipes';
 import { useProducts } from '@/hooks/useProducts';
 import { useDecorations } from '@/hooks/useDecorations';
 import { usePackaging } from '@/hooks/usePackaging';
+import { useClients } from '@/hooks/useClients';
 import { 
   Package, 
   BookOpen, 
   ShoppingBag, 
   Sparkles, 
   Box,
-  Search
+  Search,
+  Users
 } from 'lucide-react';
 
 interface GlobalSearchProps {
@@ -37,7 +39,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
   const { products } = useProducts();
   const { decorations } = useDecorations();
   const { packagingItems: packaging } = usePackaging();
-
+  const { clients } = useClients();
   // Reset search when dialog closes
   useEffect(() => {
     if (!open) {
@@ -93,11 +95,21 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
     ).slice(0, 5);
   }, [packaging, search]);
 
+  const filteredClients = useMemo(() => {
+    if (!search) return clients.slice(0, 5);
+    return clients.filter(c => 
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.phone?.toLowerCase().includes(search.toLowerCase()) ||
+      c.email?.toLowerCase().includes(search.toLowerCase())
+    ).slice(0, 5);
+  }, [clients, search]);
+
   const hasResults = filteredIngredients.length > 0 || 
     filteredRecipes.length > 0 || 
     filteredProducts.length > 0 || 
     filteredDecorations.length > 0 || 
-    filteredPackaging.length > 0;
+    filteredPackaging.length > 0 ||
+    filteredClients.length > 0;
 
   const handleSelect = (page: string) => {
     onOpenChange(false);
@@ -230,6 +242,30 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
                   {pack.category && (
                     <span className="text-xs text-muted-foreground ml-auto">
                       {pack.category.name}
+                    </span>
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
+        {filteredClients.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Clientes">
+              {filteredClients.map((client) => (
+                <CommandItem
+                  key={client.id}
+                  value={`client-${client.name}`}
+                  onSelect={() => handleSelect('clients')}
+                  className="flex items-center gap-2"
+                >
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span>{client.name}</span>
+                  {client.phone && (
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {client.phone}
                     </span>
                   )}
                 </CommandItem>

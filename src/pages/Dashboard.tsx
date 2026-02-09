@@ -15,6 +15,8 @@ import { UserSettings } from '@/components/settings/UserSettings';
 import { ProfileSettings } from '@/components/settings/ProfileSettings';
 import { SupportPage } from '@/components/support/SupportPage';
 import { UpdatesPage } from '@/components/updates/UpdatesPage';
+import { ClientsList } from '@/components/clients/ClientsList';
+import { OrdersList } from '@/components/orders/OrdersList';
 import { TrialBanner } from '@/components/subscription/TrialBanner';
 import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
@@ -143,6 +145,8 @@ export function Dashboard() {
         {currentPage === 'decoration-categories' && <DecorationCategoriesList />}
         {currentPage === 'packaging' && <PackagingList />}
         {currentPage === 'packaging-categories' && <PackagingCategoriesList />}
+        {currentPage === 'clients' && <ClientsList />}
+        {currentPage === 'orders' && <OrdersList />}
         {currentPage === 'settings' && <UserSettings />}
         {currentPage === 'profile' && <ProfileSettings />}
         {currentPage === 'support' && <SupportPage />}
