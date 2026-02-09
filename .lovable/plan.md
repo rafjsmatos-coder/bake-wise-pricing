@@ -1,180 +1,226 @@
 
-# Melhorias Gerais do PreciBake - Pacote Completo
 
-## 1. Parar a pagina de atualizar ao trocar de aba
+# Modulos Clientes e Pedidos - PreciBake
 
-**Problema**: Quando o usuario troca de aba no navegador e volta, a pagina recarrega os dados e perde o que estava sendo preenchido.
+## Visao Geral
 
-**Causa**: O React Query (gerenciador de dados) esta configurado sem opcoes customizadas, usando o comportamento padrao que recarrega automaticamente os dados quando a janela ganha foco.
+Criar dois modulos interligados: **Clientes** (cadastro completo com endereco, contato e observacoes) e **Pedidos** (vinculados a clientes e produtos, com controle de status, pagamento e calendario de entregas).
 
-**Solucao**: Desativar o `refetchOnWindowFocus` no `QueryClient` em `src/App.tsx`. Isso impede que os dados sejam buscados novamente toda vez que o usuario voltar para a aba.
+---
+
+## Modulo 1: Clientes
+
+### Tabela `clients`
+
+| Coluna | Tipo | Obrigatorio | Descricao |
+|--------|------|-------------|-----------|
+| id | uuid (PK) | Sim | Identificador unico |
+| user_id | uuid | Sim | Dono do registro (confeiteiro) |
+| name | text | Sim | Nome completo do cliente |
+| phone | text | Nao | Telefone principal |
+| email | text | Nao | Email do cliente |
+| address | text | Nao | Rua/numero |
+| neighborhood | text | Nao | Bairro |
+| city | text | Nao | Cidade |
+| state | text | Nao | Estado |
+| zip_code | text | Nao | CEP |
+| instagram | text | Nao | Perfil Instagram |
+| whatsapp | text | Nao | Numero WhatsApp |
+| notes | text | Nao | Observacoes (alergias, preferencias, restricoes) |
+| created_at | timestamptz | Sim | Data de criacao |
+| updated_at | timestamptz | Sim | Data de atualizacao |
+
+RLS: Cada usuario ve/edita/exclui somente seus proprios clientes (user_id = auth.uid()).
+
+### Interface do Cliente
+
+- **Lista de clientes**: Cards com nome, telefone, WhatsApp e badges indicando total de pedidos
+- **Busca e filtro**: Campo de busca por nome/telefone
+- **Formulario**: Dialog responsivo (full screen no mobile) com campos organizados em grid
+- **Detalhes**: Dialog mostrando todas as informacoes do cliente + historico de pedidos vinculados
+- **Acoes no card**: Ver, Editar, Excluir (padrao visual existente)
+
+### Arquivos do modulo Clientes
+
+- `src/hooks/useClients.tsx` - Hook com CRUD completo (React Query + Supabase)
+- `src/components/clients/ClientsList.tsx` - Pagina principal com lista e filtros
+- `src/components/clients/ClientCard.tsx` - Card do cliente
+- `src/components/clients/ClientForm.tsx` - Formulario de criacao/edicao
+- `src/components/clients/ClientDetails.tsx` - Visualizacao detalhada + historico de pedidos
+
+---
+
+## Modulo 2: Pedidos
+
+### Tabela `orders`
+
+| Coluna | Tipo | Obrigatorio | Descricao |
+|--------|------|-------------|-----------|
+| id | uuid (PK) | Sim | Identificador unico |
+| user_id | uuid | Sim | Dono do registro |
+| client_id | uuid (FK clients) | Sim | Cliente vinculado |
+| status | text | Sim | pending, in_production, ready, delivered, cancelled |
+| payment_status | text | Sim | pending, partial, paid |
+| delivery_date | timestamptz | Nao | Data/hora de entrega |
+| total_amount | numeric | Sim default 0 | Valor total do pedido |
+| paid_amount | numeric | Sim default 0 | Valor ja pago |
+| notes | text | Nao | Observacoes do pedido |
+| created_at | timestamptz | Sim | Data de criacao |
+| updated_at | timestamptz | Sim | Data de atualizacao |
+
+### Tabela `order_items`
+
+| Coluna | Tipo | Obrigatorio | Descricao |
+|--------|------|-------------|-----------|
+| id | uuid (PK) | Sim | Identificador unico |
+| order_id | uuid (FK orders) | Sim | Pedido vinculado |
+| product_id | uuid (FK products) | Sim | Produto selecionado |
+| quantity | numeric | Sim default 1 | Quantidade |
+| unit_price | numeric | Sim | Preco unitario (editavel) |
+| total_price | numeric | Sim | Preco total do item |
+| notes | text | Nao | Observacoes do item |
+| created_at | timestamptz | Sim | Data de criacao |
+
+RLS para ambas: user_id = auth.uid() no `orders`, e `order_items` usa EXISTS no `orders` (mesmo padrao de product_recipes).
+
+### Interface de Pedidos
+
+#### Lista de Pedidos
+- Cards com: nome do cliente, data de entrega, status (badge colorido), status de pagamento, valor total
+- Filtros: por status, por cliente, por data, busca por texto
+- Ordenacao: por data de entrega (mais proximo primeiro)
+
+#### Calendario de Pedidos
+- Visao mensal mostrando os pedidos posicionados nas datas de entrega
+- Cada dia mostra quantos pedidos tem e badges com status
+- Clicar em um dia mostra os pedidos daquele dia
+- Cores por status: Pendente (amarelo), Em producao (azul), Pronto (verde), Entregue (cinza), Cancelado (vermelho)
+
+#### Formulario de Pedido
+- Selecionar cliente (combobox com busca, padrao existente dos seletores)
+- Adicionar produtos com quantidade e preco (preco sugerido pre-preenchido do calculo de custo, editavel)
+- Data e horario de entrega (DatePicker + campo de hora)
+- Status do pedido (select)
+- Controle de pagamento: status + valor pago
+- Observacoes gerais
+
+#### Detalhes do Pedido
+- Header com nome do cliente, status, data de entrega
+- Tabela de itens com produto, quantidade, preco unitario, total
+- Resumo financeiro: subtotal, total, valor pago, saldo restante
+- Botoes: Editar, Alterar Status, Registrar Pagamento
+
+### Arquivos do modulo Pedidos
+
+- `src/hooks/useOrders.tsx` - Hook com CRUD de pedidos + itens
+- `src/components/orders/OrdersList.tsx` - Pagina principal com lista e filtros
+- `src/components/orders/OrderCard.tsx` - Card de pedido
+- `src/components/orders/OrderForm.tsx` - Formulario completo de pedido
+- `src/components/orders/OrderDetails.tsx` - Visualizacao detalhada
+- `src/components/orders/OrderCalendar.tsx` - Calendario visual de entregas
+- `src/components/orders/OrderStatusBadge.tsx` - Badge de status reutilizavel
+- `src/components/orders/ProductSelector.tsx` - Seletor de produtos para o pedido
+
+---
+
+## Integracao com o Sistema
+
+### Navegacao (AppLayout.tsx)
+
+Adicionar dois novos itens no menu lateral, logo apos "Produtos":
 
 ```text
-Arquivo: src/App.tsx
-Antes:  const queryClient = new QueryClient();
-Depois: const queryClient = new QueryClient({
-          defaultOptions: {
-            queries: {
-              refetchOnWindowFocus: false,
-              staleTime: 5 * 60 * 1000, // 5 minutos
-            }
-          }
-        });
+Dashboard
+Produtos > Categorias
+Receitas > Categorias
+--> Clientes (icone: Users)
+--> Pedidos (icone: ClipboardList)
+Ingredientes > Categorias
+Decoracoes > Categorias
+Embalagens > Categorias
+Configuracoes
+Novidades
+Suporte
 ```
 
----
+### Dashboard (DashboardHome.tsx)
 
-## 2. Card de Produto responsivo no mobile
+- Adicionar card de resumo: "Clientes" e "Pedidos" nos summary cards
+- Adicionar acoes rapidas: "Novo Cliente" e "Novo Pedido"
+- Adicionar card de "Proximas Entregas" mostrando os 5 pedidos mais proximos
 
-**Problema**: No celular, o card de produto nao se adapta bem e o nome da categoria fica cortado.
+### Busca Global (GlobalSearch.tsx)
 
-**Solucao**: Ajustar o `ProductCard.tsx`:
-- Aumentar o `max-w` do badge da categoria de `100px` para `150px` (ou remover o limite para usar o espaco disponivel)
-- Reorganizar o layout do header do card para empilhar os botoes de acao abaixo do titulo em telas pequenas
-- Usar `flex-wrap` nos botoes de acao para que nao comprimam o conteudo
-- Garantir que o bloco de custos use `text-base` ao inves de `text-lg` em mobile
+- Incluir clientes e pedidos nos resultados da busca global (Ctrl+K)
 
-Arquivo: `src/components/products/ProductCard.tsx`
+### Pagina Dashboard (Dashboard.tsx)
 
----
-
-## 3. Revisar Dicas do Dashboard
-
-**Dicas atuais**:
-1. Comece cadastrando seus ingredientes com precos atualizados
-2. Crie receitas usando os ingredientes para calcular custos
-3. Monte produtos combinando receitas, decoracoes e embalagens
-4. Defina a margem de lucro para obter o preco de venda sugerido
-
-**Analise**: A ordem esta correta e condiz com o fluxo do sistema. Porem, falta mencionar o passo de configurar custos operacionais (que e importante para calculos precisos).
-
-**Dicas revisadas**:
-1. Configure seus **custos operacionais** nas Configuracoes (forno, energia, mao de obra)
-2. Cadastre seus **ingredientes** com precos atualizados
-3. Crie **receitas** usando os ingredientes para calcular custos automaticamente
-4. Cadastre **decoracoes** e **embalagens** que voce utiliza
-5. Monte **produtos** combinando receitas, decoracoes e embalagens com sua margem de lucro
-
-Arquivo: `src/components/dashboard/DashboardHome.tsx`
+- Registrar as 3 novas paginas: `clients`, `orders`, `order-calendar`
 
 ---
 
-## 4. Revisar Acoes Rapidas
+## Detalhes Tecnicos
 
-**Acoes atuais**: Novo Produto, Nova Receita, Novo Ingrediente
+### Calendario de Pedidos
 
-**Analise**: Faltam atalhos para Decoracoes e Embalagens, que sao igualmente usados com frequencia. Tambem falta um atalho para as Configuracoes de custo.
+O calendario sera implementado com componentes React puros (sem biblioteca externa), usando um grid de 7 colunas (dias da semana) com calculo de dias do mes. Cada celula mostra pontos coloridos representando os pedidos daquele dia. Navegacao por mes com setas.
 
-**Acoes revisadas**: Adicionar "Nova Decoracao", "Nova Embalagem" e "Configurar Custos"
+### Seletor de Produtos no Pedido
 
-Arquivo: `src/components/dashboard/DashboardHome.tsx`
+Seguira o padrao dos seletores existentes (RecipeSelector, IngredientSelector):
+- Combobox com busca para selecionar produto
+- Campos de quantidade e preco unitario (pre-preenchido com preco sugerido)
+- Calculo automatico do preco total do item
+- Lista de itens adicionados com opcao de remover
 
----
+### Controle de Pagamento
 
-## 5. Dashboard - informacoes adequadas
+O campo `payment_status` sera calculado automaticamente:
+- `pending`: paid_amount = 0
+- `partial`: paid_amount > 0 e paid_amount < total_amount
+- `paid`: paid_amount >= total_amount
 
-**Analise**: O dashboard ja possui:
-- Cards de resumo (quantidades de cada modulo)
-- Acoes rapidas
-- Alertas de estoque
-- Card de configuracao de custos (progresso)
-- Card de assinatura
-- Dicas
+No formulario, o usuario informa o valor pago e o status e calculado.
 
-**Avaliacao**: Para o momento esta bem completo. Nao ha necessidade de adicionar mais informacoes agora.
+### Migracao SQL
 
----
-
-## 6. Sessao de Assinatura
-
-**Analise do card atual**: Esta funcional e mostra status, data de expiracao, botao para assinar/gerenciar, e opcao de verificar pagamento via boleto.
-
-**Melhorias propostas**:
-- Adicionar lista resumida dos beneficios do plano Premium dentro do card (para trial e expirado)
-- Melhorar o texto informativo sobre o que o plano inclui
-
-Arquivo: `src/components/subscription/SubscriptionCard.tsx`
+Uma unica migracao criara:
+1. Tabela `clients` com RLS
+2. Tabela `orders` com RLS
+3. Tabela `order_items` com RLS (via EXISTS em orders)
+4. Trigger para atualizar `updated_at` nas tabelas clients e orders
+5. Indice em `orders.delivery_date` para performance do calendario
 
 ---
 
-## 7. Modulo de Suporte - Limitar a 1 ticket aberto por tipo
+## Resumo de Arquivos
 
-**Problema**: O usuario pode abrir multiplos tickets de suporte e sugestoes sem limite.
+| Arquivo | Tipo | Descricao |
+|---------|------|-----------|
+| Migracao SQL | Novo | Tabelas clients, orders, order_items + RLS |
+| `src/hooks/useClients.tsx` | Novo | Hook CRUD clientes |
+| `src/hooks/useOrders.tsx` | Novo | Hook CRUD pedidos + itens |
+| `src/components/clients/ClientsList.tsx` | Novo | Lista de clientes |
+| `src/components/clients/ClientCard.tsx` | Novo | Card de cliente |
+| `src/components/clients/ClientForm.tsx` | Novo | Formulario cliente |
+| `src/components/clients/ClientDetails.tsx` | Novo | Detalhes + historico |
+| `src/components/orders/OrdersList.tsx` | Novo | Lista de pedidos |
+| `src/components/orders/OrderCard.tsx` | Novo | Card de pedido |
+| `src/components/orders/OrderForm.tsx` | Novo | Formulario pedido |
+| `src/components/orders/OrderDetails.tsx` | Novo | Detalhes do pedido |
+| `src/components/orders/OrderCalendar.tsx` | Novo | Calendario visual |
+| `src/components/orders/OrderStatusBadge.tsx` | Novo | Badge de status |
+| `src/components/orders/ProductSelector.tsx` | Novo | Seletor de produtos |
+| `src/components/layout/AppLayout.tsx` | Editar | Novos itens no menu |
+| `src/components/dashboard/DashboardHome.tsx` | Editar | Cards + acoes + entregas |
+| `src/components/search/GlobalSearch.tsx` | Editar | Incluir clientes/pedidos |
+| `src/pages/Dashboard.tsx` | Editar | Registrar novas paginas |
 
-**Solucao**:
-- No `SupportPage.tsx`, verificar se ja existe um ticket de suporte **aberto** ou **em andamento** antes de mostrar o botao "Novo Ticket"
-- Se ja existir, desabilitar o botao e mostrar uma mensagem: "Voce ja tem um ticket aberto. Aguarde a resolucao antes de abrir outro."
-- Mesma logica para sugestoes
-- A verificacao e feita no frontend usando os dados ja carregados (`supportTickets` e `suggestions` filtrados por status)
+### Sequencia de Implementacao
 
-Arquivo: `src/components/support/SupportPage.tsx`
+1. Migracao SQL (tabelas + RLS)
+2. Hook useClients + componentes de Clientes
+3. Hook useOrders + componentes de Pedidos
+4. Calendario de Entregas
+5. Integracao: menu, dashboard, busca global
 
----
-
-## 8. Nova sessao: Atualizacoes e Melhorias do Sistema
-
-**Descricao**: Criar uma sessao onde os usuarios possam ver as ultimas novidades, atualizacoes e melhorias do sistema. No admin, criar uma interface para gerenciar esses comunicados.
-
-### Banco de Dados
-Nova tabela `system_updates`:
-- `id` (uuid, PK)
-- `title` (text) - titulo da atualizacao
-- `content` (text) - descricao detalhada (markdown simples)
-- `type` (text) - "feature", "improvement", "fix"
-- `published_at` (timestamptz) - data de publicacao
-- `created_by` (uuid) - admin que criou
-- `created_at` (timestamptz)
-- `is_published` (boolean) - controle de visibilidade
-
-RLS: Admins podem CRUD; usuarios autenticados podem apenas ler registros publicados.
-
-### Frontend - Usuario
-- Novo item no menu lateral: "Novidades" (icone Megaphone/Newspaper)
-- Pagina listando as atualizacoes em ordem cronologica inversa
-- Cards com icone por tipo (feature = estrela, improvement = seta pra cima, fix = ferramenta)
-- Badge "Novo" para atualizacoes dos ultimos 7 dias
-- Badge de notificacao no menu indicando atualizacoes nao vistas
-
-Nova tabela `user_update_views` para rastrear quais atualizacoes cada usuario ja viu:
-- `user_id` (uuid)
-- `last_seen_at` (timestamptz)
-- Unique constraint em `user_id`
-
-### Frontend - Admin
-- Nova aba "Novidades" no painel administrativo
-- Formulario para criar/editar atualizacoes (titulo, conteudo, tipo, publicado/rascunho)
-- Lista de atualizacoes com opcoes de editar, excluir e alternar publicacao
-
-### Arquivos envolvidos:
-- Migracao SQL para tabelas `system_updates` e `user_update_views`
-- `src/hooks/useSystemUpdates.tsx` (novo hook)
-- `src/components/updates/UpdatesPage.tsx` (pagina do usuario)
-- `src/components/updates/UpdateCard.tsx` (card de atualizacao)
-- `src/components/admin/UpdatesManagement.tsx` (gestao admin)
-- `src/components/admin/UpdateForm.tsx` (formulario admin)
-- `src/components/layout/AppLayout.tsx` (novo item no menu)
-- `src/components/layout/AdminLayout.tsx` (nova aba)
-- `src/pages/Dashboard.tsx` (adicionar rota)
-- `src/pages/AdminDashboard.tsx` (adicionar aba)
-
----
-
-## Resumo de Alteracoes por Arquivo
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/App.tsx` | Desativar refetchOnWindowFocus no QueryClient |
-| `src/components/products/ProductCard.tsx` | Melhorar responsividade mobile e badge de categoria |
-| `src/components/dashboard/DashboardHome.tsx` | Revisar dicas e adicionar acoes rapidas |
-| `src/components/subscription/SubscriptionCard.tsx` | Adicionar beneficios do plano |
-| `src/components/support/SupportPage.tsx` | Limitar 1 ticket aberto por tipo |
-| Nova migracao SQL | Tabelas system_updates e user_update_views |
-| `src/hooks/useSystemUpdates.tsx` | Novo hook para atualizacoes |
-| `src/components/updates/UpdatesPage.tsx` | Nova pagina de novidades |
-| `src/components/updates/UpdateCard.tsx` | Card de atualizacao |
-| `src/components/admin/UpdatesManagement.tsx` | Gestao de novidades (admin) |
-| `src/components/admin/UpdateForm.tsx` | Formulario de novidade (admin) |
-| `src/components/layout/AppLayout.tsx` | Novo item "Novidades" no menu + badge |
-| `src/components/layout/AdminLayout.tsx` | Nova aba "Novidades" |
-| `src/pages/Dashboard.tsx` | Registrar pagina de novidades |
-| `src/pages/AdminDashboard.tsx` | Registrar aba de novidades |
