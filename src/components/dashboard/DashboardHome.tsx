@@ -3,6 +3,8 @@ import { useRecipes } from '@/hooks/useRecipes';
 import { useIngredients } from '@/hooks/useIngredients';
 import { useDecorations } from '@/hooks/useDecorations';
 import { usePackaging } from '@/hooks/usePackaging';
+import { useClients } from '@/hooks/useClients';
+import { useOrders } from '@/hooks/useOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StartTourButton } from '@/components/tour/StartTourButton';
@@ -18,7 +20,9 @@ import {
   Plus,
   Loader2,
   Cake,
-  Settings
+  Settings,
+  Users,
+  ClipboardList
 } from 'lucide-react';
 
 interface DashboardHomeProps {
@@ -31,8 +35,10 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
   const { ingredients, isLoading: loadingIngredients } = useIngredients();
   const { decorations, isLoading: loadingDecorations } = useDecorations();
   const { packagingItems, isLoading: loadingPackaging } = usePackaging();
+  const { clients, isLoading: loadingClients } = useClients();
+  const { orders, isLoading: loadingOrders } = useOrders();
 
-  const isLoading = loadingProducts || loadingRecipes || loadingIngredients || loadingDecorations || loadingPackaging;
+  const isLoading = loadingProducts || loadingRecipes || loadingIngredients || loadingDecorations || loadingPackaging || loadingClients || loadingOrders;
 
   const summaryCards = [
     { 
@@ -75,6 +81,22 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       bgColor: 'bg-blue-500/10',
       page: 'packaging'
     },
+    { 
+      title: 'Clientes', 
+      count: clients?.length || 0, 
+      icon: Users, 
+      color: 'text-cyan-500',
+      bgColor: 'bg-cyan-500/10',
+      page: 'clients'
+    },
+    { 
+      title: 'Pedidos', 
+      count: orders?.length || 0, 
+      icon: ClipboardList, 
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-500/10',
+      page: 'orders'
+    },
   ];
 
   const quickActions = [
@@ -83,6 +105,8 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
     { label: 'Novo Ingrediente', icon: Package, page: 'ingredients' },
     { label: 'Nova Decoração', icon: Sparkles, page: 'decorations' },
     { label: 'Nova Embalagem', icon: Box, page: 'packaging' },
+    { label: 'Novo Cliente', icon: Users, page: 'clients' },
+    { label: 'Novo Pedido', icon: ClipboardList, page: 'orders' },
     { label: 'Configurar Custos', icon: Settings, page: 'settings' },
   ];
 
@@ -111,7 +135,7 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" data-tour="summary-cards">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4" data-tour="summary-cards">
         {summaryCards.map((card) => (
           <Card 
             key={card.title} 
