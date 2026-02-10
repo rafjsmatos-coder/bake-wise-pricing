@@ -25,7 +25,7 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
 
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [unitPrice, setUnitPrice] = useState(0);
+  const [unitPriceStr, setUnitPriceStr] = useState('');
 
   const getSuggestedPrice = (product: Product): number => {
     if (!product || !settings) return 0;
@@ -93,24 +93,25 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
     const product = products.find((p) => p.id === productId);
     if (product) {
       const suggested = getSuggestedPrice(product);
-      setUnitPrice(Math.round(suggested * 100) / 100);
+      setUnitPriceStr(String(Math.round(suggested * 100) / 100).replace('.', ','));
     }
   };
 
   const handleAdd = () => {
+    const parsedPrice = parseFloat(unitPriceStr.replace(',', '.')) || 0;
     if (!selectedProductId || quantity <= 0) return;
 
     const newItem: OrderItemFormData = {
       product_id: selectedProductId,
       quantity,
-      unit_price: unitPrice,
-      total_price: Math.round(quantity * unitPrice * 100) / 100,
+      unit_price: parsedPrice,
+      total_price: Math.round(quantity * parsedPrice * 100) / 100,
     };
 
     onChange([...items, newItem]);
     setSelectedProductId('');
     setQuantity(1);
-    setUnitPrice(0);
+    setUnitPriceStr('');
   };
 
   const handleRemove = (index: number) => {
@@ -156,11 +157,11 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
             <div className="space-y-1">
               <Label className="text-xs">Preço un. (R$)</Label>
               <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={unitPrice}
-                onChange={(e) => setUnitPrice(Number(e.target.value) || 0)}
+                type="text"
+                inputMode="decimal"
+                value={unitPriceStr}
+                onChange={(e) => setUnitPriceStr(e.target.value)}
+                placeholder="0,00"
                 className="text-base"
               />
             </div>

@@ -84,7 +84,7 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
           {recipe.recipe_categories && (
             <Badge
               variant="secondary"
-              className="text-xs max-w-[100px] truncate mb-1"
+              className="text-xs max-w-[200px] truncate mb-1"
               style={{
                 backgroundColor: `${recipe.recipe_categories.color}20`,
                 color: recipe.recipe_categories.color,
