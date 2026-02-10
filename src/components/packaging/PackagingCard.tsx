@@ -39,7 +39,7 @@ export function PackagingCard({ packaging, onEdit, onDelete }: PackagingCardProp
           {packaging.category && (
             <Badge
               variant="secondary"
-              className="text-xs max-w-[100px] truncate mb-1"
+              className="text-xs max-w-[200px] truncate mb-1"
               style={{
                 backgroundColor: `${packaging.category.color}20`,
                 color: packaging.category.color || undefined,

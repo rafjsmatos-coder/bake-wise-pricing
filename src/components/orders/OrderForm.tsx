@@ -43,7 +43,7 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
   const [status, setStatus] = useState('pending');
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>();
   const [deliveryTime, setDeliveryTime] = useState('');
-  const [paidAmount, setPaidAmount] = useState(0);
+  const [paidAmountStr, setPaidAmountStr] = useState('');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<OrderItemFormData[]>([]);
 
@@ -59,7 +59,7 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
         setDeliveryDate(undefined);
         setDeliveryTime('');
       }
-      setPaidAmount(order.paid_amount);
+      setPaidAmountStr(order.paid_amount ? String(order.paid_amount).replace('.', ',') : '');
       setNotes(order.notes || '');
       setItems(
         order.order_items?.map((item) => ({
@@ -75,7 +75,7 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
       setStatus('pending');
       setDeliveryDate(undefined);
       setDeliveryTime('');
-      setPaidAmount(0);
+      setPaidAmountStr('');
       setNotes('');
       setItems([]);
     }
@@ -99,7 +99,7 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
       client_id: clientId,
       status,
       delivery_date: deliveryDateISO,
-      paid_amount: paidAmount,
+      paid_amount: parseFloat(paidAmountStr.replace(',', '.')) || 0,
       notes: notes || null,
       items,
     });
@@ -116,7 +116,7 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[100dvh] overflow-y-auto sm:max-h-[85vh]">
+      <DialogContent className="max-w-lg max-h-[100dvh] overflow-y-auto sm:max-h-[85vh]" style={{ overscrollBehavior: 'contain' }}>
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Editar Pedido' : 'Novo Pedido'}</DialogTitle>
         </DialogHeader>
@@ -201,11 +201,10 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
           <div className="space-y-2">
             <Label>Valor pago (R$)</Label>
             <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={paidAmount}
-              onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
+              type="text"
+              inputMode="decimal"
+              value={paidAmountStr}
+              onChange={(e) => setPaidAmountStr(e.target.value)}
               placeholder="0,00"
               className="text-base"
             />

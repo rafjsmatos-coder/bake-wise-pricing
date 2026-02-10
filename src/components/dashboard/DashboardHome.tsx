@@ -11,6 +11,10 @@ import { StartTourButton } from '@/components/tour/StartTourButton';
 import { SubscriptionCard } from '@/components/subscription/SubscriptionCard';
 import { StockAlertsCard } from '@/components/dashboard/StockAlertsCard';
 import { CostConfigCard } from '@/components/dashboard/CostConfigCard';
+import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
+import { formatCurrency } from '@/lib/product-cost-calculator';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { 
   ShoppingBag, 
   BookOpen, 
@@ -22,7 +26,8 @@ import {
   Cake,
   Settings,
   Users,
-  ClipboardList
+  ClipboardList,
+  CalendarClock
 } from 'lucide-react';
 
 interface DashboardHomeProps {
@@ -179,12 +184,49 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
         </CardContent>
       </Card>
 
+      {/* Upcoming Deliveries */}
+      {(() => {
+        const now = new Date();
+        const upcomingOrders = (orders || [])
+          .filter(o => o.delivery_date && ['pending', 'in_production', 'ready'].includes(o.status) && new Date(o.delivery_date) >= now)
+          .sort((a, b) => new Date(a.delivery_date!).getTime() - new Date(b.delivery_date!).getTime())
+          .slice(0, 5);
+
+        if (upcomingOrders.length === 0) return null;
+
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CalendarClock className="h-5 w-5 text-accent" />
+                Próximas Entregas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {upcomingOrders.map((o) => (
+                <div
+                  key={o.id}
+                  className="flex items-center justify-between gap-3 p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors"
+                  onClick={() => onNavigate('orders')}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{o.client?.name || 'Cliente'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(o.delivery_date!), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                  <OrderStatusBadge status={o.status} type="order" />
+                  <span className="text-sm font-medium shrink-0">{formatCurrency(o.total_amount)}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Important Cards Row */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Stock Alerts Card */}
         <StockAlertsCard onNavigate={onNavigate} />
-        
-        {/* Cost Config Card */}
         <CostConfigCard onNavigate={onNavigate} />
       </div>
 

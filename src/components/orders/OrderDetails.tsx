@@ -15,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calendar, User, FileText, Pencil } from 'lucide-react';
+import { Calendar, User, FileText, Pencil, MessageCircle } from 'lucide-react';
+import { cleanPhone } from '@/lib/format-utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -43,16 +44,42 @@ export function OrderDetails({
     onEdit(order);
   };
 
+  const clientWhatsapp = order.client?.whatsapp ? cleanPhone(order.client.whatsapp) : '';
+  const hasWhatsapp = clientWhatsapp.length >= 10;
+
+  const handleSendQuote = () => {
+    if (!hasWhatsapp) return;
+    const clientName = order.client?.name || 'Cliente';
+    const itemsText = order.order_items?.map(
+      (item) => `• ${item.quantity}x ${item.product?.name || 'Produto'} - ${formatCurrency(item.total_price)}`
+    ).join('\n') || '';
+    const deliveryText = order.delivery_date
+      ? `\nEntrega: ${format(new Date(order.delivery_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
+      : '';
+    const notesText = order.notes ? `\nObservações: ${order.notes}` : '';
+    const message = `Olá ${clientName}! Segue o orçamento do seu pedido:\n\n${itemsText}\n\nTotal: ${formatCurrency(order.total_amount)}${deliveryText}${notesText}\n\nObrigado(a) pela preferência! 🎂`;
+    const url = `https://wa.me/55${clientWhatsapp}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[100dvh] overflow-y-auto sm:max-h-[85vh]">
         <DialogHeader>
           <div className="flex items-center justify-between gap-2">
             <DialogTitle>Detalhes do Pedido</DialogTitle>
-            <Button variant="outline" size="sm" onClick={handleEdit} className="shrink-0">
-              <Pencil className="h-4 w-4 mr-1" />
-              Editar
-            </Button>
+            <div className="flex gap-2 shrink-0">
+              {hasWhatsapp && (
+                <Button variant="outline" size="sm" onClick={handleSendQuote} className="text-green-600 border-green-600 hover:bg-green-50">
+                  <MessageCircle className="h-4 w-4 mr-1" />
+                  Orçamento
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={handleEdit}>
+                <Pencil className="h-4 w-4 mr-1" />
+                Editar
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 

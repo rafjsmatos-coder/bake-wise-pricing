@@ -29,7 +29,7 @@ export function DecorationCard({ decoration, onEdit, onDelete }: DecorationCardP
           {decoration.decoration_categories && (
             <Badge
               variant="secondary"
-              className="text-xs max-w-[100px] truncate mb-1"
+              className="text-xs max-w-[200px] truncate mb-1"
               style={{
                 backgroundColor: `${decoration.decoration_categories.color}20`,
                 color: decoration.decoration_categories.color,

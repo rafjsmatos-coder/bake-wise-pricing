@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
+import { formatPhone, formatCEP } from '@/lib/format-utils';
 
 interface ClientFormProps {
   open: boolean;
@@ -102,8 +103,9 @@ export function ClientForm({ open, onOpenChange, client, onSubmit, isLoading }: 
               <Label htmlFor="phone">Telefone</Label>
               <Input
                 id="phone"
+                type="tel"
                 value={formData.phone || ''}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, phone: formatPhone(e.target.value) })}
                 placeholder="(00) 00000-0000"
                 className="text-base"
               />
@@ -112,8 +114,9 @@ export function ClientForm({ open, onOpenChange, client, onSubmit, isLoading }: 
               <Label htmlFor="whatsapp">WhatsApp</Label>
               <Input
                 id="whatsapp"
+                type="tel"
                 value={formData.whatsapp || ''}
-                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, whatsapp: formatPhone(e.target.value) })}
                 placeholder="(00) 00000-0000"
                 className="text-base"
               />
@@ -172,7 +175,7 @@ export function ClientForm({ open, onOpenChange, client, onSubmit, isLoading }: 
               <Input
                 id="zip_code"
                 value={formData.zip_code || ''}
-                onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, zip_code: formatCEP(e.target.value) })}
                 placeholder="00000-000"
                 className="text-base"
               />

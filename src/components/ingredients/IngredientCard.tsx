@@ -29,7 +29,7 @@ export function IngredientCard({ ingredient, onEdit, onDelete }: IngredientCardP
           {ingredient.categories && (
             <Badge
               variant="secondary"
-              className="text-xs max-w-[100px] truncate mb-1"
+              className="text-xs max-w-[200px] truncate mb-1"
               style={{
                 backgroundColor: `${ingredient.categories.color}20`,
                 color: ingredient.categories.color,
