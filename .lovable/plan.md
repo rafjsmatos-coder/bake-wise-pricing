@@ -1,226 +1,184 @@
 
 
-# Modulos Clientes e Pedidos - PreciBake
+# Correcoes e Melhorias - Cards, Formularios e Integracao WhatsApp
 
-## Visao Geral
+## 1. Badge de categoria cortada em todos os cards
 
-Criar dois modulos interligados: **Clientes** (cadastro completo com endereco, contato e observacoes) e **Pedidos** (vinculados a clientes e produtos, com controle de status, pagamento e calendario de entregas).
+**Problema**: Os cards de Receitas, Decoracoes, Embalagens e Ingredientes usam `max-w-[100px]` no badge da categoria, cortando nomes grandes. O card de Produtos ja foi corrigido para `max-w-[200px]`.
 
----
+**Solucao**: Aumentar o `max-w` do badge para `200px` em todos os 4 cards, igualando ao padrao do ProductCard.
 
-## Modulo 1: Clientes
-
-### Tabela `clients`
-
-| Coluna | Tipo | Obrigatorio | Descricao |
-|--------|------|-------------|-----------|
-| id | uuid (PK) | Sim | Identificador unico |
-| user_id | uuid | Sim | Dono do registro (confeiteiro) |
-| name | text | Sim | Nome completo do cliente |
-| phone | text | Nao | Telefone principal |
-| email | text | Nao | Email do cliente |
-| address | text | Nao | Rua/numero |
-| neighborhood | text | Nao | Bairro |
-| city | text | Nao | Cidade |
-| state | text | Nao | Estado |
-| zip_code | text | Nao | CEP |
-| instagram | text | Nao | Perfil Instagram |
-| whatsapp | text | Nao | Numero WhatsApp |
-| notes | text | Nao | Observacoes (alergias, preferencias, restricoes) |
-| created_at | timestamptz | Sim | Data de criacao |
-| updated_at | timestamptz | Sim | Data de atualizacao |
-
-RLS: Cada usuario ve/edita/exclui somente seus proprios clientes (user_id = auth.uid()).
-
-### Interface do Cliente
-
-- **Lista de clientes**: Cards com nome, telefone, WhatsApp e badges indicando total de pedidos
-- **Busca e filtro**: Campo de busca por nome/telefone
-- **Formulario**: Dialog responsivo (full screen no mobile) com campos organizados em grid
-- **Detalhes**: Dialog mostrando todas as informacoes do cliente + historico de pedidos vinculados
-- **Acoes no card**: Ver, Editar, Excluir (padrao visual existente)
-
-### Arquivos do modulo Clientes
-
-- `src/hooks/useClients.tsx` - Hook com CRUD completo (React Query + Supabase)
-- `src/components/clients/ClientsList.tsx` - Pagina principal com lista e filtros
-- `src/components/clients/ClientCard.tsx` - Card do cliente
-- `src/components/clients/ClientForm.tsx` - Formulario de criacao/edicao
-- `src/components/clients/ClientDetails.tsx` - Visualizacao detalhada + historico de pedidos
+Arquivos:
+- `src/components/recipes/RecipeCard.tsx` (linha 87: `max-w-[100px]` -> `max-w-[200px]`)
+- `src/components/decorations/DecorationCard.tsx` (linha 32: idem)
+- `src/components/packaging/PackagingCard.tsx` (linha 42: idem)
+- `src/components/ingredients/IngredientCard.tsx` (linha 33: idem)
 
 ---
 
-## Modulo 2: Pedidos
+## 2. Formulario de pedido "se movendo" no mobile
 
-### Tabela `orders`
+**Problema**: O Dialog do formulario de pedido pode causar deslocamento da pagina em dispositivos moveis quando o teclado virtual abre ou ao interagir com selects/calendarios dentro do dialog.
 
-| Coluna | Tipo | Obrigatorio | Descricao |
-|--------|------|-------------|-----------|
-| id | uuid (PK) | Sim | Identificador unico |
-| user_id | uuid | Sim | Dono do registro |
-| client_id | uuid (FK clients) | Sim | Cliente vinculado |
-| status | text | Sim | pending, in_production, ready, delivered, cancelled |
-| payment_status | text | Sim | pending, partial, paid |
-| delivery_date | timestamptz | Nao | Data/hora de entrega |
-| total_amount | numeric | Sim default 0 | Valor total do pedido |
-| paid_amount | numeric | Sim default 0 | Valor ja pago |
-| notes | text | Nao | Observacoes do pedido |
-| created_at | timestamptz | Sim | Data de criacao |
-| updated_at | timestamptz | Sim | Data de atualizacao |
+**Solucao**: Adicionar classes CSS ao DialogContent para fixar o dialog e evitar deslocamento:
+- Usar `fixed inset-0` no mobile para garantir posicionamento estavel
+- Adicionar `overscroll-behavior: contain` para evitar scroll propagation
+- Garantir que o Popover do calendario use `modal={true}` e `side="top"` em mobile
 
-### Tabela `order_items`
-
-| Coluna | Tipo | Obrigatorio | Descricao |
-|--------|------|-------------|-----------|
-| id | uuid (PK) | Sim | Identificador unico |
-| order_id | uuid (FK orders) | Sim | Pedido vinculado |
-| product_id | uuid (FK products) | Sim | Produto selecionado |
-| quantity | numeric | Sim default 1 | Quantidade |
-| unit_price | numeric | Sim | Preco unitario (editavel) |
-| total_price | numeric | Sim | Preco total do item |
-| notes | text | Nao | Observacoes do item |
-| created_at | timestamptz | Sim | Data de criacao |
-
-RLS para ambas: user_id = auth.uid() no `orders`, e `order_items` usa EXISTS no `orders` (mesmo padrao de product_recipes).
-
-### Interface de Pedidos
-
-#### Lista de Pedidos
-- Cards com: nome do cliente, data de entrega, status (badge colorido), status de pagamento, valor total
-- Filtros: por status, por cliente, por data, busca por texto
-- Ordenacao: por data de entrega (mais proximo primeiro)
-
-#### Calendario de Pedidos
-- Visao mensal mostrando os pedidos posicionados nas datas de entrega
-- Cada dia mostra quantos pedidos tem e badges com status
-- Clicar em um dia mostra os pedidos daquele dia
-- Cores por status: Pendente (amarelo), Em producao (azul), Pronto (verde), Entregue (cinza), Cancelado (vermelho)
-
-#### Formulario de Pedido
-- Selecionar cliente (combobox com busca, padrao existente dos seletores)
-- Adicionar produtos com quantidade e preco (preco sugerido pre-preenchido do calculo de custo, editavel)
-- Data e horario de entrega (DatePicker + campo de hora)
-- Status do pedido (select)
-- Controle de pagamento: status + valor pago
-- Observacoes gerais
-
-#### Detalhes do Pedido
-- Header com nome do cliente, status, data de entrega
-- Tabela de itens com produto, quantidade, preco unitario, total
-- Resumo financeiro: subtotal, total, valor pago, saldo restante
-- Botoes: Editar, Alterar Status, Registrar Pagamento
-
-### Arquivos do modulo Pedidos
-
-- `src/hooks/useOrders.tsx` - Hook com CRUD de pedidos + itens
-- `src/components/orders/OrdersList.tsx` - Pagina principal com lista e filtros
-- `src/components/orders/OrderCard.tsx` - Card de pedido
-- `src/components/orders/OrderForm.tsx` - Formulario completo de pedido
-- `src/components/orders/OrderDetails.tsx` - Visualizacao detalhada
-- `src/components/orders/OrderCalendar.tsx` - Calendario visual de entregas
-- `src/components/orders/OrderStatusBadge.tsx` - Badge de status reutilizavel
-- `src/components/orders/ProductSelector.tsx` - Seletor de produtos para o pedido
+Arquivo: `src/components/orders/OrderForm.tsx`
 
 ---
 
-## Integracao com o Sistema
+## 3. Campo "Valor pago" com problemas
 
-### Navegacao (AppLayout.tsx)
+**Problema 1**: O campo usa `type="number"` que nao aceita virgula como separador decimal (padrao brasileiro).
+**Problema 2**: O campo inicia com valor `0` ao inves de vazio.
 
-Adicionar dois novos itens no menu lateral, logo apos "Produtos":
+**Solucao**:
+- Mudar o campo para `type="text"` com `inputMode="decimal"` para aceitar virgula
+- Iniciar com string vazia ao inves de `0`
+- Ao processar, converter virgula para ponto e parsear para numero
+- Aplicar mesma logica nos campos de preco/quantidade do `OrderProductSelector.tsx`
 
+Arquivos: `src/components/orders/OrderForm.tsx`, `src/components/orders/OrderProductSelector.tsx`
+
+---
+
+## 4. Padronizar layouts das paginas
+
+**Analise**: As paginas de lista (produtos, receitas, ingredientes, etc.) ja seguem um padrao consistente com header + contador + botao + grid. Os cards de Decoracoes e Embalagens nao tem botoes "Ver" e "Duplicar" como os cards de Receitas e Produtos.
+
+**Solucao**: Nao mexer nisso agora, pois decoracoes e embalagens sao itens simples sem tela de detalhes elaborada. O padrao atual esta consistente dentro de cada tipo de modulo.
+
+---
+
+## 5. Formatacao de telefone, celular, WhatsApp e email
+
+**Solucao**: Criar uma funcao utilitaria `formatPhone` que aplica mascara automatica `(00) 00000-0000` enquanto o usuario digita. Aplicar nos campos de telefone e WhatsApp do formulario de cliente.
+
+- O campo de email permanece como `type="email"` (validacao nativa do navegador)
+- A mascara formata automaticamente conforme o usuario digita, adicionando parenteses e hifen
+
+Arquivos:
+- `src/lib/format-utils.ts` (novo - funcoes de formatacao)
+- `src/components/clients/ClientForm.tsx` (aplicar mascara nos campos phone e whatsapp)
+
+---
+
+## 6. Enviar orcamento via WhatsApp
+
+**Solucao**: Integrar um botao "Enviar Orcamento" na tela de detalhes do pedido (OrderDetails). Ao clicar, o sistema:
+
+1. Monta uma mensagem formatada com os dados do pedido:
+   - Nome do cliente
+   - Lista de produtos com quantidade e preco
+   - Total do pedido
+   - Data de entrega
+   - Observacoes
+
+2. Abre o WhatsApp Web/App com a mensagem pronta usando `https://wa.me/{numero}?text={mensagem}`
+
+3. O numero vem do cadastro do cliente (campo WhatsApp)
+
+Se o cliente nao tiver WhatsApp cadastrado, o botao fica desabilitado com tooltip explicando.
+
+Exemplo da mensagem:
 ```text
-Dashboard
-Produtos > Categorias
-Receitas > Categorias
---> Clientes (icone: Users)
---> Pedidos (icone: ClipboardList)
-Ingredientes > Categorias
-Decoracoes > Categorias
-Embalagens > Categorias
-Configuracoes
-Novidades
-Suporte
+Ola {nome}! Segue o orcamento do seu pedido:
+
+- 1x Bolo de Chocolate - R$ 120,00
+- 2x Brigadeiro (cento) - R$ 80,00
+
+Total: R$ 200,00
+Entrega: 15/02/2026 as 14:00
+
+Observacoes: Sem lactose
+
+Obrigado(a) pela preferencia!
 ```
 
-### Dashboard (DashboardHome.tsx)
+Arquivos:
+- `src/components/orders/OrderDetails.tsx` (adicionar botao + logica de montar mensagem)
+- `src/hooks/useClients.tsx` (buscar dados do cliente com WhatsApp)
 
-- Adicionar card de resumo: "Clientes" e "Pedidos" nos summary cards
-- Adicionar acoes rapidas: "Novo Cliente" e "Novo Pedido"
-- Adicionar card de "Proximas Entregas" mostrando os 5 pedidos mais proximos
+---
 
-### Busca Global (GlobalSearch.tsx)
+## 7. Card de proximas entregas no Dashboard
 
-- Incluir clientes e pedidos nos resultados da busca global (Ctrl+K)
+**Solucao**: Adicionar um card "Proximas Entregas" no Dashboard mostrando os proximos 5 pedidos com entrega agendada (apenas status pendente, em producao ou pronto). Cada item mostra:
+- Nome do cliente
+- Data/hora de entrega
+- Badge de status
+- Total do pedido
 
-### Pagina Dashboard (Dashboard.tsx)
+O card fica acima dos cards de Assinatura e Dicas, junto com os cards de Alertas de Estoque e Configuracao de Custos.
 
-- Registrar as 3 novas paginas: `clients`, `orders`, `order-calendar`
+Arquivo: `src/components/dashboard/DashboardHome.tsx`
 
 ---
 
 ## Detalhes Tecnicos
 
-### Calendario de Pedidos
+### Funcao de formatacao de telefone
 
-O calendario sera implementado com componentes React puros (sem biblioteca externa), usando um grid de 7 colunas (dias da semana) com calculo de dias do mes. Cada celula mostra pontos coloridos representando os pedidos daquele dia. Navegacao por mes com setas.
+```text
+Arquivo: src/lib/format-utils.ts
 
-### Seletor de Produtos no Pedido
+export function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2) return digits.length ? `(${digits}` : '';
+  if (digits.length <= 7) return `(${digits.slice(0,2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
+}
 
-Seguira o padrao dos seletores existentes (RecipeSelector, IngredientSelector):
-- Combobox com busca para selecionar produto
-- Campos de quantidade e preco unitario (pre-preenchido com preco sugerido)
-- Calculo automatico do preco total do item
-- Lista de itens adicionados com opcao de remover
+export function cleanPhone(value: string): string {
+  return value.replace(/\D/g, '');
+}
+```
 
-### Controle de Pagamento
+### Campo de valor com suporte a virgula
 
-O campo `payment_status` sera calculado automaticamente:
-- `pending`: paid_amount = 0
-- `partial`: paid_amount > 0 e paid_amount < total_amount
-- `paid`: paid_amount >= total_amount
+```text
+// Estado como string
+const [paidAmountStr, setPaidAmountStr] = useState('');
 
-No formulario, o usuario informa o valor pago e o status e calculado.
+// No input
+<Input
+  type="text"
+  inputMode="decimal"
+  value={paidAmountStr}
+  onChange={(e) => setPaidAmountStr(e.target.value)}
+  placeholder="0,00"
+/>
 
-### Migracao SQL
+// Ao submeter
+const paidAmount = parseFloat(paidAmountStr.replace(',', '.')) || 0;
+```
 
-Uma unica migracao criara:
-1. Tabela `clients` com RLS
-2. Tabela `orders` com RLS
-3. Tabela `order_items` com RLS (via EXISTS em orders)
-4. Trigger para atualizar `updated_at` nas tabelas clients e orders
-5. Indice em `orders.delivery_date` para performance do calendario
+### Botao WhatsApp no OrderDetails
+
+```text
+// Montar URL do WhatsApp
+const whatsappNumber = cleanPhone(order.client?.whatsapp || '');
+const message = buildOrderMessage(order);
+const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(message)}`;
+window.open(whatsappUrl, '_blank');
+```
 
 ---
 
-## Resumo de Arquivos
+## Resumo de Alteracoes
 
-| Arquivo | Tipo | Descricao |
-|---------|------|-----------|
-| Migracao SQL | Novo | Tabelas clients, orders, order_items + RLS |
-| `src/hooks/useClients.tsx` | Novo | Hook CRUD clientes |
-| `src/hooks/useOrders.tsx` | Novo | Hook CRUD pedidos + itens |
-| `src/components/clients/ClientsList.tsx` | Novo | Lista de clientes |
-| `src/components/clients/ClientCard.tsx` | Novo | Card de cliente |
-| `src/components/clients/ClientForm.tsx` | Novo | Formulario cliente |
-| `src/components/clients/ClientDetails.tsx` | Novo | Detalhes + historico |
-| `src/components/orders/OrdersList.tsx` | Novo | Lista de pedidos |
-| `src/components/orders/OrderCard.tsx` | Novo | Card de pedido |
-| `src/components/orders/OrderForm.tsx` | Novo | Formulario pedido |
-| `src/components/orders/OrderDetails.tsx` | Novo | Detalhes do pedido |
-| `src/components/orders/OrderCalendar.tsx` | Novo | Calendario visual |
-| `src/components/orders/OrderStatusBadge.tsx` | Novo | Badge de status |
-| `src/components/orders/ProductSelector.tsx` | Novo | Seletor de produtos |
-| `src/components/layout/AppLayout.tsx` | Editar | Novos itens no menu |
-| `src/components/dashboard/DashboardHome.tsx` | Editar | Cards + acoes + entregas |
-| `src/components/search/GlobalSearch.tsx` | Editar | Incluir clientes/pedidos |
-| `src/pages/Dashboard.tsx` | Editar | Registrar novas paginas |
-
-### Sequencia de Implementacao
-
-1. Migracao SQL (tabelas + RLS)
-2. Hook useClients + componentes de Clientes
-3. Hook useOrders + componentes de Pedidos
-4. Calendario de Entregas
-5. Integracao: menu, dashboard, busca global
+| Arquivo | Alteracao |
+|---------|-----------|
+| `RecipeCard.tsx` | max-w badge: 100px -> 200px |
+| `DecorationCard.tsx` | max-w badge: 100px -> 200px |
+| `PackagingCard.tsx` | max-w badge: 100px -> 200px |
+| `IngredientCard.tsx` | max-w badge: 100px -> 200px |
+| `OrderForm.tsx` | Fix mobile layout + campo valor com virgula |
+| `OrderProductSelector.tsx` | Campos preco com suporte a virgula |
+| `src/lib/format-utils.ts` | Novo: funcoes formatPhone, cleanPhone |
+| `ClientForm.tsx` | Mascara de telefone nos campos phone/whatsapp |
+| `OrderDetails.tsx` | Botao "Enviar Orcamento" via WhatsApp |
+| `DashboardHome.tsx` | Card "Proximas Entregas" |
 
