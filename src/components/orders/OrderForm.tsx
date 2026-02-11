@@ -116,7 +116,7 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[100dvh] overflow-y-auto sm:max-h-[85vh]" style={{ overscrollBehavior: 'contain' }}>
+      <DialogContent className="max-w-lg max-h-[100dvh] overflow-y-auto overflow-x-hidden sm:max-h-[85vh]" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Editar Pedido' : 'Novo Pedido'}</DialogTitle>
         </DialogHeader>

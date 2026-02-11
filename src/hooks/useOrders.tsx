@@ -227,6 +227,55 @@ export function useOrders() {
     },
   });
 
+  const duplicateOrder = useMutation({
+    mutationFn: async (order: Order) => {
+      if (!user?.id) throw new Error('Usuário não autenticado');
+
+      const { data: newOrder, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          client_id: order.client_id,
+          status: 'pending',
+          payment_status: 'pending',
+          delivery_date: null,
+          total_amount: order.total_amount,
+          paid_amount: 0,
+          notes: order.notes,
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      if (order.order_items && order.order_items.length > 0) {
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(
+            order.order_items.map((item) => ({
+              order_id: newOrder.id,
+              product_id: item.product_id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              total_price: item.total_price,
+              notes: item.notes,
+            }))
+          );
+        if (itemsError) throw itemsError;
+      }
+
+      return newOrder;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast.success('Pedido duplicado com sucesso!');
+    },
+    onError: (error) => {
+      console.error('Erro ao duplicar pedido:', error);
+      toast.error('Erro ao duplicar pedido');
+    },
+  });
+
   return {
     orders,
     isLoading,
@@ -235,5 +284,6 @@ export function useOrders() {
     updateOrder,
     updateOrderStatus,
     deleteOrder,
+    duplicateOrder,
   };
 }

@@ -17,6 +17,10 @@ import { SupportPage } from '@/components/support/SupportPage';
 import { UpdatesPage } from '@/components/updates/UpdatesPage';
 import { ClientsList } from '@/components/clients/ClientsList';
 import { OrdersList } from '@/components/orders/OrdersList';
+import { ShoppingList } from '@/components/orders/ShoppingList';
+import { TransactionsList } from '@/components/financial/TransactionsList';
+import { RevenueReport } from '@/components/financial/RevenueReport';
+import { ReceivablesList } from '@/components/financial/ReceivablesList';
 import { TrialBanner } from '@/components/subscription/TrialBanner';
 import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
@@ -147,6 +151,10 @@ export function Dashboard() {
         {currentPage === 'packaging-categories' && <PackagingCategoriesList />}
         {currentPage === 'clients' && <ClientsList />}
         {currentPage === 'orders' && <OrdersList />}
+        {currentPage === 'shopping-list' && <ShoppingList />}
+        {currentPage === 'cash-flow' && <TransactionsList />}
+        {currentPage === 'reports' && <RevenueReport />}
+        {currentPage === 'receivables' && <ReceivablesList />}
         {currentPage === 'settings' && <UserSettings />}
         {currentPage === 'profile' && <ProfileSettings />}
         {currentPage === 'support' && <SupportPage />}
