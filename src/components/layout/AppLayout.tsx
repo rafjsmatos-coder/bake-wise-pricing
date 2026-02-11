@@ -22,7 +22,9 @@ import {
   Newspaper,
   Loader2,
   Users,
-  ClipboardList
+  ClipboardList,
+  ShoppingCart,
+  DollarSign
 } from 'lucide-react';
 import { useSystemUpdates } from '@/hooks/useSystemUpdates';
 import { cn } from '@/lib/utils';
@@ -46,6 +48,10 @@ export type PageType =
   | 'product-categories' 
   | 'clients'
   | 'orders'
+  | 'shopping-list'
+  | 'cash-flow'
+  | 'reports'
+  | 'receivables'
   | 'settings'
   | 'profile'
   | 'support'
@@ -118,7 +124,23 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
       ]
     },
     { id: 'clients', label: 'Clientes', icon: Users },
-    { id: 'orders', label: 'Pedidos', icon: ClipboardList },
+    { 
+      id: 'orders', 
+      label: 'Pedidos', 
+      icon: ClipboardList,
+      children: [
+        { id: 'shopping-list', label: 'Lista de Compras' }
+      ]
+    },
+    { 
+      id: 'cash-flow', 
+      label: 'Financeiro', 
+      icon: DollarSign,
+      children: [
+        { id: 'reports', label: 'Relatórios' },
+        { id: 'receivables', label: 'Contas a Receber' }
+      ]
+    },
     { 
       id: 'ingredients', 
       label: 'Ingredientes', 

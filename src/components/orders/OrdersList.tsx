@@ -5,6 +5,7 @@ import { OrderForm } from '@/components/orders/OrderForm';
 import { OrderDetails } from '@/components/orders/OrderDetails';
 import { OrderCalendar } from '@/components/orders/OrderCalendar';
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
+import { StockDeductionDialog } from '@/components/orders/StockDeductionDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,9 +36,11 @@ import { Plus, Search, ClipboardList, Loader2, Calendar } from 'lucide-react';
 import { formatCurrency } from '@/lib/product-cost-calculator';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function OrdersList() {
-  const { orders, isLoading, createOrder, updateOrder, updateOrderStatus, deleteOrder } = useOrders();
+  const { orders, isLoading, createOrder, updateOrder, updateOrderStatus, deleteOrder, duplicateOrder } = useOrders();
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -47,6 +50,8 @@ export function OrdersList() {
   const [dayOrdersOpen, setDayOrdersOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [dayOrders, setDayOrders] = useState<{ date: Date; orders: Order[] }>({ date: new Date(), orders: [] });
+  const [stockDeductionOpen, setStockDeductionOpen] = useState(false);
+  const [stockDeductionOrder, setStockDeductionOrder] = useState<Order | null>(null);
 
   const filteredOrders = useMemo(() => {
     let filtered = orders;
@@ -112,7 +117,21 @@ export function OrdersList() {
   };
 
   const handleStatusChange = (orderId: string, status: string) => {
-    updateOrderStatus.mutate({ id: orderId, status });
+    updateOrderStatus.mutate({ id: orderId, status }, {
+      onSuccess: () => {
+        if (status === 'delivered') {
+          const order = orders.find((o) => o.id === orderId);
+          if (order) {
+            setStockDeductionOrder(order);
+            setStockDeductionOpen(true);
+          }
+        }
+      },
+    });
+  };
+
+  const handleDuplicate = (order: Order) => {
+    duplicateOrder.mutate(order);
   };
 
   const handleDayClick = (date: Date, dayOrds: Order[]) => {
@@ -196,6 +215,7 @@ export function OrdersList() {
                   onView={handleView}
                   onEdit={handleEdit}
                   onDelete={handleDeleteClick}
+                  onDuplicate={handleDuplicate}
                 />
               ))}
             </div>
@@ -241,6 +261,7 @@ export function OrdersList() {
         order={selectedOrder}
         onEdit={handleEdit}
         onStatusChange={handleStatusChange}
+        onDuplicate={handleDuplicate}
       />
 
       {/* Day Orders Dialog */}
@@ -301,6 +322,16 @@ export function OrdersList() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Stock Deduction Dialog */}
+      <StockDeductionDialog
+        open={stockDeductionOpen}
+        onOpenChange={setStockDeductionOpen}
+        order={stockDeductionOrder}
+        onComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
+        }}
+      />
     </div>
   );
 }

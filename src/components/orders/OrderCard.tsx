@@ -1,7 +1,7 @@
 import { Order } from '@/hooks/useOrders';
 import { Button } from '@/components/ui/button';
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
-import { Eye, Pencil, Trash2, Calendar, User } from 'lucide-react';
+import { Eye, Pencil, Trash2, Calendar, User, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/product-cost-calculator';
@@ -11,9 +11,10 @@ interface OrderCardProps {
   onView: (order: Order) => void;
   onEdit: (order: Order) => void;
   onDelete: (order: Order) => void;
+  onDuplicate?: (order: Order) => void;
 }
 
-export function OrderCard({ order, onView, onEdit, onDelete }: OrderCardProps) {
+export function OrderCard({ order, onView, onEdit, onDelete, onDuplicate }: OrderCardProps) {
   return (
     <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
       {/* Header */}
@@ -38,6 +39,11 @@ export function OrderCard({ order, onView, onEdit, onDelete }: OrderCardProps) {
           <Button variant="ghost" size="icon" onClick={() => onView(order)} className="h-8 w-8">
             <Eye className="h-4 w-4" />
           </Button>
+          {onDuplicate && (
+            <Button variant="ghost" size="icon" onClick={() => onDuplicate(order)} className="h-8 w-8">
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
           <Button variant="ghost" size="icon" onClick={() => onEdit(order)} className="h-8 w-8">
             <Pencil className="h-4 w-4" />
           </Button>

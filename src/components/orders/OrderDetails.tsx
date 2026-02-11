@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calendar, User, FileText, Pencil, MessageCircle } from 'lucide-react';
+import { Calendar, User, FileText, Pencil, MessageCircle, Copy } from 'lucide-react';
 import { cleanPhone } from '@/lib/format-utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -26,6 +26,7 @@ interface OrderDetailsProps {
   order: Order | null;
   onEdit: (order: Order) => void;
   onStatusChange: (orderId: string, status: string) => void;
+  onDuplicate?: (order: Order) => void;
 }
 
 export function OrderDetails({
@@ -34,6 +35,7 @@ export function OrderDetails({
   order,
   onEdit,
   onStatusChange,
+  onDuplicate,
 }: OrderDetailsProps) {
   if (!order) return null;
 
@@ -68,11 +70,17 @@ export function OrderDetails({
         <DialogHeader>
           <div className="flex items-center justify-between gap-2">
             <DialogTitle>Detalhes do Pedido</DialogTitle>
-            <div className="flex gap-2 shrink-0">
+            <div className="flex gap-2 shrink-0 flex-wrap">
               {hasWhatsapp && (
                 <Button variant="outline" size="sm" onClick={handleSendQuote} className="text-green-600 border-green-600 hover:bg-green-50">
                   <MessageCircle className="h-4 w-4 mr-1" />
                   Orçamento
+                </Button>
+              )}
+              {onDuplicate && (
+                <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); onDuplicate(order); }}>
+                  <Copy className="h-4 w-4 mr-1" />
+                  Duplicar
                 </Button>
               )}
               <Button variant="outline" size="sm" onClick={handleEdit}>
