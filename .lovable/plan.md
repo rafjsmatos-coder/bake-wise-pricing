@@ -1,184 +1,173 @@
 
 
-# Correcoes e Melhorias - Cards, Formularios e Integracao WhatsApp
+# Melhorias de Pedidos + Novos Modulos
 
-## 1. Badge de categoria cortada em todos os cards
+## 1. Corrigir Dialog de Pedido "se movendo" no mobile
 
-**Problema**: Os cards de Receitas, Decoracoes, Embalagens e Ingredientes usam `max-w-[100px]` no badge da categoria, cortando nomes grandes. O card de Produtos ja foi corrigido para `max-w-[200px]`.
-
-**Solucao**: Aumentar o `max-w` do badge para `200px` em todos os 4 cards, igualando ao padrao do ProductCard.
+O problema persiste porque o `overscroll-behavior: contain` nao e suficiente -- o dialog do Radix usa `translate-x-[-50%] translate-y-[-50%]` com posicionamento central que permite scroll lateral. A solucao e aplicar `touch-action: none` no overlay e `overflow-x: hidden` no DialogContent, alem de garantir que o conteudo nao ultrapasse a largura do dialog.
 
 Arquivos:
-- `src/components/recipes/RecipeCard.tsx` (linha 87: `max-w-[100px]` -> `max-w-[200px]`)
-- `src/components/decorations/DecorationCard.tsx` (linha 32: idem)
-- `src/components/packaging/PackagingCard.tsx` (linha 42: idem)
-- `src/components/ingredients/IngredientCard.tsx` (linha 33: idem)
+- `src/components/orders/OrderForm.tsx` -- adicionar `overflow-x-hidden` e CSS inline `touchAction: 'pan-y'` no DialogContent
 
 ---
 
-## 2. Formulario de pedido "se movendo" no mobile
+## 2. Duplicar Pedido
 
-**Problema**: O Dialog do formulario de pedido pode causar deslocamento da pagina em dispositivos moveis quando o teclado virtual abre ou ao interagir com selects/calendarios dentro do dialog.
-
-**Solucao**: Adicionar classes CSS ao DialogContent para fixar o dialog e evitar deslocamento:
-- Usar `fixed inset-0` no mobile para garantir posicionamento estavel
-- Adicionar `overscroll-behavior: contain` para evitar scroll propagation
-- Garantir que o Popover do calendario use `modal={true}` e `side="top"` em mobile
-
-Arquivo: `src/components/orders/OrderForm.tsx`
-
----
-
-## 3. Campo "Valor pago" com problemas
-
-**Problema 1**: O campo usa `type="number"` que nao aceita virgula como separador decimal (padrao brasileiro).
-**Problema 2**: O campo inicia com valor `0` ao inves de vazio.
-
-**Solucao**:
-- Mudar o campo para `type="text"` com `inputMode="decimal"` para aceitar virgula
-- Iniciar com string vazia ao inves de `0`
-- Ao processar, converter virgula para ponto e parsear para numero
-- Aplicar mesma logica nos campos de preco/quantidade do `OrderProductSelector.tsx`
-
-Arquivos: `src/components/orders/OrderForm.tsx`, `src/components/orders/OrderProductSelector.tsx`
-
----
-
-## 4. Padronizar layouts das paginas
-
-**Analise**: As paginas de lista (produtos, receitas, ingredientes, etc.) ja seguem um padrao consistente com header + contador + botao + grid. Os cards de Decoracoes e Embalagens nao tem botoes "Ver" e "Duplicar" como os cards de Receitas e Produtos.
-
-**Solucao**: Nao mexer nisso agora, pois decoracoes e embalagens sao itens simples sem tela de detalhes elaborada. O padrao atual esta consistente dentro de cada tipo de modulo.
-
----
-
-## 5. Formatacao de telefone, celular, WhatsApp e email
-
-**Solucao**: Criar uma funcao utilitaria `formatPhone` que aplica mascara automatica `(00) 00000-0000` enquanto o usuario digita. Aplicar nos campos de telefone e WhatsApp do formulario de cliente.
-
-- O campo de email permanece como `type="email"` (validacao nativa do navegador)
-- A mascara formata automaticamente conforme o usuario digita, adicionando parenteses e hifen
+Adicionar botao "Duplicar" no card de pedido e nos detalhes. Ao clicar, cria um novo pedido com os mesmos dados (cliente, itens, precos, observacoes) mas com status "pendente", pagamento zerado e sem data de entrega.
 
 Arquivos:
-- `src/lib/format-utils.ts` (novo - funcoes de formatacao)
-- `src/components/clients/ClientForm.tsx` (aplicar mascara nos campos phone e whatsapp)
+- `src/hooks/useOrders.tsx` -- adicionar mutacao `duplicateOrder`
+- `src/components/orders/OrderCard.tsx` -- adicionar botao Duplicar (icone Copy)
+- `src/components/orders/OrderDetails.tsx` -- adicionar botao Duplicar no header
+- `src/components/orders/OrdersList.tsx` -- adicionar handler `handleDuplicate`
 
 ---
 
-## 6. Enviar orcamento via WhatsApp
+## 3. Baixa de Estoque (Sugestao + Confirmacao)
 
-**Solucao**: Integrar um botao "Enviar Orcamento" na tela de detalhes do pedido (OrderDetails). Ao clicar, o sistema:
+Conforme a estrategia definida: ao marcar um pedido como "Entregue", o sistema apresenta um dialog de confirmacao listando todos os materiais (ingredientes, decoracoes e embalagens) necessarios para produzir os itens do pedido. O usuario revisa a lista e confirma quais itens deseja descontar do estoque.
 
-1. Monta uma mensagem formatada com os dados do pedido:
-   - Nome do cliente
-   - Lista de produtos com quantidade e preco
-   - Total do pedido
-   - Data de entrega
-   - Observacoes
+### Fluxo
 
-2. Abre o WhatsApp Web/App com a mensagem pronta usando `https://wa.me/{numero}?text={mensagem}`
-
-3. O numero vem do cadastro do cliente (campo WhatsApp)
-
-Se o cliente nao tiver WhatsApp cadastrado, o botao fica desabilitado com tooltip explicando.
-
-Exemplo da mensagem:
 ```text
-Ola {nome}! Segue o orcamento do seu pedido:
-
-- 1x Bolo de Chocolate - R$ 120,00
-- 2x Brigadeiro (cento) - R$ 80,00
-
-Total: R$ 200,00
-Entrega: 15/02/2026 as 14:00
-
-Observacoes: Sem lactose
-
-Obrigado(a) pela preferencia!
+Pedido marcado como "Entregue"
+        |
+        v
+Dialog "Baixa de Estoque"
+  - Lista materiais calculados a partir dos produtos do pedido
+  - Cada item com checkbox (todos marcados por padrao)
+  - Mostra: nome, quantidade a descontar, estoque atual
+  - Botoes: "Confirmar Baixa" / "Pular"
+        |
+        v
+Atualiza stock_quantity nos registros selecionados
 ```
+
+### Calculo dos materiais
+
+Para cada item do pedido:
+1. Buscar o produto e seus componentes (receitas, ingredientes diretos, decoracoes, embalagens)
+2. Para cada receita do produto, buscar os ingredientes da receita
+3. Multiplicar quantidades pela quantidade do pedido
+4. Agregar materiais repetidos
 
 Arquivos:
-- `src/components/orders/OrderDetails.tsx` (adicionar botao + logica de montar mensagem)
-- `src/hooks/useClients.tsx` (buscar dados do cliente com WhatsApp)
+- `src/components/orders/StockDeductionDialog.tsx` -- novo componente com lista de materiais e checkboxes
+- `src/hooks/useOrders.tsx` -- adicionar logica para buscar materiais e atualizar estoque
+- `src/components/orders/OrderDetails.tsx` -- integrar dialog quando status muda para "delivered"
+- `src/components/orders/OrdersList.tsx` -- integrar dialog no fluxo de mudanca de status
 
 ---
 
-## 7. Card de proximas entregas no Dashboard
+## 4. Lista de Compras Automatica
 
-**Solucao**: Adicionar um card "Proximas Entregas" no Dashboard mostrando os proximos 5 pedidos com entrega agendada (apenas status pendente, em producao ou pronto). Cada item mostra:
-- Nome do cliente
-- Data/hora de entrega
-- Badge de status
-- Total do pedido
+Gerar uma lista de compras baseada nos pedidos da semana (ou periodo selecionavel). Agrega todos os ingredientes, decoracoes e embalagens necessarios, mostrando:
+- Nome do material
+- Quantidade total necessaria
+- Estoque atual
+- Quantidade a comprar (necessario - estoque)
 
-O card fica acima dos cards de Assinatura e Dicas, junto com os cards de Alertas de Estoque e Configuracao de Custos.
+### Interface
 
-Arquivo: `src/components/dashboard/DashboardHome.tsx`
+Uma nova pagina "Lista de Compras" acessivel pelo menu lateral (dentro de Pedidos como sub-item ou como pagina independente). Possui:
+- Seletor de periodo (esta semana, proxima semana, customizado)
+- Lista agrupada por tipo (Ingredientes, Decoracoes, Embalagens)
+- Apenas itens que precisam ser comprados (estoque insuficiente) com opcao de mostrar todos
+- Botao para compartilhar via WhatsApp (mensagem formatada)
+
+Arquivos:
+- `src/components/orders/ShoppingList.tsx` -- novo componente com a lista
+- `src/pages/Dashboard.tsx` -- registrar nova pagina `shopping-list`
+- `src/components/layout/AppLayout.tsx` -- adicionar item no menu (sub-item de Pedidos)
 
 ---
 
-## Detalhes Tecnicos
+## 5. Modulo Financeiro
 
-### Funcao de formatacao de telefone
+### 5A. Fluxo de Caixa (Entradas e Saidas)
 
-```text
-Arquivo: src/lib/format-utils.ts
+Tabela `financial_transactions` para registrar movimentacoes manuais:
 
-export function formatPhone(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 11);
-  if (digits.length <= 2) return digits.length ? `(${digits}` : '';
-  if (digits.length <= 7) return `(${digits.slice(0,2)}) ${digits.slice(2)}`;
-  return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
-}
+| Coluna | Tipo | Descricao |
+|--------|------|-----------|
+| id | uuid (PK) | Identificador |
+| user_id | uuid | Dono |
+| type | text | 'income' ou 'expense' |
+| category | text | Categoria (ex: "Material", "Aluguel", "Venda avulsa") |
+| description | text | Descricao da movimentacao |
+| amount | numeric | Valor |
+| date | date | Data da movimentacao |
+| order_id | uuid (FK, nullable) | Vinculo opcional com pedido |
+| created_at | timestamptz | Criacao |
 
-export function cleanPhone(value: string): string {
-  return value.replace(/\D/g, '');
-}
-```
+RLS: user_id = auth.uid()
 
-### Campo de valor com suporte a virgula
+Quando um pedido for pago (total ou parcialmente), o sistema sugere registrar automaticamente como entrada no fluxo de caixa.
 
-```text
-// Estado como string
-const [paidAmountStr, setPaidAmountStr] = useState('');
+### 5B. Relatorio de Faturamento
 
-// No input
-<Input
-  type="text"
-  inputMode="decimal"
-  value={paidAmountStr}
-  onChange={(e) => setPaidAmountStr(e.target.value)}
-  placeholder="0,00"
-/>
+Tela com:
+- Filtro por periodo (mes atual, mes anterior, trimestre, customizado)
+- Card com total faturado (pedidos entregues + pagos no periodo)
+- Card com total de despesas registradas
+- Card com lucro (faturamento - despesas)
+- Grafico de barras mensal (usando Recharts, ja instalado)
+- Lista dos top 5 produtos mais vendidos no periodo
+- Lista dos top 5 clientes por faturamento
 
-// Ao submeter
-const paidAmount = parseFloat(paidAmountStr.replace(',', '.')) || 0;
-```
+### 5C. Contas a Receber
 
-### Botao WhatsApp no OrderDetails
+Tela/card mostrando:
+- Pedidos com saldo pendente (paid_amount < total_amount)
+- Ordenados por data de entrega (mais antigos primeiro = mais urgentes)
+- Total a receber
+- Botao rapido para registrar pagamento parcial ou total
+- Destaque visual para pedidos vencidos (entregues mas nao pagos totalmente)
 
-```text
-// Montar URL do WhatsApp
-const whatsappNumber = cleanPhone(order.client?.whatsapp || '');
-const message = buildOrderMessage(order);
-const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(message)}`;
-window.open(whatsappUrl, '_blank');
-```
+### Interface do Modulo Financeiro
+
+Nova secao "Financeiro" no menu lateral com sub-paginas:
+- Fluxo de Caixa (lista de transacoes + formulario + saldo)
+- Relatorios (graficos + metricas)
+- Contas a Receber (lista de pendencias)
+
+Arquivos:
+- Migracao SQL -- tabela `financial_transactions` + RLS
+- `src/hooks/useFinancial.tsx` -- Hook CRUD de transacoes + queries de relatorios
+- `src/components/financial/TransactionsList.tsx` -- Lista de transacoes com filtros
+- `src/components/financial/TransactionForm.tsx` -- Formulario de entrada/saida
+- `src/components/financial/RevenueReport.tsx` -- Relatorios com graficos
+- `src/components/financial/ReceivablesList.tsx` -- Contas a receber
+- `src/pages/Dashboard.tsx` -- registrar paginas financeiras
+- `src/components/layout/AppLayout.tsx` -- adicionar menu "Financeiro" com sub-itens
 
 ---
 
 ## Resumo de Alteracoes
 
-| Arquivo | Alteracao |
-|---------|-----------|
-| `RecipeCard.tsx` | max-w badge: 100px -> 200px |
-| `DecorationCard.tsx` | max-w badge: 100px -> 200px |
-| `PackagingCard.tsx` | max-w badge: 100px -> 200px |
-| `IngredientCard.tsx` | max-w badge: 100px -> 200px |
-| `OrderForm.tsx` | Fix mobile layout + campo valor com virgula |
-| `OrderProductSelector.tsx` | Campos preco com suporte a virgula |
-| `src/lib/format-utils.ts` | Novo: funcoes formatPhone, cleanPhone |
-| `ClientForm.tsx` | Mascara de telefone nos campos phone/whatsapp |
-| `OrderDetails.tsx` | Botao "Enviar Orcamento" via WhatsApp |
-| `DashboardHome.tsx` | Card "Proximas Entregas" |
+| Arquivo | Tipo | Descricao |
+|---------|------|-----------|
+| `OrderForm.tsx` | Editar | Fix mobile swipe/movement |
+| `useOrders.tsx` | Editar | Adicionar duplicateOrder + logica de estoque |
+| `OrderCard.tsx` | Editar | Botao duplicar |
+| `OrderDetails.tsx` | Editar | Botao duplicar + integracao baixa estoque |
+| `OrdersList.tsx` | Editar | Handlers duplicar + baixa estoque |
+| `StockDeductionDialog.tsx` | Novo | Dialog de confirmacao de baixa de estoque |
+| `ShoppingList.tsx` | Novo | Lista de compras automatica |
+| Migracao SQL | Novo | Tabela financial_transactions + RLS |
+| `useFinancial.tsx` | Novo | Hook financeiro |
+| `TransactionsList.tsx` | Novo | Fluxo de caixa |
+| `TransactionForm.tsx` | Novo | Formulario de transacao |
+| `RevenueReport.tsx` | Novo | Relatorios com graficos |
+| `ReceivablesList.tsx` | Novo | Contas a receber |
+| `AppLayout.tsx` | Editar | Menu Financeiro + Lista de Compras |
+| `Dashboard.tsx` | Editar | Registrar novas paginas |
+
+### Sequencia de Implementacao
+
+1. Fix mobile do OrderForm
+2. Duplicar pedido
+3. Baixa de estoque (dialog + logica)
+4. Lista de compras automatica
+5. Modulo financeiro (tabela + fluxo de caixa + relatorios + contas a receber)
 
