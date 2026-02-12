@@ -1,145 +1,168 @@
 
 
-# Melhorias de Pedidos + Novos Modulos
+# Melhorias Finais: Auto-registro Financeiro, Dashboard, Mobile, PWA e Landing Page
 
-## 1. Corrigir Dialog de Pedido "se movendo" no mobile
+## 1. Auto-registrar pagamentos no fluxo de caixa
 
-O problema persiste porque o `overscroll-behavior: contain` nao e suficiente -- o dialog do Radix usa `translate-x-[-50%] translate-y-[-50%]` com posicionamento central que permite scroll lateral. A solucao e aplicar `touch-action: none` no overlay e `overflow-x: hidden` no DialogContent, alem de garantir que o conteudo nao ultrapasse a largura do dialog.
+Quando um pedido for salvo (criado ou atualizado) com valor pago maior que zero, o sistema registra automaticamente uma transacao do tipo "income" na tabela `financial_transactions` com categoria "Venda de Pedido" e referencia ao pedido (`order_id`).
 
-Arquivos:
-- `src/components/orders/OrderForm.tsx` -- adicionar `overflow-x-hidden` e CSS inline `touchAction: 'pan-y'` no DialogContent
+Para evitar duplicatas: antes de inserir, verifica se ja existe transacao vinculada aquele `order_id`. Se existir, atualiza o valor. Se nao, cria nova.
 
----
-
-## 2. Duplicar Pedido
-
-Adicionar botao "Duplicar" no card de pedido e nos detalhes. Ao clicar, cria um novo pedido com os mesmos dados (cliente, itens, precos, observacoes) mas com status "pendente", pagamento zerado e sem data de entrega.
-
-Arquivos:
-- `src/hooks/useOrders.tsx` -- adicionar mutacao `duplicateOrder`
-- `src/components/orders/OrderCard.tsx` -- adicionar botao Duplicar (icone Copy)
-- `src/components/orders/OrderDetails.tsx` -- adicionar botao Duplicar no header
-- `src/components/orders/OrdersList.tsx` -- adicionar handler `handleDuplicate`
+Arquivo: `src/hooks/useOrders.tsx` -- adicionar logica apos `createOrder` e `updateOrder` para inserir/atualizar transacao financeira automaticamente.
 
 ---
 
-## 3. Baixa de Estoque (Sugestao + Confirmacao)
+## 2. Remover Acoes Rapidas do Dashboard e atualizar Tour
 
-Conforme a estrategia definida: ao marcar um pedido como "Entregue", o sistema apresenta um dialog de confirmacao listando todos os materiais (ingredientes, decoracoes e embalagens) necessarios para produzir os itens do pedido. O usuario revisa a lista e confirma quais itens deseja descontar do estoque.
+**Dashboard**: Remover o bloco "Acoes Rapidas" (quickActions) do `DashboardHome.tsx`. Os summary cards ja servem como navegacao rapida.
 
-### Fluxo
+**Tour**: Remover o step 2 (quick-actions) do `TourProvider.tsx` e ajustar os indices dos steps que controlam a sidebar (de `[3,4,5,6,7,8]` para `[2,3,4,5,6,7]`).
+
+Arquivos:
+- `src/components/dashboard/DashboardHome.tsx` -- remover quickActions e o card correspondente
+- `src/components/tour/TourProvider.tsx` -- remover step "Acoes Rapidas" e reindexar sidebarSteps
+
+---
+
+## 3. OrderDetails maior que a tela no mobile
+
+O dialog de detalhes do pedido esta sem restricao de overflow. A area de botoes no header (Orcamento, Duplicar, Editar) ocupa espaco demais em telas pequenas.
+
+Solucao:
+- Adicionar `overflow-x-hidden` e `touchAction: 'pan-y'` ao DialogContent (mesmo padrao do OrderForm)
+- Reorganizar botoes no header para empilhar verticalmente em mobile usando `flex-wrap`
+- Garantir que textos longos (observacoes, nomes de produtos) usem `break-words`
+
+Arquivo: `src/components/orders/OrderDetails.tsx`
+
+---
+
+## 4. PWA (Progressive Web App)
+
+Instalar e configurar `vite-plugin-pwa` para transformar o site em app instalavel. Isso permite que confeiteiros "instalem" o PreciBake no celular direto do navegador, com icone na home screen, splash screen e funcionamento offline basico.
+
+Configuracao:
+- Instalar `vite-plugin-pwa`
+- Configurar em `vite.config.ts` com manifest (nome, cores, icones)
+- Adicionar meta tags de PWA no `index.html` (theme-color, apple-touch-icon)
+- Criar icones PWA em `/public/` (192x192 e 512x512)
+- Adicionar `navigateFallbackDenylist: [/^\/~oauth/]` no workbox config
+- Criar pagina `/install` opcional com instrucoes de instalacao
+
+Arquivos:
+- `vite.config.ts` -- adicionar VitePWA plugin
+- `index.html` -- meta tags PWA
+- `public/pwa-192x192.png` e `public/pwa-512x512.png` -- icones (gerados com placeholder)
+
+---
+
+## 5. Atualizar Landing Page (one page)
+
+Atualizar o conteudo e SEO da landing page para refletir todas as funcionalidades atuais do sistema (pedidos, clientes, financeiro, lista de compras, WhatsApp, etc).
+
+### SEO
+- `index.html`: melhorar meta tags (description mais completa, keywords, canonical URL, structured data JSON-LD)
+- `robots.txt`: ja esta bom
+- Adicionar sitemap basico ou referencia
+
+### Conteudo da Landing Page
+
+**HeroSection**: Atualizar subtitulo para mencionar "gestao completa" (nao so precificacao). Adicionar mais badges (ex: "Gestao de Pedidos", "Controle Financeiro").
+
+**FeaturesSection**: Adicionar os novos modulos:
+- Gestao de Pedidos e Clientes
+- Orcamento via WhatsApp
+- Controle Financeiro (fluxo de caixa, relatorios)
+- Lista de Compras Automatica
+- Controle de Estoque
+- PWA (funciona no celular como app)
+
+**PainPointsSection/BenefitsSection**: Revisar textos para incluir dores de gestao (nao so precificacao).
+
+Arquivos:
+- `index.html` -- SEO aprimorado
+- `src/components/landing/HeroSection.tsx` -- atualizar copy
+- `src/components/landing/FeaturesSection.tsx` -- adicionar novos features
+- Demais secoes da landing conforme necessario
+
+---
+
+## Detalhes Tecnicos
+
+### Auto-registro financeiro (useOrders.tsx)
 
 ```text
-Pedido marcado como "Entregue"
-        |
-        v
-Dialog "Baixa de Estoque"
-  - Lista materiais calculados a partir dos produtos do pedido
-  - Cada item com checkbox (todos marcados por padrao)
-  - Mostra: nome, quantidade a descontar, estoque atual
-  - Botoes: "Confirmar Baixa" / "Pular"
-        |
-        v
-Atualiza stock_quantity nos registros selecionados
+// Apos criar/atualizar pedido com sucesso:
+const paidAmount = data.paid_amount;
+if (paidAmount > 0) {
+  // Verificar se ja existe transacao para este order_id
+  const { data: existing } = await supabase
+    .from('financial_transactions')
+    .select('id')
+    .eq('order_id', orderId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from('financial_transactions')
+      .update({ amount: paidAmount, date: new Date().toISOString().split('T')[0] })
+      .eq('id', existing.id);
+  } else {
+    await supabase.from('financial_transactions')
+      .insert({
+        user_id: user.id,
+        type: 'income',
+        category: 'Venda de Pedido',
+        description: `Pagamento pedido - ${clientName}`,
+        amount: paidAmount,
+        date: new Date().toISOString().split('T')[0],
+        order_id: orderId,
+      });
+  }
+}
 ```
 
-### Calculo dos materiais
+### PWA Config (vite.config.ts)
 
-Para cada item do pedido:
-1. Buscar o produto e seus componentes (receitas, ingredientes diretos, decoracoes, embalagens)
-2. Para cada receita do produto, buscar os ingredientes da receita
-3. Multiplicar quantidades pela quantidade do pedido
-4. Agregar materiais repetidos
+```text
+import { VitePWA } from 'vite-plugin-pwa';
 
-Arquivos:
-- `src/components/orders/StockDeductionDialog.tsx` -- novo componente com lista de materiais e checkboxes
-- `src/hooks/useOrders.tsx` -- adicionar logica para buscar materiais e atualizar estoque
-- `src/components/orders/OrderDetails.tsx` -- integrar dialog quando status muda para "delivered"
-- `src/components/orders/OrdersList.tsx` -- integrar dialog no fluxo de mudanca de status
+VitePWA({
+  registerType: 'autoUpdate',
+  workbox: {
+    navigateFallbackDenylist: [/^\/~oauth/],
+    globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+  },
+  manifest: {
+    name: 'PreciBake - O ponto certo do preco',
+    short_name: 'PreciBake',
+    description: 'Sistema de precificacao e gestao para confeiteiros',
+    theme_color: '#1e293b',
+    background_color: '#f5f6fa',
+    display: 'standalone',
+    icons: [
+      { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+  },
+})
+```
 
----
+### SEO (index.html)
 
-## 4. Lista de Compras Automatica
-
-Gerar uma lista de compras baseada nos pedidos da semana (ou periodo selecionavel). Agrega todos os ingredientes, decoracoes e embalagens necessarios, mostrando:
-- Nome do material
-- Quantidade total necessaria
-- Estoque atual
-- Quantidade a comprar (necessario - estoque)
-
-### Interface
-
-Uma nova pagina "Lista de Compras" acessivel pelo menu lateral (dentro de Pedidos como sub-item ou como pagina independente). Possui:
-- Seletor de periodo (esta semana, proxima semana, customizado)
-- Lista agrupada por tipo (Ingredientes, Decoracoes, Embalagens)
-- Apenas itens que precisam ser comprados (estoque insuficiente) com opcao de mostrar todos
-- Botao para compartilhar via WhatsApp (mensagem formatada)
-
-Arquivos:
-- `src/components/orders/ShoppingList.tsx` -- novo componente com a lista
-- `src/pages/Dashboard.tsx` -- registrar nova pagina `shopping-list`
-- `src/components/layout/AppLayout.tsx` -- adicionar item no menu (sub-item de Pedidos)
-
----
-
-## 5. Modulo Financeiro
-
-### 5A. Fluxo de Caixa (Entradas e Saidas)
-
-Tabela `financial_transactions` para registrar movimentacoes manuais:
-
-| Coluna | Tipo | Descricao |
-|--------|------|-----------|
-| id | uuid (PK) | Identificador |
-| user_id | uuid | Dono |
-| type | text | 'income' ou 'expense' |
-| category | text | Categoria (ex: "Material", "Aluguel", "Venda avulsa") |
-| description | text | Descricao da movimentacao |
-| amount | numeric | Valor |
-| date | date | Data da movimentacao |
-| order_id | uuid (FK, nullable) | Vinculo opcional com pedido |
-| created_at | timestamptz | Criacao |
-
-RLS: user_id = auth.uid()
-
-Quando um pedido for pago (total ou parcialmente), o sistema sugere registrar automaticamente como entrada no fluxo de caixa.
-
-### 5B. Relatorio de Faturamento
-
-Tela com:
-- Filtro por periodo (mes atual, mes anterior, trimestre, customizado)
-- Card com total faturado (pedidos entregues + pagos no periodo)
-- Card com total de despesas registradas
-- Card com lucro (faturamento - despesas)
-- Grafico de barras mensal (usando Recharts, ja instalado)
-- Lista dos top 5 produtos mais vendidos no periodo
-- Lista dos top 5 clientes por faturamento
-
-### 5C. Contas a Receber
-
-Tela/card mostrando:
-- Pedidos com saldo pendente (paid_amount < total_amount)
-- Ordenados por data de entrega (mais antigos primeiro = mais urgentes)
-- Total a receber
-- Botao rapido para registrar pagamento parcial ou total
-- Destaque visual para pedidos vencidos (entregues mas nao pagos totalmente)
-
-### Interface do Modulo Financeiro
-
-Nova secao "Financeiro" no menu lateral com sub-paginas:
-- Fluxo de Caixa (lista de transacoes + formulario + saldo)
-- Relatorios (graficos + metricas)
-- Contas a Receber (lista de pendencias)
-
-Arquivos:
-- Migracao SQL -- tabela `financial_transactions` + RLS
-- `src/hooks/useFinancial.tsx` -- Hook CRUD de transacoes + queries de relatorios
-- `src/components/financial/TransactionsList.tsx` -- Lista de transacoes com filtros
-- `src/components/financial/TransactionForm.tsx` -- Formulario de entrada/saida
-- `src/components/financial/RevenueReport.tsx` -- Relatorios com graficos
-- `src/components/financial/ReceivablesList.tsx` -- Contas a receber
-- `src/pages/Dashboard.tsx` -- registrar paginas financeiras
-- `src/components/layout/AppLayout.tsx` -- adicionar menu "Financeiro" com sub-itens
+```text
+<meta name="keywords" content="precificacao confeitaria, calcular preco bolo, ..." />
+<link rel="canonical" href="https://bake-wise-pricing.lovable.app/" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "PreciBake",
+  "applicationCategory": "BusinessApplication",
+  ...
+}
+</script>
+```
 
 ---
 
@@ -147,27 +170,20 @@ Arquivos:
 
 | Arquivo | Tipo | Descricao |
 |---------|------|-----------|
-| `OrderForm.tsx` | Editar | Fix mobile swipe/movement |
-| `useOrders.tsx` | Editar | Adicionar duplicateOrder + logica de estoque |
-| `OrderCard.tsx` | Editar | Botao duplicar |
-| `OrderDetails.tsx` | Editar | Botao duplicar + integracao baixa estoque |
-| `OrdersList.tsx` | Editar | Handlers duplicar + baixa estoque |
-| `StockDeductionDialog.tsx` | Novo | Dialog de confirmacao de baixa de estoque |
-| `ShoppingList.tsx` | Novo | Lista de compras automatica |
-| Migracao SQL | Novo | Tabela financial_transactions + RLS |
-| `useFinancial.tsx` | Novo | Hook financeiro |
-| `TransactionsList.tsx` | Novo | Fluxo de caixa |
-| `TransactionForm.tsx` | Novo | Formulario de transacao |
-| `RevenueReport.tsx` | Novo | Relatorios com graficos |
-| `ReceivablesList.tsx` | Novo | Contas a receber |
-| `AppLayout.tsx` | Editar | Menu Financeiro + Lista de Compras |
-| `Dashboard.tsx` | Editar | Registrar novas paginas |
+| `useOrders.tsx` | Editar | Auto-registro de pagamentos no financeiro |
+| `DashboardHome.tsx` | Editar | Remover Acoes Rapidas |
+| `TourProvider.tsx` | Editar | Remover step quick-actions, reindexar |
+| `OrderDetails.tsx` | Editar | Fix overflow mobile |
+| `vite.config.ts` | Editar | Adicionar VitePWA |
+| `index.html` | Editar | Meta tags PWA + SEO |
+| `HeroSection.tsx` | Editar | Atualizar copy e badges |
+| `FeaturesSection.tsx` | Editar | Adicionar novos modulos |
 
 ### Sequencia de Implementacao
 
-1. Fix mobile do OrderForm
-2. Duplicar pedido
-3. Baixa de estoque (dialog + logica)
-4. Lista de compras automatica
-5. Modulo financeiro (tabela + fluxo de caixa + relatorios + contas a receber)
+1. Auto-registro financeiro
+2. Remover acoes rapidas + atualizar tour
+3. Fix OrderDetails mobile
+4. Configurar PWA
+5. Atualizar landing page + SEO
 
