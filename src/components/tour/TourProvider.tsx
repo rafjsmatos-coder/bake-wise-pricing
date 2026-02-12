@@ -19,7 +19,7 @@ function TourController({ onSidebarToggle }: { onSidebarToggle?: (open: boolean)
     // Step 3: nav-ingredients, Step 4: nav-recipes, Step 5: nav-products
     // Step 6: nav-decorations, Step 7: nav-packaging, Step 8: nav-settings
     // Step 9: welcome (final)
-    const sidebarSteps = [3, 4, 5, 6, 7, 8];
+    const sidebarSteps = [2, 3, 4, 5, 6, 7];
     const needsSidebar = sidebarSteps.includes(currentStep);
     
     onSidebarToggle(needsSidebar);
@@ -50,15 +50,6 @@ export function TourWrapper({ children, onSidebarToggle }: TourWrapperProps) {
         <h3 className="font-bold text-lg">Visão Geral 📊</h3>
         <p>Aqui você vê um resumo de tudo: quantos produtos, receitas, ingredientes, decorações e embalagens você tem cadastrados.</p>
         <p className="text-sm text-muted-foreground mt-2">Clique em qualquer card para acessar a lista completa.</p>
-      </div>
-    ),
-  },
-  {
-    selector: '[data-tour="quick-actions"]',
-    content: (
-      <div className="space-y-2">
-        <h3 className="font-bold text-lg">Ações Rápidas ⚡</h3>
-        <p>Atalhos para criar novos itens sem precisar navegar pelo menu.</p>
       </div>
     ),
   },
