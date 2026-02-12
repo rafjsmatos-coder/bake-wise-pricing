@@ -66,9 +66,9 @@ export function OrderDetails({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[100dvh] overflow-y-auto sm:max-h-[85vh]">
+      <DialogContent className="max-w-lg max-h-[100dvh] overflow-y-auto overflow-x-hidden sm:max-h-[85vh]" style={{ touchAction: 'pan-y' }}>
         <DialogHeader>
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <DialogTitle>Detalhes do Pedido</DialogTitle>
             <div className="flex gap-2 shrink-0 flex-wrap">
               {hasWhatsapp && (
@@ -184,7 +184,7 @@ export function OrderDetails({
               <h4 className="text-sm font-semibold">Observações</h4>
               <div className="flex items-start gap-2 text-sm text-muted-foreground">
                 <FileText className="h-4 w-4 shrink-0 mt-0.5" />
-                <p className="whitespace-pre-wrap">{order.notes}</p>
+                <p className="whitespace-pre-wrap break-words">{order.notes}</p>
               </div>
             </div>
           )}

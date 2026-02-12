@@ -106,7 +106,7 @@ export function useOrders() {
           paid_amount: data.paid_amount,
           notes: data.notes || null,
         })
-        .select()
+        .select(`*, client:clients(id, name)`)
         .single();
 
       if (orderError) throw orderError;
@@ -128,11 +128,26 @@ export function useOrders() {
         if (itemsError) throw itemsError;
       }
 
+      // Auto-registrar pagamento no financeiro
+      if (data.paid_amount > 0) {
+        const clientName = order.client?.name || 'Cliente';
+        await supabase.from('financial_transactions').insert({
+          user_id: user.id,
+          type: 'income',
+          category: 'Venda de Pedido',
+          description: `Pagamento pedido - ${clientName}`,
+          amount: data.paid_amount,
+          date: new Date().toISOString().split('T')[0],
+          order_id: order.id,
+        });
+      }
+
       return order;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['financial'] });
       toast.success('Pedido criado com sucesso!');
     },
     onError: (error) => {
@@ -143,6 +158,8 @@ export function useOrders() {
 
   const updateOrder = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: OrderFormData }) => {
+      if (!user?.id) throw new Error('Usuário não autenticado');
+
       const totalAmount = data.items.reduce((sum, item) => sum + item.total_price, 0);
       const paymentStatus = calculatePaymentStatus(data.paid_amount, totalAmount);
 
@@ -180,10 +197,51 @@ export function useOrders() {
 
         if (itemsError) throw itemsError;
       }
+
+      // Auto-registrar/atualizar pagamento no financeiro
+      if (data.paid_amount > 0) {
+        // Buscar nome do cliente
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('name')
+          .eq('id', data.client_id)
+          .single();
+        const clientName = clientData?.name || 'Cliente';
+
+        const { data: existing } = await supabase
+          .from('financial_transactions')
+          .select('id')
+          .eq('order_id', id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase.from('financial_transactions')
+            .update({ amount: data.paid_amount, date: new Date().toISOString().split('T')[0] })
+            .eq('id', existing.id);
+        } else {
+          await supabase.from('financial_transactions').insert({
+            user_id: user.id,
+            type: 'income',
+            category: 'Venda de Pedido',
+            description: `Pagamento pedido - ${clientName}`,
+            amount: data.paid_amount,
+            date: new Date().toISOString().split('T')[0],
+            order_id: id,
+          });
+        }
+      } else {
+        // Se paid_amount = 0, remover transação vinculada se existir
+        await supabase.from('financial_transactions')
+          .delete()
+          .eq('order_id', id)
+          .eq('user_id', user.id);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['financial'] });
       toast.success('Pedido atualizado com sucesso!');
     },
     onError: (error) => {

@@ -21,10 +21,8 @@ import {
   Package, 
   Sparkles, 
   Box,
-  Plus,
   Loader2,
   Cake,
-  Settings,
   Users,
   ClipboardList,
   CalendarClock
@@ -104,16 +102,6 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
     },
   ];
 
-  const quickActions = [
-    { label: 'Novo Produto', icon: ShoppingBag, page: 'products' },
-    { label: 'Nova Receita', icon: BookOpen, page: 'recipes' },
-    { label: 'Novo Ingrediente', icon: Package, page: 'ingredients' },
-    { label: 'Nova Decoração', icon: Sparkles, page: 'decorations' },
-    { label: 'Nova Embalagem', icon: Box, page: 'packaging' },
-    { label: 'Novo Cliente', icon: Users, page: 'clients' },
-    { label: 'Novo Pedido', icon: ClipboardList, page: 'orders' },
-    { label: 'Configurar Custos', icon: Settings, page: 'settings' },
-  ];
 
   if (isLoading) {
     return (
@@ -161,28 +149,6 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
           </Card>
         ))}
       </div>
-
-      {/* Quick Actions */}
-      <Card data-tour="quick-actions">
-        <CardHeader>
-          <CardTitle className="text-lg">Ações Rápidas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {quickActions.map((action) => (
-              <Button 
-                key={action.label}
-                variant="outline" 
-                onClick={() => onNavigate(action.page)}
-                className="gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                {action.label}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Upcoming Deliveries */}
       {(() => {

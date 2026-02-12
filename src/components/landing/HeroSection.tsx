@@ -34,19 +34,27 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
 
       <div className="container mx-auto px-4 py-16 md:py-24 relative">
         <div className="max-w-3xl mx-auto text-center space-y-6">
-          <Badge variant="secondary" className="gap-1.5 px-4 py-1.5">
-            <Sparkles className="w-3.5 h-3.5" />
-            Calcule seus preços com precisão
-          </Badge>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <Badge variant="secondary" className="gap-1.5 px-4 py-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              Precificação Inteligente
+            </Badge>
+            <Badge variant="secondary" className="gap-1.5 px-4 py-1.5">
+              Gestão de Pedidos
+            </Badge>
+            <Badge variant="secondary" className="gap-1.5 px-4 py-1.5">
+              Controle Financeiro
+            </Badge>
+          </div>
           
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-            Saiba exatamente quanto cobrar —{' '}
-            <span className="text-accent">sem adivinhação</span>
+            Gestão completa para sua confeitaria —{' '}
+            <span className="text-accent">do preço ao lucro</span>
           </h1>
           
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Lucre mais com o mesmo trabalho e tenha segurança ao cobrar seus produtos. 
-            Chega de vender barato por não saber calcular.
+            Precifique com precisão, gerencie pedidos, controle estoque e finanças. 
+            Tudo em um só lugar, direto do seu celular.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -68,11 +76,11 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           <div className="flex items-center justify-center gap-6 pt-6 text-sm text-muted-foreground flex-wrap">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-accent" />
-              Fácil de usar
+              Funciona no celular
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-accent" />
-              Cálculos precisos
+              Orçamento via WhatsApp
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-accent" />
