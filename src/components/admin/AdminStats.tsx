@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2, Users, CreditCard, Clock, Crown, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   BarChart,
@@ -16,6 +16,13 @@ import {
 
 interface Stats {
   total: number;
+  subscriptions?: {
+    trial: number;
+    active: number;
+    expired: number;
+    canceled: number;
+    pending: number;
+  };
 }
 
 interface MonthlyData {
@@ -101,6 +108,64 @@ export function AdminStats() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Subscription Stats */}
+      {stats?.subscriptions && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-yellow-500/10">
+                  <Clock className="h-5 w-5 text-yellow-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.subscriptions.trial}</p>
+                  <p className="text-xs text-muted-foreground">Em Trial</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-green-500/10">
+                  <Crown className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.subscriptions.active}</p>
+                  <p className="text-xs text-muted-foreground">Premium</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-red-500/10">
+                  <XCircle className="h-5 w-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.subscriptions.expired}</p>
+                  <p className="text-xs text-muted-foreground">Expirados</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-muted">
+                  <CreditCard className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.subscriptions.canceled}</p>
+                  <p className="text-xs text-muted-foreground">Cancelados</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Growth Chart */}
       <Card>

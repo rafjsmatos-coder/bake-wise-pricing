@@ -117,13 +117,19 @@ export function OrdersList() {
   };
 
   const handleStatusChange = (orderId: string, status: string) => {
+    // Fechar detalhes primeiro para evitar conflito de dialogs
+    setDetailsOpen(false);
+
     updateOrderStatus.mutate({ id: orderId, status }, {
       onSuccess: () => {
         if (status === 'delivered') {
           const order = orders.find((o) => o.id === orderId);
-          if (order) {
-            setStockDeductionOrder(order);
-            setStockDeductionOpen(true);
+          if (order && order.order_items && order.order_items.length > 0) {
+            // Pequeno delay para garantir que o dialog anterior fechou
+            setTimeout(() => {
+              setStockDeductionOrder(order);
+              setStockDeductionOpen(true);
+            }, 300);
           }
         }
       },

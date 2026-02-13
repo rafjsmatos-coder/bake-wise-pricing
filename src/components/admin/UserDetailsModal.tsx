@@ -41,6 +41,8 @@ interface UserDetails {
     products: number;
     packaging: number;
     decorations: number;
+    orders: number;
+    clients: number;
   };
 }
 
@@ -210,6 +212,14 @@ export function UserDetailsModal({ userId, open, onOpenChange }: UserDetailsModa
 
             <TabsContent value="data" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="bg-muted/50 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold">{details.dataCounts.orders}</p>
+                  <p className="text-sm text-muted-foreground">Pedidos</p>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold">{details.dataCounts.clients}</p>
+                  <p className="text-sm text-muted-foreground">Clientes</p>
+                </div>
                 <div className="bg-muted/50 rounded-lg p-4 text-center">
                   <p className="text-2xl font-bold">{details.dataCounts.ingredients}</p>
                   <p className="text-sm text-muted-foreground">Ingredientes</p>
