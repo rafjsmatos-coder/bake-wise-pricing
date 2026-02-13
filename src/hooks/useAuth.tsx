@@ -32,10 +32,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Set up auth state listener BEFORE getting session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (_event, newSession) => {
         if (!isMounted) return;
-        setSession(session);
-        setUser(session?.user ?? null);
+        
+        // Only update user/session if user actually changed (prevents unnecessary re-renders on TOKEN_REFRESHED)
+        setUser(prev => {
+          const newUser = newSession?.user ?? null;
+          if (prev?.id === newUser?.id) return prev; // same user, keep stable reference
+          return newUser;
+        });
+        setSession(newSession);
         setLoading(false);
         // Clear timeout if auth event fires
         if (timeoutId) {
