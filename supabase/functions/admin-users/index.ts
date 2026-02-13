@@ -281,12 +281,16 @@ serve(async (req) => {
           { count: productsCount },
           { count: packagingCount },
           { count: decorationsCount },
+          { count: ordersCount },
+          { count: clientsCount },
         ] = await Promise.all([
           supabaseAdmin.from("ingredients").select("*", { count: "exact", head: true }).eq("user_id", userId),
           supabaseAdmin.from("recipes").select("*", { count: "exact", head: true }).eq("user_id", userId),
           supabaseAdmin.from("products").select("*", { count: "exact", head: true }).eq("user_id", userId),
           supabaseAdmin.from("packaging").select("*", { count: "exact", head: true }).eq("user_id", userId),
           supabaseAdmin.from("decorations").select("*", { count: "exact", head: true }).eq("user_id", userId),
+          supabaseAdmin.from("orders").select("*", { count: "exact", head: true }).eq("user_id", userId),
+          supabaseAdmin.from("clients").select("*", { count: "exact", head: true }).eq("user_id", userId),
         ]);
 
         logStep("User details retrieved", { userId });
@@ -308,6 +312,8 @@ serve(async (req) => {
               products: productsCount || 0,
               packaging: packagingCount || 0,
               decorations: decorationsCount || 0,
+              orders: ordersCount || 0,
+              clients: clientsCount || 0,
             },
           }),
           {
