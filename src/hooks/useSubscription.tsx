@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { prepareExternalNavigation } from '@/lib/open-external';
 
 // Hook para gerenciar estado de assinatura com sincronização de auth
 
@@ -77,9 +78,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Se é polling, não setar isLoading para evitar "flash" na UI
-    if (!isPolling) {
+    // Se é polling OU já estamos inicializados com acesso, não setar isLoading para evitar "flash" na UI
+    if (!isPolling && !state.initialized) {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
+    } else if (!isPolling) {
+      setState(prev => ({ ...prev, error: null }));
     }
 
     // Timeout failsafe
@@ -166,8 +169,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const startCheckout = useCallback(async () => {
     try {
+      // Pre-open navigation BEFORE async to avoid popup blockers on mobile
+      const navigate = prepareExternalNavigation();
+      
       const token = await getFreshAccessToken();
       if (!token) {
+        navigate(null); // close blank tab if opened
         throw new Error('Not authenticated');
       }
 
@@ -177,11 +184,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         },
       });
 
-      if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
+      if (error) {
+        navigate(null);
+        throw error;
       }
+
+      navigate(data?.url || null);
     } catch (err) {
       console.error('[useSubscription] Checkout error:', err);
       throw err;
@@ -190,8 +198,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const openCustomerPortal = useCallback(async () => {
     try {
+      // Pre-open navigation BEFORE async to avoid popup blockers on mobile
+      const navigate = prepareExternalNavigation();
+      
       const token = await getFreshAccessToken();
       if (!token) {
+        navigate(null);
         throw new Error('Not authenticated');
       }
 
@@ -201,11 +213,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         },
       });
 
-      if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
+      if (error) {
+        navigate(null);
+        throw error;
       }
+
+      navigate(data?.url || null);
     } catch (err) {
       console.error('[useSubscription] Portal error:', err);
       throw err;
