@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { ensureSessionUserId } from '@/lib/ensure-session';
 import type { MeasurementUnit } from '@/lib/unit-conversion';
 
 export interface Decoration {
@@ -50,16 +51,8 @@ export function useDecorations() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('decorations')
-        .select(`
-          *,
-          decoration_categories (
-            id,
-            name,
-            color
-          )
-        `)
+        .select(`*, decoration_categories (id, name, color)`)
         .order('name');
-
       if (error) throw error;
       return data as Decoration[];
     },
@@ -68,110 +61,42 @@ export function useDecorations() {
 
   const createDecoration = useMutation({
     mutationFn: async (data: CreateDecorationData) => {
-      if (!user) throw new Error('User not authenticated');
-
+      const userId = await ensureSessionUserId();
       const { data: decoration, error } = await supabase
         .from('decorations')
-        .insert({
-          user_id: user.id,
-          ...data,
-        })
-        .select(`
-          *,
-          decoration_categories (
-            id,
-            name,
-            color
-          )
-        `)
+        .insert({ user_id: userId, ...data })
+        .select(`*, decoration_categories (id, name, color)`)
         .single();
-
       if (error) throw error;
       return decoration as Decoration;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] });
-      toast({
-        title: 'Decoração criada',
-        description: 'A decoração foi adicionada com sucesso.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Erro ao criar decoração',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); toast({ title: 'Decoração criada', description: 'A decoração foi adicionada com sucesso.' }); },
+    onError: (error: Error) => { toast({ title: 'Erro ao criar decoração', description: error.message, variant: 'destructive' }); },
   });
 
   const updateDecoration = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateDecorationData }) => {
-      const { data: decoration, error } = await supabase
-        .from('decorations')
-        .update(data)
-        .eq('id', id)
-        .select(`
-          *,
-          decoration_categories (
-            id,
-            name,
-            color
-          )
-        `)
-        .single();
-
+      await ensureSessionUserId();
+      const { data: decoration, error } = await supabase.from('decorations').update(data).eq('id', id).select(`*, decoration_categories (id, name, color)`).single();
       if (error) throw error;
       return decoration as Decoration;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast({
-        title: 'Decoração atualizada',
-        description: 'A decoração foi atualizada com sucesso.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Erro ao atualizar decoração',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); queryClient.invalidateQueries({ queryKey: ['products'] }); toast({ title: 'Decoração atualizada', description: 'A decoração foi atualizada com sucesso.' }); },
+    onError: (error: Error) => { toast({ title: 'Erro ao atualizar decoração', description: error.message, variant: 'destructive' }); },
   });
 
   const deleteDecoration = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('decorations')
-        .delete()
-        .eq('id', id);
-
+      await ensureSessionUserId();
+      const { error } = await supabase.from('decorations').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] });
-      toast({
-        title: 'Decoração excluída',
-        description: 'A decoração foi excluída com sucesso.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Erro ao excluir decoração',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); toast({ title: 'Decoração excluída', description: 'A decoração foi excluída com sucesso.' }); },
+    onError: (error: Error) => { toast({ title: 'Erro ao excluir decoração', description: error.message, variant: 'destructive' }); },
   });
 
-  return {
-    decorations: decorationsQuery.data || [],
-    isLoading: decorationsQuery.isLoading,
-    error: decorationsQuery.error,
-    createDecoration,
-    updateDecoration,
-    deleteDecoration,
-  };
+  return { decorations: decorationsQuery.data || [], isLoading: decorationsQuery.isLoading, error: decorationsQuery.error, createDecoration, updateDecoration, deleteDecoration };
 }

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useOrders, Order } from '@/hooks/useOrders';
+import { useOrders } from '@/hooks/useOrders';
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
 import { Loader2, AlertTriangle, DollarSign } from 'lucide-react';
 import { formatCurrency } from '@/lib/product-cost-calculator';
@@ -11,9 +11,11 @@ export function ReceivablesList() {
 
   const receivables = useMemo(() => {
     return orders
-      .filter((o) => o.status !== 'cancelled' && o.paid_amount < o.total_amount)
+      .filter((o) => {
+        const effectiveTotal = o.total_amount - (o.discount || 0);
+        return o.status !== 'cancelled' && o.paid_amount < effectiveTotal;
+      })
       .sort((a, b) => {
-        // Delivered but unpaid first (overdue), then by delivery date
         const aOverdue = a.status === 'delivered' ? 0 : 1;
         const bOverdue = b.status === 'delivered' ? 0 : 1;
         if (aOverdue !== bOverdue) return aOverdue - bOverdue;
@@ -24,7 +26,7 @@ export function ReceivablesList() {
   }, [orders]);
 
   const totalReceivable = useMemo(
-    () => receivables.reduce((s, o) => s + (o.total_amount - o.paid_amount), 0),
+    () => receivables.reduce((s, o) => s + (o.total_amount - (o.discount || 0) - o.paid_amount), 0),
     [receivables]
   );
 
@@ -45,7 +47,6 @@ export function ReceivablesList() {
         </p>
       </div>
 
-      {/* Total */}
       <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
           <DollarSign className="h-4 w-4" />
@@ -54,25 +55,20 @@ export function ReceivablesList() {
         <p className="text-2xl font-bold text-primary">{formatCurrency(totalReceivable)}</p>
       </div>
 
-      {/* List */}
       {receivables.length > 0 ? (
         <div className="space-y-2">
           {receivables.map((order) => {
-            const remaining = order.total_amount - order.paid_amount;
+            const effectiveTotal = order.total_amount - (order.discount || 0);
+            const remaining = effectiveTotal - order.paid_amount;
             const isOverdue = order.status === 'delivered';
 
             return (
-              <div
-                key={order.id}
-                className={`p-4 bg-card border rounded-lg ${isOverdue ? 'border-destructive/50' : 'border-border'}`}
-              >
+              <div key={order.id} className={`p-4 bg-card border rounded-lg ${isOverdue ? 'border-destructive/50' : 'border-border'}`}>
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       {isOverdue && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
-                      <span className="font-semibold text-sm truncate">
-                        {order.client?.name || 'Cliente removido'}
-                      </span>
+                      <span className="font-semibold text-sm truncate">{order.client?.name || 'Cliente removido'}</span>
                     </div>
                     {order.delivery_date && (
                       <p className="text-xs text-muted-foreground mt-0.5">
@@ -82,15 +78,13 @@ export function ReceivablesList() {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-bold text-destructive">{formatCurrency(remaining)}</p>
-                    <p className="text-xs text-muted-foreground">de {formatCurrency(order.total_amount)}</p>
+                    <p className="text-xs text-muted-foreground">de {formatCurrency(effectiveTotal)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <OrderStatusBadge status={order.status} />
                   <OrderStatusBadge status={order.payment_status} type="payment" />
-                  {isOverdue && (
-                    <span className="text-xs text-destructive font-medium">Entregue - Pagamento pendente</span>
-                  )}
+                  {isOverdue && <span className="text-xs text-destructive font-medium">Entregue - Pagamento pendente</span>}
                 </div>
               </div>
             );

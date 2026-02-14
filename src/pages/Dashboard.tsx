@@ -29,6 +29,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { Loader2, AlertCircle, RefreshCw, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Pages that expired users can still access
+const FREE_PAGES: PageType[] = ['dashboard', 'support'];
+
 export function Dashboard() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -49,7 +52,6 @@ export function Dashboard() {
     await signOut();
   };
 
-  // Loading state - show spinner until fully initialized with valid access status
   if (isLoading || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -58,27 +60,13 @@ export function Dashboard() {
     );
   }
 
-  // Error state - show retry UI
   if (error && !canAccess) {
     const errorMessages: Record<string, { title: string; description: string }> = {
-      TOKEN_MISSING: {
-        title: 'Sessão expirada',
-        description: 'Sua sessão expirou. Tente novamente ou faça login novamente.',
-      },
-      NETWORK_ERROR: {
-        title: 'Erro de conexão',
-        description: 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.',
-      },
-      TIMEOUT: {
-        title: 'Tempo esgotado',
-        description: 'A verificação demorou mais que o esperado. Tente novamente.',
-      },
+      TOKEN_MISSING: { title: 'Sessão expirada', description: 'Sua sessão expirou. Tente novamente ou faça login novamente.' },
+      NETWORK_ERROR: { title: 'Erro de conexão', description: 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.' },
+      TIMEOUT: { title: 'Tempo esgotado', description: 'A verificação demorou mais que o esperado. Tente novamente.' },
     };
-
-    const errorInfo = errorMessages[error] || {
-      title: 'Erro inesperado',
-      description: 'Ocorreu um erro ao verificar sua assinatura.',
-    };
+    const errorInfo = errorMessages[error] || { title: 'Erro inesperado', description: 'Ocorreu um erro ao verificar sua assinatura.' };
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -86,31 +74,16 @@ export function Dashboard() {
           <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
             <AlertCircle className="w-8 h-8 text-destructive" />
           </div>
-          
           <div className="space-y-2">
             <h1 className="text-xl font-semibold text-foreground">{errorInfo.title}</h1>
             <p className="text-muted-foreground">{errorInfo.description}</p>
           </div>
-
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button
-              onClick={handleRetry}
-              disabled={isRetrying}
-              className="min-h-[44px]"
-            >
-              {isRetrying ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4 mr-2" />
-              )}
+            <Button onClick={handleRetry} disabled={isRetrying} className="min-h-[44px]">
+              {isRetrying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
               Tentar novamente
             </Button>
-            
-            <Button
-              variant="outline"
-              onClick={handleSignOut}
-              className="min-h-[44px]"
-            >
+            <Button variant="outline" onClick={handleSignOut} className="min-h-[44px]">
               <LogOut className="w-4 h-4 mr-2" />
               Sair
             </Button>
@@ -120,13 +93,48 @@ export function Dashboard() {
     );
   }
 
-  // Paywall for expired users
-  if (initialized && !canAccess) {
-    return <SubscriptionPaywall />;
-  }
-
   const handleSearchNavigate = (page: string) => {
     setCurrentPage(page as PageType);
+  };
+
+  // Determine if the current page is accessible
+  const isPageAccessible = canAccess || FREE_PAGES.includes(currentPage);
+
+  // Force navigation to allowed page if expired user tries to access restricted page
+  const handlePageChange = (page: PageType) => {
+    setCurrentPage(page);
+  };
+
+  const renderPageContent = () => {
+    // If user doesn't have access and page is not free, show paywall inline
+    if (!canAccess && !FREE_PAGES.includes(currentPage)) {
+      return <SubscriptionPaywall />;
+    }
+
+    switch (currentPage) {
+      case 'dashboard': return <DashboardHome onNavigate={(page) => setCurrentPage(page as PageType)} />;
+      case 'products': return <ProductsList />;
+      case 'product-categories': return <ProductCategoriesList />;
+      case 'recipes': return <RecipesList />;
+      case 'recipe-categories': return <RecipeCategoriesList />;
+      case 'ingredients': return <IngredientsList />;
+      case 'categories': return <CategoriesList />;
+      case 'decorations': return <DecorationsList />;
+      case 'decoration-categories': return <DecorationCategoriesList />;
+      case 'packaging': return <PackagingList />;
+      case 'packaging-categories': return <PackagingCategoriesList />;
+      case 'clients': return <ClientsList />;
+      case 'orders': return <OrdersList />;
+      case 'shopping-list': return <ShoppingList />;
+      case 'cash-flow': return <TransactionsList />;
+      case 'reports': return <RevenueReport />;
+      case 'receivables': return <ReceivablesList />;
+      case 'settings': return <UserSettings />;
+      case 'profile': return <ProfileSettings />;
+      case 'support': return <SupportPage />;
+      case 'updates': return <UpdatesPage />;
+      default: return <DashboardHome onNavigate={(page) => setCurrentPage(page as PageType)} />;
+    }
   };
 
   return (
@@ -137,28 +145,8 @@ export function Dashboard() {
         onOpenChange={setSearchOpen} 
         onNavigate={handleSearchNavigate}
       />
-      <AppLayout currentPage={currentPage} onPageChange={setCurrentPage}>
-        {currentPage === 'dashboard' && <DashboardHome onNavigate={(page) => setCurrentPage(page as PageType)} />}
-        {currentPage === 'products' && <ProductsList />}
-        {currentPage === 'product-categories' && <ProductCategoriesList />}
-        {currentPage === 'recipes' && <RecipesList />}
-        {currentPage === 'recipe-categories' && <RecipeCategoriesList />}
-        {currentPage === 'ingredients' && <IngredientsList />}
-        {currentPage === 'categories' && <CategoriesList />}
-        {currentPage === 'decorations' && <DecorationsList />}
-        {currentPage === 'decoration-categories' && <DecorationCategoriesList />}
-        {currentPage === 'packaging' && <PackagingList />}
-        {currentPage === 'packaging-categories' && <PackagingCategoriesList />}
-        {currentPage === 'clients' && <ClientsList />}
-        {currentPage === 'orders' && <OrdersList />}
-        {currentPage === 'shopping-list' && <ShoppingList />}
-        {currentPage === 'cash-flow' && <TransactionsList />}
-        {currentPage === 'reports' && <RevenueReport />}
-        {currentPage === 'receivables' && <ReceivablesList />}
-        {currentPage === 'settings' && <UserSettings />}
-        {currentPage === 'profile' && <ProfileSettings />}
-        {currentPage === 'support' && <SupportPage />}
-        {currentPage === 'updates' && <UpdatesPage />}
+      <AppLayout currentPage={currentPage} onPageChange={handlePageChange} canAccess={canAccess}>
+        {renderPageContent()}
       </AppLayout>
     </>
   );

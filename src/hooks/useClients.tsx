@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { ensureSessionUserId } from '@/lib/ensure-session';
 
 export interface Client {
   id: string;
@@ -44,128 +45,63 @@ export function useClients() {
     queryKey: ['clients', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('name');
-
+      const { data, error } = await supabase.from('clients').select('*').eq('user_id', user.id).order('name');
       if (error) throw error;
 
-      // Get order counts per client
-      const { data: orderCounts, error: countError } = await supabase
-        .from('orders')
-        .select('client_id')
-        .eq('user_id', user.id);
-
+      const { data: orderCounts, error: countError } = await supabase.from('orders').select('client_id').eq('user_id', user.id);
       if (countError) throw countError;
 
       const countsMap: Record<string, number> = {};
-      orderCounts?.forEach((o: { client_id: string }) => {
-        countsMap[o.client_id] = (countsMap[o.client_id] || 0) + 1;
-      });
+      orderCounts?.forEach((o: { client_id: string }) => { countsMap[o.client_id] = (countsMap[o.client_id] || 0) + 1; });
 
-      return (data || []).map((client) => ({
-        ...client,
-        orders_count: countsMap[client.id] || 0,
-      })) as Client[];
+      return (data || []).map((client) => ({ ...client, orders_count: countsMap[client.id] || 0 })) as Client[];
     },
     enabled: !!user?.id,
   });
 
   const createClient = useMutation({
     mutationFn: async (data: ClientFormData) => {
-      if (!user?.id) throw new Error('Usuário não autenticado');
-
-      const { data: client, error } = await supabase
-        .from('clients')
-        .insert({
-          user_id: user.id,
-          name: data.name,
-          phone: data.phone || null,
-          email: data.email || null,
-          address: data.address || null,
-          neighborhood: data.neighborhood || null,
-          city: data.city || null,
-          state: data.state || null,
-          zip_code: data.zip_code || null,
-          instagram: data.instagram || null,
-          whatsapp: data.whatsapp || null,
-          notes: data.notes || null,
-        })
-        .select()
-        .single();
-
+      const userId = await ensureSessionUserId();
+      const { data: client, error } = await supabase.from('clients').insert({
+        user_id: userId, name: data.name, phone: data.phone || null, email: data.email || null,
+        address: data.address || null, neighborhood: data.neighborhood || null, city: data.city || null,
+        state: data.state || null, zip_code: data.zip_code || null, instagram: data.instagram || null,
+        whatsapp: data.whatsapp || null, notes: data.notes || null,
+      }).select().single();
       if (error) throw error;
       return client;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      toast.success('Cliente cadastrado com sucesso!');
-    },
-    onError: (error) => {
-      console.error('Erro ao criar cliente:', error);
-      toast.error('Erro ao cadastrar cliente');
-    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['clients'] }); toast.success('Cliente cadastrado com sucesso!'); },
+    onError: (error) => { console.error('Erro ao criar cliente:', error); toast.error('Erro ao cadastrar cliente'); },
   });
 
   const updateClient = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ClientFormData }) => {
-      const { error } = await supabase
-        .from('clients')
-        .update({
-          name: data.name,
-          phone: data.phone || null,
-          email: data.email || null,
-          address: data.address || null,
-          neighborhood: data.neighborhood || null,
-          city: data.city || null,
-          state: data.state || null,
-          zip_code: data.zip_code || null,
-          instagram: data.instagram || null,
-          whatsapp: data.whatsapp || null,
-          notes: data.notes || null,
-        })
-        .eq('id', id);
-
+      await ensureSessionUserId();
+      const { error } = await supabase.from('clients').update({
+        name: data.name, phone: data.phone || null, email: data.email || null,
+        address: data.address || null, neighborhood: data.neighborhood || null, city: data.city || null,
+        state: data.state || null, zip_code: data.zip_code || null, instagram: data.instagram || null,
+        whatsapp: data.whatsapp || null, notes: data.notes || null,
+      }).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      toast.success('Cliente atualizado com sucesso!');
-    },
-    onError: (error) => {
-      console.error('Erro ao atualizar cliente:', error);
-      toast.error('Erro ao atualizar cliente');
-    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['clients'] }); toast.success('Cliente atualizado com sucesso!'); },
+    onError: (error) => { console.error('Erro ao atualizar cliente:', error); toast.error('Erro ao atualizar cliente'); },
   });
 
   const deleteClient = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('clients')
-        .delete()
-        .eq('id', id);
-
+      await ensureSessionUserId();
+      const { error } = await supabase.from('clients').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      toast.success('Cliente excluído com sucesso!');
-    },
-    onError: (error) => {
-      console.error('Erro ao excluir cliente:', error);
-      toast.error('Erro ao excluir cliente');
-    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['clients'] }); toast.success('Cliente excluído com sucesso!'); },
+    onError: (error) => { console.error('Erro ao excluir cliente:', error); toast.error('Erro ao excluir cliente'); },
   });
 
-  return {
-    clients,
-    isLoading,
-    error,
-    createClient,
-    updateClient,
-    deleteClient,
-  };
+  return { clients, isLoading, error, createClient, updateClient, deleteClient };
 }

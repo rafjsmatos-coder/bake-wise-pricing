@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { ensureSessionUserId } from '@/lib/ensure-session';
 import type { MeasurementUnit } from '@/lib/unit-conversion';
 
 export interface Ingredient {
@@ -70,12 +71,12 @@ export function useIngredients() {
 
   const createIngredient = useMutation({
     mutationFn: async (data: CreateIngredientData) => {
-      if (!user) throw new Error('User not authenticated');
+      const userId = await ensureSessionUserId();
 
       const { data: ingredient, error } = await supabase
         .from('ingredients')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           ...data,
         })
         .select(`
@@ -91,6 +92,7 @@ export function useIngredients() {
       if (error) throw error;
       return ingredient as Ingredient;
     },
+    retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
       toast({
@@ -109,6 +111,7 @@ export function useIngredients() {
 
   const updateIngredient = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateIngredientData }) => {
+      await ensureSessionUserId();
       const { data: ingredient, error } = await supabase
         .from('ingredients')
         .update(data)
@@ -126,9 +129,9 @@ export function useIngredients() {
       if (error) throw error;
       return ingredient as Ingredient;
     },
+    retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
-      // Invalidate recipes to trigger cost recalculation with updated prices
       queryClient.invalidateQueries({ queryKey: ['recipes'] });
       toast({
         title: 'Ingrediente atualizado',
@@ -146,6 +149,7 @@ export function useIngredients() {
 
   const deleteIngredient = useMutation({
     mutationFn: async (id: string) => {
+      await ensureSessionUserId();
       const { error } = await supabase
         .from('ingredients')
         .delete()
@@ -153,6 +157,7 @@ export function useIngredients() {
 
       if (error) throw error;
     },
+    retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
       toast({

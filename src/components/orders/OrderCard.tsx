@@ -1,7 +1,7 @@
 import { Order } from '@/hooks/useOrders';
 import { Button } from '@/components/ui/button';
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
-import { Eye, Pencil, Trash2, Calendar, User, Copy } from 'lucide-react';
+import { Eye, Pencil, Trash2, Calendar, User, Copy, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/product-cost-calculator';
@@ -15,6 +15,9 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order, onView, onEdit, onDelete, onDuplicate }: OrderCardProps) {
+  const discount = order.discount || 0;
+  const effectiveTotal = order.total_amount - discount;
+
   return (
     <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
       {/* Header */}
@@ -68,12 +71,23 @@ export function OrderCard({ order, onView, onEdit, onDelete, onDuplicate }: Orde
       <div className="flex items-center gap-2 flex-wrap mb-3">
         <OrderStatusBadge status={order.status} />
         <OrderStatusBadge status={order.payment_status} type="payment" />
+        {discount > 0 && (
+          <span className="inline-flex items-center gap-1 text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full">
+            <Tag className="h-3 w-3" />
+            -{formatCurrency(discount)}
+          </span>
+        )}
       </div>
 
       {/* Footer */}
       <div className="pt-3 border-t border-border flex items-center justify-between">
         <span className="text-sm text-muted-foreground">Total</span>
-        <span className="font-bold text-primary">{formatCurrency(order.total_amount)}</span>
+        <div className="text-right">
+          {discount > 0 && (
+            <span className="text-xs text-muted-foreground line-through mr-2">{formatCurrency(order.total_amount)}</span>
+          )}
+          <span className="font-bold text-primary">{formatCurrency(effectiveTotal)}</span>
+        </div>
       </div>
     </div>
   );
