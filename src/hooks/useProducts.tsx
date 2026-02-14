@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { ensureSessionUserId } from '@/lib/ensure-session';
 import type { Database } from '@/integrations/supabase/types';
 
 type MeasurementUnit = Database['public']['Enums']['measurement_unit'];
@@ -122,13 +123,11 @@ export function useProducts() {
 
   const createProduct = useMutation({
     mutationFn: async (productData: ProductFormData) => {
-      if (!user?.id) throw new Error('Usuário não autenticado');
-      
-      // Create the product
+      const userId = await ensureSessionUserId();
       const { data: product, error: productError } = await supabase
         .from('products')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           name: productData.name,
           category_id: productData.category_id || null,
           decoration_time_minutes: productData.decoration_time_minutes ?? 0,
@@ -141,7 +140,6 @@ export function useProducts() {
       
       if (productError) throw productError;
 
-      // Insert recipes
       if (productData.recipes?.length) {
         const { error } = await supabase
           .from('product_recipes')
@@ -154,7 +152,6 @@ export function useProducts() {
         if (error) throw error;
       }
 
-      // Insert ingredients
       if (productData.ingredients?.length) {
         const { error } = await supabase
           .from('product_ingredients')
@@ -167,7 +164,6 @@ export function useProducts() {
         if (error) throw error;
       }
 
-      // Insert decorations
       if (productData.decorations?.length) {
         const { error } = await supabase
           .from('product_decorations')
@@ -180,7 +176,6 @@ export function useProducts() {
         if (error) throw error;
       }
 
-      // Insert packaging
       if (productData.packaging?.length) {
         const { error } = await supabase
           .from('product_packaging')
@@ -194,6 +189,7 @@ export function useProducts() {
 
       return product;
     },
+    retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Produto criado com sucesso!');
@@ -206,7 +202,8 @@ export function useProducts() {
 
   const updateProduct = useMutation({
     mutationFn: async ({ id, ...productData }: { id: string } & ProductFormData) => {
-      // Update the product
+      await ensureSessionUserId();
+      
       const { error: productError } = await supabase
         .from('products')
         .update({
@@ -221,13 +218,11 @@ export function useProducts() {
       
       if (productError) throw productError;
 
-      // Delete existing relations and re-insert
       await supabase.from('product_recipes').delete().eq('product_id', id);
       await supabase.from('product_ingredients').delete().eq('product_id', id);
       await supabase.from('product_decorations').delete().eq('product_id', id);
       await supabase.from('product_packaging').delete().eq('product_id', id);
 
-      // Insert recipes
       if (productData.recipes?.length) {
         const { error } = await supabase
           .from('product_recipes')
@@ -240,7 +235,6 @@ export function useProducts() {
         if (error) throw error;
       }
 
-      // Insert ingredients
       if (productData.ingredients?.length) {
         const { error } = await supabase
           .from('product_ingredients')
@@ -253,7 +247,6 @@ export function useProducts() {
         if (error) throw error;
       }
 
-      // Insert decorations
       if (productData.decorations?.length) {
         const { error } = await supabase
           .from('product_decorations')
@@ -266,7 +259,6 @@ export function useProducts() {
         if (error) throw error;
       }
 
-      // Insert packaging
       if (productData.packaging?.length) {
         const { error } = await supabase
           .from('product_packaging')
@@ -280,6 +272,7 @@ export function useProducts() {
 
       return { id };
     },
+    retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Produto atualizado com sucesso!');
@@ -292,6 +285,8 @@ export function useProducts() {
 
   const deleteProduct = useMutation({
     mutationFn: async (id: string) => {
+      await ensureSessionUserId();
+      
       const { error } = await supabase
         .from('products')
         .delete()
@@ -299,6 +294,7 @@ export function useProducts() {
       
       if (error) throw error;
     },
+    retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Produto excluído com sucesso!');
@@ -311,7 +307,7 @@ export function useProducts() {
 
   const duplicateProduct = useMutation({
     mutationFn: async (product: Product) => {
-      if (!user?.id) throw new Error('Usuário não autenticado');
+      await ensureSessionUserId();
       
       const productData: ProductFormData = {
         name: `${product.name} (cópia)`,

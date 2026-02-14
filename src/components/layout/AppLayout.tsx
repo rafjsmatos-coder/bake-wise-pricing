@@ -69,7 +69,10 @@ interface AppLayoutProps {
   children: ReactNode;
   currentPage: PageType;
   onPageChange: (page: PageType) => void;
+  canAccess?: boolean;
 }
+
+const FREE_PAGES: PageType[] = ['dashboard', 'support'];
 
 export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProps) {
   const { user, signOut } = useAuth();

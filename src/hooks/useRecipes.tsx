@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { ensureSessionUserId } from '@/lib/ensure-session';
 import type { MeasurementUnit } from '@/lib/unit-conversion';
 
 export interface RecipeIngredient {
@@ -70,6 +71,15 @@ export interface UpdateRecipeData extends Partial<Omit<CreateRecipeData, 'ingred
   ingredients?: CreateRecipeIngredientData[];
 }
 
+const RECIPE_SELECT = `
+  *,
+  recipe_categories (id, name, color),
+  recipe_ingredients (
+    id, recipe_id, ingredient_id, quantity, unit, created_at,
+    ingredients (id, name, purchase_price, package_quantity, unit, cost_per_unit)
+  )
+`;
+
 export function useRecipes() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -80,30 +90,7 @@ export function useRecipes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('recipes')
-        .select(`
-          *,
-          recipe_categories (
-            id,
-            name,
-            color
-          ),
-          recipe_ingredients (
-            id,
-            recipe_id,
-            ingredient_id,
-            quantity,
-            unit,
-            created_at,
-            ingredients (
-              id,
-              name,
-              purchase_price,
-              package_quantity,
-              unit,
-              cost_per_unit
-            )
-          )
-        `)
+        .select(RECIPE_SELECT)
         .order('name');
 
       if (error) throw error;
@@ -114,206 +101,111 @@ export function useRecipes() {
 
   const createRecipe = useMutation({
     mutationFn: async (data: CreateRecipeData) => {
-      if (!user) throw new Error('User not authenticated');
-
+      const userId = await ensureSessionUserId();
       const { ingredients, ...recipeData } = data;
 
-      // Create the recipe first
       const { data: recipe, error: recipeError } = await supabase
         .from('recipes')
-        .insert({
-          user_id: user.id,
-          ...recipeData,
-        })
+        .insert({ user_id: userId, ...recipeData })
         .select()
         .single();
 
       if (recipeError) throw recipeError;
 
-      // Then add the ingredients
       if (ingredients.length > 0) {
-        const ingredientsToInsert = ingredients.map(ing => ({
-          recipe_id: recipe.id,
-          ingredient_id: ing.ingredient_id,
-          quantity: ing.quantity,
-          unit: ing.unit,
-        }));
-
         const { error: ingredientsError } = await supabase
           .from('recipe_ingredients')
-          .insert(ingredientsToInsert);
-
+          .insert(ingredients.map(ing => ({
+            recipe_id: recipe.id,
+            ingredient_id: ing.ingredient_id,
+            quantity: ing.quantity,
+            unit: ing.unit,
+          })));
         if (ingredientsError) throw ingredientsError;
       }
 
-      // Fetch the complete recipe with relations
       const { data: fullRecipe, error: fetchError } = await supabase
         .from('recipes')
-        .select(`
-          *,
-          recipe_categories (
-            id,
-            name,
-            color
-          ),
-          recipe_ingredients (
-            id,
-            recipe_id,
-            ingredient_id,
-            quantity,
-            unit,
-            created_at,
-            ingredients (
-              id,
-              name,
-              purchase_price,
-              package_quantity,
-              unit,
-              cost_per_unit
-            )
-          )
-        `)
+        .select(RECIPE_SELECT)
         .eq('id', recipe.id)
         .single();
 
       if (fetchError) throw fetchError;
       return fullRecipe as Recipe;
     },
+    retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes', user?.id] });
-      toast({
-        title: 'Receita criada',
-        description: 'A receita foi adicionada com sucesso.',
-      });
+      toast({ title: 'Receita criada', description: 'A receita foi adicionada com sucesso.' });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro ao criar receita',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao criar receita', description: error.message, variant: 'destructive' });
     },
   });
 
   const updateRecipe = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRecipeData }) => {
+      await ensureSessionUserId();
       const { ingredients, ...recipeData } = data;
 
-      // Update the recipe
       if (Object.keys(recipeData).length > 0) {
-        const { error: recipeError } = await supabase
-          .from('recipes')
-          .update(recipeData)
-          .eq('id', id);
-
+        const { error: recipeError } = await supabase.from('recipes').update(recipeData).eq('id', id);
         if (recipeError) throw recipeError;
       }
 
-      // Update ingredients if provided
       if (ingredients !== undefined) {
-        // Delete existing ingredients
-        const { error: deleteError } = await supabase
-          .from('recipe_ingredients')
-          .delete()
-          .eq('recipe_id', id);
-
-        if (deleteError) throw deleteError;
-
-        // Insert new ingredients
+        await supabase.from('recipe_ingredients').delete().eq('recipe_id', id);
         if (ingredients.length > 0) {
-          const ingredientsToInsert = ingredients.map(ing => ({
-            recipe_id: id,
-            ingredient_id: ing.ingredient_id,
-            quantity: ing.quantity,
-            unit: ing.unit,
-          }));
-
           const { error: ingredientsError } = await supabase
             .from('recipe_ingredients')
-            .insert(ingredientsToInsert);
-
+            .insert(ingredients.map(ing => ({
+              recipe_id: id,
+              ingredient_id: ing.ingredient_id,
+              quantity: ing.quantity,
+              unit: ing.unit,
+            })));
           if (ingredientsError) throw ingredientsError;
         }
       }
 
-      // Fetch the complete recipe with relations
       const { data: fullRecipe, error: fetchError } = await supabase
         .from('recipes')
-        .select(`
-          *,
-          recipe_categories (
-            id,
-            name,
-            color
-          ),
-          recipe_ingredients (
-            id,
-            recipe_id,
-            ingredient_id,
-            quantity,
-            unit,
-            created_at,
-            ingredients (
-              id,
-              name,
-              purchase_price,
-              package_quantity,
-              unit,
-              cost_per_unit
-            )
-          )
-        `)
+        .select(RECIPE_SELECT)
         .eq('id', id)
         .single();
 
       if (fetchError) throw fetchError;
       return fullRecipe as Recipe;
     },
+    retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes', user?.id] });
-      toast({
-        title: 'Receita atualizada',
-        description: 'A receita foi atualizada com sucesso.',
-      });
+      toast({ title: 'Receita atualizada', description: 'A receita foi atualizada com sucesso.' });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro ao atualizar receita',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao atualizar receita', description: error.message, variant: 'destructive' });
     },
   });
 
   const deleteRecipe = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('recipes')
-        .delete()
-        .eq('id', id);
-
+      await ensureSessionUserId();
+      const { error } = await supabase.from('recipes').delete().eq('id', id);
       if (error) throw error;
     },
+    retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes', user?.id] });
-      toast({
-        title: 'Receita excluída',
-        description: 'A receita foi excluída com sucesso.',
-      });
+      toast({ title: 'Receita excluída', description: 'A receita foi excluída com sucesso.' });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro ao excluir receita',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao excluir receita', description: error.message, variant: 'destructive' });
     },
   });
 
   const duplicateRecipe = useMutation({
     mutationFn: async (recipe: Recipe) => {
-      if (!user) throw new Error('User not authenticated');
-
+      await ensureSessionUserId();
       const newRecipeData: CreateRecipeData = {
         name: `${recipe.name} (cópia)`,
         category_id: recipe.category_id,
@@ -331,21 +223,13 @@ export function useRecipes() {
           unit: ing.unit,
         })) || [],
       };
-
       return createRecipe.mutateAsync(newRecipeData);
     },
     onSuccess: () => {
-      toast({
-        title: 'Receita duplicada',
-        description: 'A cópia da receita foi criada com sucesso.',
-      });
+      toast({ title: 'Receita duplicada', description: 'A cópia da receita foi criada com sucesso.' });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro ao duplicar receita',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao duplicar receita', description: error.message, variant: 'destructive' });
     },
   });
 

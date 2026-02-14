@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { convertUnit, type MeasurementUnit } from '@/lib/unit-conversion';
 
 interface MaterialItem {
   id: string;
@@ -19,6 +20,7 @@ interface MaterialItem {
   type: 'ingredient' | 'decoration' | 'packaging';
   quantity: number;
   unit: string;
+  stockUnit: string;
   currentStock: number | null;
   checked: boolean;
 }
@@ -66,6 +68,7 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
               type: 'ingredient',
               quantity: pi.quantity * qty,
               unit: pi.unit,
+              stockUnit: pi.ingredient.unit,
               currentStock: pi.ingredient.stock_quantity,
               checked: true,
             });
@@ -96,6 +99,7 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
                 type: 'ingredient',
                 quantity: ri.quantity * recipeMultiplier,
                 unit: ri.unit,
+                stockUnit: ri.ingredient.unit,
                 currentStock: ri.ingredient.stock_quantity,
                 checked: true,
               });
@@ -117,6 +121,7 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
               type: 'decoration',
               quantity: pd.quantity * qty,
               unit: pd.unit,
+              stockUnit: pd.decoration.unit,
               currentStock: pd.decoration.stock_quantity,
               checked: true,
             });
@@ -137,6 +142,7 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
               type: 'packaging',
               quantity: pp.quantity * qty,
               unit: pp.packaging.unit,
+              stockUnit: pp.packaging.unit,
               currentStock: pp.packaging.stock_quantity,
               checked: true,
             });
@@ -155,7 +161,16 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
         }
       }
 
-      setMaterials(Array.from(aggregated.values()));
+      const result = Array.from(aggregated.values());
+
+      // Auto-skip if no materials have stock defined
+      const hasAnyStock = result.some(m => m.currentStock !== null);
+      if (!hasAnyStock) {
+        onOpenChange(false);
+        return;
+      }
+
+      setMaterials(result);
     } catch (err) {
       console.error('Error loading materials:', err);
       toast.error('Erro ao carregar materiais');
@@ -170,13 +185,23 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
     );
   };
 
+  const getConvertedQty = (m: MaterialItem): number | null => {
+    if (m.unit === m.stockUnit) return m.quantity;
+    return convertUnit(m.quantity, m.unit as MeasurementUnit, m.stockUnit as MeasurementUnit);
+  };
+
   const handleConfirm = async () => {
     setSubmitting(true);
     try {
       const checked = materials.filter((m) => m.checked && m.currentStock !== null);
 
       for (const m of checked) {
-        const newStock = Math.max(0, (m.currentStock || 0) - m.quantity);
+        const convertedQty = getConvertedQty(m);
+        if (convertedQty === null) {
+          console.warn(`Cannot convert ${m.unit} to ${m.stockUnit} for ${m.name}, skipping`);
+          continue;
+        }
+        const newStock = Math.max(0, (m.currentStock || 0) - convertedQty);
         const table = m.type === 'ingredient' ? 'ingredients' : m.type === 'decoration' ? 'decorations' : 'packaging';
         await supabase.from(table).update({ stock_quantity: newStock }).eq('id', m.id);
       }
@@ -245,6 +270,9 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
                   </div>
                   {items.map((m, idx) => {
                     const globalIdx = materials.indexOf(m);
+                    const converted = getConvertedQty(m);
+                    const displayQty = converted !== null ? converted : m.quantity;
+                    const displayUnit = converted !== null ? m.stockUnit : m.unit;
                     return (
                       <label
                         key={`${m.id}-${idx}`}
@@ -253,12 +281,14 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
                         <Checkbox
                           checked={m.checked}
                           onCheckedChange={() => toggleItem(globalIdx)}
+                          disabled={m.currentStock === null}
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{m.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            Descontar: {formatQty(m.quantity)} {m.unit}
-                            {m.currentStock !== null && ` • Estoque: ${formatQty(m.currentStock)} ${m.unit}`}
+                            Descontar: {formatQty(displayQty)} {displayUnit}
+                            {m.currentStock !== null && ` • Estoque: ${formatQty(m.currentStock)} ${m.stockUnit}`}
+                            {m.currentStock === null && ' • Sem estoque cadastrado'}
                           </p>
                         </div>
                       </label>
@@ -276,7 +306,7 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={submitting || materials.filter((m) => m.checked).length === 0}
+            disabled={submitting || materials.filter((m) => m.checked && m.currentStock !== null).length === 0}
           >
             {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Confirmar Baixa

@@ -29,17 +29,12 @@ interface OrderDetailsProps {
   onDuplicate?: (order: Order) => void;
 }
 
-export function OrderDetails({
-  open,
-  onOpenChange,
-  order,
-  onEdit,
-  onStatusChange,
-  onDuplicate,
-}: OrderDetailsProps) {
+export function OrderDetails({ open, onOpenChange, order, onEdit, onStatusChange, onDuplicate }: OrderDetailsProps) {
   if (!order) return null;
 
-  const remainingAmount = order.total_amount - order.paid_amount;
+  const discount = order.discount || 0;
+  const effectiveTotal = order.total_amount - discount;
+  const remainingAmount = effectiveTotal - order.paid_amount;
 
   const handleEdit = () => {
     onOpenChange(false);
@@ -59,7 +54,15 @@ export function OrderDetails({
       ? `\nEntrega: ${format(new Date(order.delivery_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
       : '';
     const notesText = order.notes ? `\nObservações: ${order.notes}` : '';
-    const message = `Olá ${clientName}! Segue o orçamento do seu pedido:\n\n${itemsText}\n\nTotal: ${formatCurrency(order.total_amount)}${deliveryText}${notesText}\n\nObrigado(a) pela preferência! 🎂`;
+    
+    let discountText = '';
+    let totalText = `\nTotal: ${formatCurrency(order.total_amount)}`;
+    if (discount > 0) {
+      discountText = `\nDesconto: -${formatCurrency(discount)}`;
+      totalText = `\nSubtotal: ${formatCurrency(order.total_amount)}${discountText}\n*Total: ${formatCurrency(effectiveTotal)}*`;
+    }
+    
+    const message = `Olá ${clientName}! Segue o orçamento do seu pedido:\n\n${itemsText}${totalText}${deliveryText}${notesText}\n\nObrigado(a) pela preferência! 🎂`;
     const url = `https://wa.me/55${clientWhatsapp}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
@@ -101,9 +104,7 @@ export function OrderDetails({
             {order.delivery_date && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                <span>
-                  Entrega: {format(new Date(order.delivery_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                </span>
+                <span>Entrega: {format(new Date(order.delivery_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
               </div>
             )}
           </div>
@@ -112,18 +113,11 @@ export function OrderDetails({
           <div className="space-y-3">
             <h4 className="text-sm font-semibold">Status</h4>
             <div className="flex items-center gap-3">
-              <Select
-                value={order.status}
-                onValueChange={(value) => onStatusChange(order.id, value)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={order.status} onValueChange={(value) => onStatusChange(order.id, value)}>
+                <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ORDER_STATUSES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -137,17 +131,10 @@ export function OrderDetails({
             {order.order_items && order.order_items.length > 0 ? (
               <div className="space-y-2">
                 {order.order_items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
+                  <div key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {item.product?.name || 'Produto removido'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.quantity}x {formatCurrency(item.unit_price)}
-                      </p>
+                      <p className="text-sm font-medium truncate">{item.product?.name || 'Produto removido'}</p>
+                      <p className="text-xs text-muted-foreground">{item.quantity}x {formatCurrency(item.unit_price)}</p>
                     </div>
                     <span className="text-sm font-medium">{formatCurrency(item.total_price)}</span>
                   </div>
@@ -161,8 +148,18 @@ export function OrderDetails({
           {/* Resumo financeiro */}
           <div className="space-y-2 pt-3 border-t border-border">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Total</span>
-              <span className="font-bold">{formatCurrency(order.total_amount)}</span>
+              <span className="text-muted-foreground">Subtotal</span>
+              <span>{formatCurrency(order.total_amount)}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Desconto</span>
+                <span className="text-accent">-{formatCurrency(discount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground font-medium">Total</span>
+              <span className="font-bold">{formatCurrency(effectiveTotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Valor pago</span>
@@ -171,9 +168,7 @@ export function OrderDetails({
             {remainingAmount > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Saldo restante</span>
-                <span className="text-destructive font-medium">
-                  {formatCurrency(remainingAmount)}
-                </span>
+                <span className="text-destructive font-medium">{formatCurrency(remainingAmount)}</span>
               </div>
             )}
           </div>
