@@ -133,8 +133,8 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
         dimensions: data.dimensions || null,
         brand: data.brand || null,
         supplier: data.supplier || null,
-        stock_quantity: data.stock_quantity ?? null,
-        min_stock_alert: data.min_stock_alert ?? null,
+        stock_quantity: data.stock_quantity || null,
+        min_stock_alert: data.min_stock_alert || null,
       };
 
       if (packaging) {
