@@ -38,6 +38,7 @@ export function StockAlertsCard({ onNavigate }: StockAlertsCardProps) {
     if (
       item.stock_quantity !== null && 
       item.min_stock_alert !== null && 
+      item.min_stock_alert > 0 &&
       item.stock_quantity <= item.min_stock_alert
     ) {
       lowStockItems.push({
@@ -56,6 +57,7 @@ export function StockAlertsCard({ onNavigate }: StockAlertsCardProps) {
     if (
       item.stock_quantity !== null && 
       item.min_stock_alert !== null && 
+      item.min_stock_alert > 0 &&
       item.stock_quantity <= item.min_stock_alert
     ) {
       lowStockItems.push({
@@ -74,6 +76,7 @@ export function StockAlertsCard({ onNavigate }: StockAlertsCardProps) {
     if (
       item.stock_quantity !== null && 
       item.min_stock_alert !== null && 
+      item.min_stock_alert > 0 &&
       item.stock_quantity <= item.min_stock_alert
     ) {
       lowStockItems.push({
