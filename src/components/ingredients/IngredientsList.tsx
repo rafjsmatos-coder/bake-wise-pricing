@@ -49,7 +49,10 @@ export function IngredientsList() {
 
   const groupedIngredients = useMemo(() => {
     if (categoryFilter !== 'all') {
-      return { [categoryFilter]: filteredIngredients };
+      const catName = categoryFilter === 'uncategorized' 
+        ? 'Sem categoria' 
+        : categories.find(c => c.id === categoryFilter)?.name || categoryFilter;
+      return { [catName]: filteredIngredients };
     }
 
     const groups: Record<string, Ingredient[]> = {};
@@ -75,7 +78,7 @@ export function IngredientsList() {
       });
 
     return sortedGroups;
-  }, [filteredIngredients, categoryFilter]);
+  }, [filteredIngredients, categoryFilter, categories]);
 
   const handleEdit = (ingredient: Ingredient) => {
     setEditingIngredient(ingredient);

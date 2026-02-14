@@ -21,7 +21,7 @@ import { ShoppingList } from '@/components/orders/ShoppingList';
 import { TransactionsList } from '@/components/financial/TransactionsList';
 import { RevenueReport } from '@/components/financial/RevenueReport';
 import { ReceivablesList } from '@/components/financial/ReceivablesList';
-import { TrialBanner } from '@/components/subscription/TrialBanner';
+
 import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -139,7 +139,7 @@ export function Dashboard() {
 
   return (
     <>
-      <TrialBanner />
+      
       <GlobalSearch 
         open={searchOpen} 
         onOpenChange={setSearchOpen} 
