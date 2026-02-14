@@ -24,7 +24,8 @@ import {
   Users,
   ClipboardList,
   ShoppingCart,
-  DollarSign
+  DollarSign,
+  Lock
 } from 'lucide-react';
 import { useSystemUpdates } from '@/hooks/useSystemUpdates';
 import { cn } from '@/lib/utils';
@@ -74,7 +75,7 @@ interface AppLayoutProps {
 
 const FREE_PAGES: PageType[] = ['dashboard', 'support'];
 
-export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProps) {
+export function AppLayout({ children, currentPage, onPageChange, canAccess = true }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { sidebarOpen, setSidebarOpen } = useSidebarControl();
@@ -190,6 +191,9 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
     return item.children?.some(child => child.id === currentPage) || false;
   };
 
+  const isPageFree = (page: PageType) => FREE_PAGES.includes(page);
+  const isItemLocked = (page: PageType) => !canAccess && !isPageFree(page);
+
   const handleNavClick = (page: PageType) => {
     onPageChange(page);
     setSidebarOpen(false);
@@ -242,12 +246,13 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
               const hasChildren = item.children && item.children.length > 0;
 
               if (hasChildren) {
+                const locked = isItemLocked(item.id);
                 return (
                   <Collapsible 
                     key={item.id} 
                     defaultOpen={isActive || hasActiveChild}
                   >
-                    <div className="space-y-1">
+                    <div className={cn("space-y-1", locked && "opacity-50")}>
                       {/* Parent button */}
                       <div className="flex items-center" data-tour={getTourAttribute(item.id)}>
                         <button
@@ -258,63 +263,73 @@ export function AppLayout({ children, currentPage, onPageChange }: AppLayoutProp
                               ? 'bg-accent text-accent-foreground'
                               : hasActiveChild
                                 ? 'text-foreground'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                            locked && 'pointer-events-none'
                           )}
                         >
                           <item.icon className="h-5 w-5" />
-                          <span className="font-medium">{item.label}</span>
+                          <span className="font-medium flex-1">{item.label}</span>
+                          {locked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
                         </button>
-                        <CollapsibleTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 shrink-0"
-                          >
-                            <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-                          </Button>
-                        </CollapsibleTrigger>
+                        {!locked && (
+                          <CollapsibleTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 shrink-0"
+                            >
+                              <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                            </Button>
+                          </CollapsibleTrigger>
+                        )}
                       </div>
 
                       {/* Children */}
-                      <CollapsibleContent>
-                        <div className="ml-6 pl-4 border-l border-border space-y-1">
-                          {item.children.map((child) => (
-                            <button
-                              key={child.id}
-                              onClick={() => handleNavClick(child.id)}
-                              className={cn(
-                                'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left text-sm',
-                                currentPage === child.id
-                                  ? 'bg-accent text-accent-foreground'
-                                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                              )}
-                            >
-                              <span>{child.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </CollapsibleContent>
+                      {!locked && (
+                        <CollapsibleContent>
+                          <div className="ml-6 pl-4 border-l border-border space-y-1">
+                            {item.children.map((child) => (
+                              <button
+                                key={child.id}
+                                onClick={() => handleNavClick(child.id)}
+                                className={cn(
+                                  'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left text-sm',
+                                  currentPage === child.id
+                                    ? 'bg-accent text-accent-foreground'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                )}
+                              >
+                                <span>{child.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      )}
                     </div>
                   </Collapsible>
                 );
               }
 
               // Simple item without children
+              const locked = isItemLocked(item.id);
               return (
                 <button
                   key={item.id}
-                  onClick={() => handleNavClick(item.id)}
+                  onClick={() => !locked && handleNavClick(item.id)}
                   data-tour={getTourAttribute(item.id)}
                   className={cn(
                     'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-left',
-                    isActive
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    locked
+                      ? 'opacity-50 cursor-default text-muted-foreground'
+                      : isActive
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >
                   <item.icon className="h-5 w-5" />
                   <span className="font-medium flex-1">{item.label}</span>
-                  {item.badge !== undefined && item.badge > 0 && (
+                  {locked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                  {!locked && item.badge !== undefined && item.badge > 0 && (
                     <span className="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">
                       {item.badge}
                     </span>
