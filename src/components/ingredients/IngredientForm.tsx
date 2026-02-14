@@ -131,8 +131,8 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
       brand: data.brand?.trim() || null,
       supplier: data.supplier?.trim() || null,
       expiry_date: data.expiry_date || null,
-      stock_quantity: data.stock_quantity ?? null,
-      min_stock_alert: data.min_stock_alert ?? null,
+      stock_quantity: data.stock_quantity || null,
+      min_stock_alert: data.min_stock_alert || null,
     };
 
     if (ingredient) {

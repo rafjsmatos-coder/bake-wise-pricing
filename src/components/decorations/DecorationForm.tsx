@@ -117,8 +117,8 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
       category_id: data.category_id || null,
       brand: data.brand?.trim() || null,
       supplier: data.supplier?.trim() || null,
-      stock_quantity: data.stock_quantity ?? null,
-      min_stock_alert: data.min_stock_alert ?? null,
+      stock_quantity: data.stock_quantity || null,
+      min_stock_alert: data.min_stock_alert || null,
     };
 
     if (decoration) {
