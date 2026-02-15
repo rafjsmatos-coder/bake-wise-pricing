@@ -24,8 +24,13 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      // Use custom edge function to send PT-BR recovery email via Resend
+      const { data, error } = await supabase.functions.invoke('send-auth-email', {
+        body: {
+          action: 'recovery',
+          email,
+          redirectTo: `${window.location.origin}/reset-password`,
+        },
       });
 
       if (error) {
