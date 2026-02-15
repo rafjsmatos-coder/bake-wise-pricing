@@ -1,1 +1,15 @@
 project_id = "ektodtogznnlwvcsawgu"
+
+[auth.email]
+# Sender name and email
+[auth.email.template.confirmation]
+subject = "PreciBake - Confirme seu e-mail"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "PreciBake - Redefinir sua senha"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "PreciBake - Confirme a alteração de e-mail"
+content_path = "./supabase/templates/email_change.html"
