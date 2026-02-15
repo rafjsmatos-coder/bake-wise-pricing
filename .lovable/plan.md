@@ -1,57 +1,57 @@
 
+## Otimizacoes de SEO para o PreciBake
 
-## Personalizar o sistema com a logo e icone do PreciBake
+### O que sera corrigido
 
-### Resumo
-Substituir o icone generico de bolo (Cake do Lucide) pela logo e icone oficiais do PreciBake em todo o sistema.
+**1. Idioma da pagina (html lang)**
+- Alterar `<html lang="en">` para `<html lang="pt-BR">` no `index.html`
 
-### Arquivos de imagem
+**2. Link canonico**
+- Alterar de `https://bake-wise-pricing.lovable.app/` para `https://precibake.com.br/`
+- Atualizar tambem as URLs em `og:url`
 
-Tres imagens serao copiadas para o projeto:
+**3. Titulo da pagina (muito curto)**
+- Atual (38 caracteres): "PreciBake - Gestao Completa para Confeitaria"
+- Novo (55+ caracteres): "PreciBake - Sistema de Gestao e Precificacao para Confeitaria"
+- Inclui palavras-chave importantes: "sistema", "precificacao", "confeitaria"
 
-- **Icone** (`src/assets/precibake-icon.jpeg`) - Etiqueta com "P", para uso em espacos pequenos (sidebar compacto, favicon, PWA)
-- **Logo sem slogan** (`src/assets/precibake-logo.jpeg`) - Icone + "PreciBake", para sidebar, headers e navegacao
-- **Logo com slogan** (`src/assets/precibake-logo-full.jpeg`) - Logo + "O ponto certo do preco", para landing page e telas de autenticacao
+**4. Meta descricao (muito longa, precisa ter 120-160 caracteres)**
+- Atual (174 caracteres): "PreciBake — Sistema completo para confeiteiros: precificacao automatica, gestao de pedidos, controle financeiro, lista de compras e orcamento via WhatsApp. Use no celular como app."
+- Nova (~155 caracteres): "PreciBake: sistema de precificacao e gestao para confeiteiros. Calcule precos, gerencie pedidos, controle financas e envie orcamentos via WhatsApp."
 
-Adicionalmente, o icone sera copiado para `public/` para uso como favicon e icones PWA.
+**5. Distribuicao de palavras-chave nas tags HTML**
+- Adicionar palavras-chave principais no titulo e na descricao de forma mais estrategica
+- Garantir que as tags `og:title` e `og:description` tambem reflitam as palavras-chave
 
-### Locais de substituicao
+**6. Rede social - Instagram**
+- Remover `twitter:site` com "@PreciBake" (nao existe Twitter)
+- Adicionar link do Instagram no Footer: `https://instagram.com/precibake`
 
-| Arquivo | Local | Imagem usada |
-|---------|-------|-------------|
-| `AppLayout.tsx` | Logo na sidebar + header mobile | Logo sem slogan |
-| `HeroSection.tsx` | Header da landing page | Logo sem slogan |
-| `StickyHeader.tsx` | Header fixo ao rolar | Logo sem slogan |
-| `Footer.tsx` | Rodape | Logo sem slogan |
-| `AuthForm.tsx` | Tela de login/cadastro | Logo com slogan |
-| `ForgotPasswordForm.tsx` | Tela de esqueci a senha | Icone |
-| `ResetPasswordForm.tsx` | Tela de redefinir senha | Icone |
-| `PrivacyPolicy.tsx` | Pagina de privacidade | Logo sem slogan |
-| `TermsOfService.tsx` | Pagina de termos | Logo sem slogan |
-| `ExampleSection.tsx` | Secao de exemplo na landing | Icone |
-| `index.html` | Favicon | Icone (via public/) |
+**7. Criar sitemap.xml**
+- Criar arquivo `public/sitemap.xml` com as paginas publicas do site
+- Atualizar `robots.txt` para referenciar o sitemap
+
+**8. Criar llms.txt**
+- Criar `public/llms.txt` com descricao do PreciBake para LLMs
+
+**9. Melhorar robots.txt**
+- Adicionar referencia ao sitemap
+- Formato mais limpo
+
+**10. Dados estruturados (JSON-LD)**
+- Atualizar URL do site para `precibake.com.br`
+- Adicionar `sameAs` com link do Instagram
 
 ### Detalhes tecnicos
 
-**1. Copiar imagens para o projeto**
-- `user-uploads://...3.jpeg` para `src/assets/precibake-icon.jpeg` e `public/precibake-icon.png`
-- `user-uploads://...2.jpeg` para `src/assets/precibake-logo.jpeg`
-- `user-uploads://...1.jpeg` para `src/assets/precibake-logo-full.jpeg`
+**Arquivos a editar:**
+- `index.html` - lang, title, meta description, canonical, og tags, twitter tags, JSON-LD
+- `public/robots.txt` - adicionar referencia ao sitemap
+- `src/components/landing/Footer.tsx` - adicionar link do Instagram
 
-**2. Em cada componente:**
-- Remover o import do `Cake` de lucide-react (quando nao usado para mais nada)
-- Importar a imagem adequada: `import precibakeLogo from '@/assets/precibake-logo.jpeg'`
-- Substituir `<Cake className="..." />` por `<img src={precibakeLogo} alt="PreciBake" className="..." />`
-- Ajustar tamanhos via classes Tailwind (`h-8 w-8`, `h-10`, etc.)
+**Arquivos a criar:**
+- `public/sitemap.xml` - mapa do site com paginas publicas
+- `public/llms.txt` - descricao do sistema para LLMs
 
-**3. Favicon e PWA**
-- Atualizar `index.html` para apontar para `/precibake-icon.png`
-- Atualizar `apple-touch-icon` para o novo icone
-- Atualizar os icones PWA em `vite.config.ts` se necessario
-
-**4. Remover containers de fundo**
-- Os `<div className="bg-accent/10 rounded-lg">` que envolviam o icone Cake serao removidos ou ajustados, ja que a logo tem seu proprio fundo/estilo
-
-### Observacao sobre qualidade
-Como voce mencionou que as imagens nao estao com qualidade muito boa, elas serao usadas nos tamanhos menores para minimizar a perda de nitidez. Se futuramente voce tiver versoes em PNG com fundo transparente e maior resolucao, basta substituir os arquivos.
-
+### Sobre velocidade de carregamento
+A velocidade de carregamento depende de fatores como tamanho das imagens e quantidade de JavaScript. A criacao do sitemap e as melhorias de meta tags ajudam no SEO, mas para melhorias significativas de velocidade seria necessario analisar o bundle e otimizar imagens — isso pode ser feito em uma etapa futura.
