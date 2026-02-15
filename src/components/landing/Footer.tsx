@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Instagram } from 'lucide-react';
 import precibakeLogo from '@/assets/precibake-logo.jpeg';
 
 export function Footer() {
@@ -11,6 +12,16 @@ export function Footer() {
           </div>
           
           <div className="flex items-center gap-4 text-sm">
+            <a
+              href="https://instagram.com/precibake"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+            >
+              <Instagram className="h-4 w-4" />
+              @precibake
+            </a>
+            <span className="text-muted-foreground">•</span>
             <Link 
               to="/privacidade" 
               className="text-muted-foreground hover:text-foreground transition-colors"
