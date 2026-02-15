@@ -5,8 +5,8 @@ import { useSidebarControl } from '@/hooks/useSidebarControl';
 import { useSupport } from '@/hooks/useSupport';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import precibakeLogo from '@/assets/precibake-logo.jpeg';
 import { 
-  Cake, 
   Package, 
   LogOut, 
   Menu, 
@@ -212,8 +212,7 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
           <div className="flex items-center gap-2">
-            <Cake className="h-6 w-6 text-accent" />
-            <span className="font-semibold">PreciBake</span>
+            <img src={precibakeLogo} alt="PreciBake" className="h-7 object-contain" />
           </div>
         </div>
       </header>
@@ -228,14 +227,8 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="h-16 px-6 flex items-center gap-3 border-b border-border">
-            <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
-              <Cake className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <h1 className="font-bold text-foreground">PreciBake</h1>
-              <p className="text-xs text-muted-foreground">O ponto certo do preço</p>
-            </div>
+          <div className="h-16 px-6 flex items-center border-b border-border">
+            <img src={precibakeLogo} alt="PreciBake" className="h-9 object-contain" />
           </div>
 
           {/* Navigation */}

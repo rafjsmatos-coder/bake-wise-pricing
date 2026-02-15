@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Cake, Loader2, ArrowLeft, Eye, EyeOff, CheckCircle2, Info } from 'lucide-react';
+import { Loader2, ArrowLeft, Eye, EyeOff, CheckCircle2, Info } from 'lucide-react';
+import precibakeLogoFull from '@/assets/precibake-logo-full.jpeg';
 import { useToast } from '@/hooks/use-toast';
 import { ForgotPasswordForm } from './ForgotPasswordForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -106,14 +107,8 @@ export function AuthForm({ onBack }: AuthFormProps) {
               Voltar
             </Button>
           )}
-          <div className="mx-auto w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center">
-            <Cake className="w-8 h-8 text-accent" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl font-bold">PreciBake</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              O ponto certo do preço
-            </CardDescription>
+          <div className="mx-auto">
+            <img src={precibakeLogoFull} alt="PreciBake - O ponto certo do preço" className="h-20 object-contain mx-auto" />
           </div>
         </CardHeader>
         <CardContent>

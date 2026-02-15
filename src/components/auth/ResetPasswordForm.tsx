@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Cake, Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import precibakeIcon from '@/assets/precibake-icon.jpeg';
 import { useToast } from '@/hooks/use-toast';
 
 interface ResetPasswordFormProps {
@@ -80,8 +81,8 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md animate-fade-in">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center">
-            <Cake className="w-8 h-8 text-accent" />
+          <div className="mx-auto w-16 h-16 rounded-full overflow-hidden">
+            <img src={precibakeIcon} alt="PreciBake" className="w-full h-full object-cover" />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold">Criar Nova Senha</CardTitle>
