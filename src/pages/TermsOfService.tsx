@@ -78,7 +78,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-semibold mb-3">4. Período de Teste e Assinatura</h2>
               <p className="text-muted-foreground mb-2">
-                <strong>Período de Teste:</strong> Oferecemos 14 dias de teste gratuito com acesso 
+                <strong>Período de Teste:</strong> Oferecemos 7 dias de teste gratuito com acesso 
                 completo a todas as funcionalidades. Não é necessário cartão de crédito para iniciar o teste.
               </p>
               <p className="text-muted-foreground mb-2">
