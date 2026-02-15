@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,10 +57,10 @@ export function AuthForm({ onBack }: AuthFormProps) {
     const password = formData.get('password') as string;
     const fullName = formData.get('fullName') as string;
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       toast({
         title: 'Senha muito curta',
-        description: 'A senha deve ter pelo menos 6 caracteres para sua segurança.',
+        description: 'A senha deve ter pelo menos 8 caracteres para sua segurança.',
         variant: 'destructive',
       });
       setIsLoading(false);
@@ -89,7 +90,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
   }
 
   const passwordRequirements = [
-    { met: signupPassword.length >= 6, text: 'Pelo menos 6 caracteres' },
+    { met: signupPassword.length >= 8, text: 'Pelo menos 8 caracteres' },
   ];
 
   return (
@@ -190,7 +191,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
                 <Alert className="bg-accent/5 border-accent/20">
                   <Info className="h-4 w-4 text-accent" />
                   <AlertDescription className="text-sm">
-                    Crie sua conta grátis! Você terá 14 dias para testar todas as funcionalidades.
+                    Crie sua conta grátis! Você terá 7 dias para testar todas as funcionalidades.
                   </AlertDescription>
                 </Alert>
 
@@ -233,7 +234,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
                       type={showSignupPassword ? 'text' : 'password'}
                       placeholder="••••••••"
                       required
-                      minLength={6}
+                      minLength={8}
                       disabled={isLoading}
                       onChange={(e) => setSignupPassword(e.target.value)}
                       className="min-h-[44px] pr-10"
@@ -272,7 +273,10 @@ export function AuthForm({ onBack }: AuthFormProps) {
                 </Button>
 
                 <p className="text-center text-xs text-muted-foreground">
-                  Ao criar sua conta, você concorda com nossos termos de uso.
+                  Ao criar sua conta, você concorda com nossos{' '}
+                  <Link to="/termos" className="underline hover:text-foreground transition-colors">Termos de Uso</Link>
+                  {' '}e{' '}
+                  <Link to="/privacidade" className="underline hover:text-foreground transition-colors">Política de Privacidade</Link>.
                 </p>
               </form>
             </TabsContent>

@@ -15,6 +15,7 @@ import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
 import { formatCurrency } from '@/lib/product-cost-calculator';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import precibakeIcon from '@/assets/precibake-icon.jpeg';
 import { 
   ShoppingBag, 
   BookOpen, 
@@ -22,7 +23,6 @@ import {
   Sparkles, 
   Box,
   Loader2,
-  Cake,
   Users,
   ClipboardList,
   CalendarClock
@@ -116,8 +116,8 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       {/* Header */}
       <div className="flex items-center justify-between gap-4" data-tour="welcome">
         <div className="flex items-center gap-4">
-          <div className="w-12 sm:w-14 h-12 sm:h-14 bg-accent/10 rounded-xl flex items-center justify-center shrink-0">
-            <Cake className="h-6 sm:h-7 w-6 sm:w-7 text-accent" />
+          <div className="w-12 sm:w-14 h-12 sm:h-14 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+            <img src={precibakeIcon} alt="PreciBake" className="w-full h-full object-cover rounded-xl" />
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">Dashboard</h1>

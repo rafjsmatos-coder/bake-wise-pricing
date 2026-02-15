@@ -1,10 +1,11 @@
+import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Instagram } from 'lucide-react';
 import precibakeLogo from '@/assets/precibake-logo.jpeg';
 
-export function Footer() {
+export const Footer = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <footer className="py-8 border-t border-border bg-background">
+    <footer ref={ref} className="py-8 border-t border-border bg-background">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -44,4 +45,6 @@ export function Footer() {
       </div>
     </footer>
   );
-}
+});
+
+Footer.displayName = 'Footer';
