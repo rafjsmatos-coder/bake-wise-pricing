@@ -32,10 +32,10 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
       return;
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       toast({
         title: 'Senha muito curta',
-        description: 'A senha deve ter pelo menos 6 caracteres.',
+        description: 'A senha deve ter pelo menos 8 caracteres.',
         variant: 'destructive',
       });
       return;
@@ -73,7 +73,7 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
   };
 
   const passwordRequirements = [
-    { met: newPassword.length >= 6, text: 'Pelo menos 6 caracteres' },
+    { met: newPassword.length >= 8, text: 'Pelo menos 8 caracteres' },
     { met: newPassword === confirmPassword && confirmPassword.length > 0, text: 'Senhas conferem' },
   ];
 
@@ -103,7 +103,7 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Digite sua nova senha"
                   required
-                  minLength={6}
+                  minLength={8}
                   disabled={isLoading}
                   className="min-h-[44px] pr-10"
                 />
@@ -127,7 +127,7 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Digite novamente a senha"
                   required
-                  minLength={6}
+                  minLength={8}
                   disabled={isLoading}
                   className="min-h-[44px] pr-10"
                 />
@@ -158,7 +158,7 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading || newPassword.length < 6 || newPassword !== confirmPassword}
+              disabled={isLoading || newPassword.length < 8 || newPassword !== confirmPassword}
             >
               {isLoading ? (
                 <>
