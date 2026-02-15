@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Cake, 
   ArrowRight,
   Sparkles,
   CheckCircle2
 } from 'lucide-react';
+import precibakeLogo from '@/assets/precibake-logo.jpeg';
 
 interface HeroSectionProps {
   onGetStarted: () => void;
@@ -24,10 +24,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
       <div className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
-              <Cake className="w-5 h-5 text-accent" />
-            </div>
-            <span className="font-bold text-xl text-foreground">PreciBake</span>
+            <img src={precibakeLogo} alt="PreciBake" className="h-10 object-contain" />
           </div>
         </nav>
       </div>

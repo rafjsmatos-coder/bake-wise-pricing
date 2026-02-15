@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Cake, ArrowRight, TrendingUp } from 'lucide-react';
+import { ArrowRight, TrendingUp } from 'lucide-react';
+import precibakeIcon from '@/assets/precibake-icon.jpeg';
 
 export function ExampleSection() {
   const examples = [
@@ -45,7 +46,7 @@ export function ExampleSection() {
             <Card key={index} className="border-accent/20 hover:shadow-lg transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <Cake className="w-5 h-5 text-accent" />
+                  <img src={precibakeIcon} alt="PreciBake" className="w-5 h-5 rounded object-cover" />
                   <CardTitle className="text-lg">{example.name}</CardTitle>
                 </div>
               </CardHeader>

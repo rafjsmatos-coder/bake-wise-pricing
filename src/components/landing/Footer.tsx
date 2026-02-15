@@ -1,5 +1,5 @@
-import { Cake } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import precibakeLogo from '@/assets/precibake-logo.jpeg';
 
 export function Footer() {
   return (
@@ -7,10 +7,7 @@ export function Footer() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
-              <Cake className="w-4 h-4 text-accent" />
-            </div>
-            <span className="font-semibold text-foreground">PreciBake</span>
+            <img src={precibakeLogo} alt="PreciBake" className="h-8 object-contain" />
           </div>
           
           <div className="flex items-center gap-4 text-sm">

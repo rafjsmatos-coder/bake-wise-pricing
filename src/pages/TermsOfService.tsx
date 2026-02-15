@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Cake, FileText } from 'lucide-react';
+import { ArrowLeft, FileText } from 'lucide-react';
+import precibakeLogo from '@/assets/precibake-logo.jpeg';
 import { Link } from 'react-router-dom';
 
 export default function TermsOfService() {
@@ -11,10 +12,7 @@ export default function TermsOfService() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
-                <Cake className="w-5 h-5 text-accent" />
-              </div>
-              <span className="font-bold text-xl text-foreground">PreciBake</span>
+              <img src={precibakeLogo} alt="PreciBake" className="h-10 object-contain" />
             </Link>
             <Button variant="ghost" asChild>
               <Link to="/" className="gap-2">
