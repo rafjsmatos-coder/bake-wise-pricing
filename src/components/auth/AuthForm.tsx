@@ -78,7 +78,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
     } else {
       toast({
         title: 'Conta criada com sucesso! 🎉',
-        description: 'Bem-vindo(a) ao PreciBake! Você já pode começar a usar.',
+        description: 'Enviamos um e-mail de confirmação. Verifique sua caixa de entrada para ativar sua conta.',
       });
     }
 

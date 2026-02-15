@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useRef } from 'react';
-import { User, Session, AuthError } from '@supabase/supabase-js';
+import { User, Session, AuthError, AuthApiError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
@@ -98,17 +98,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: {
-          full_name: fullName,
+    try {
+      // Use custom edge function to create user + send PT-BR email via Resend
+      const response = await supabase.functions.invoke('send-auth-email', {
+        body: {
+          action: 'signup',
+          email,
+          password,
+          fullName: fullName || '',
+          redirectTo: window.location.origin,
         },
-      },
-    });
-    return { error };
+      });
+
+      if (response.error) {
+        const errorMessage = response.error.message || 'Erro ao criar conta';
+        return { error: new AuthApiError(errorMessage, 400, 'signup_error') };
+      }
+
+      const data = response.data;
+      if (data?.error) {
+        return { error: new AuthApiError(data.error, 400, 'signup_error') };
+      }
+
+      return { error: null };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao criar conta';
+      return { error: new AuthApiError(message, 500, 'signup_error') };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
