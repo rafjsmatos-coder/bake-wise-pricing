@@ -1,0 +1,26 @@
+# PreciBake
+
+> Sistema de gestão e precificação para confeiteiros.
+
+PreciBake é uma plataforma web (PWA) completa para confeiteiros e doceiros que precisam calcular preços com precisão, gerenciar pedidos, controlar finanças e organizar receitas e ingredientes.
+
+## Funcionalidades principais
+
+- Precificação automática de produtos com cálculo detalhado de custos (ingredientes, mão de obra, energia, embalagens, decorações)
+- Gestão de pedidos com calendário e status de acompanhamento
+- Cadastro e gerenciamento de clientes
+- Controle financeiro com fluxo de caixa e relatórios
+- Lista de compras automática baseada nos pedidos
+- Envio de orçamentos via WhatsApp
+- Gestão de receitas com cálculo de rendimento e custo por porção
+- Controle de estoque de ingredientes, embalagens e decorações
+- Funciona como aplicativo no celular (PWA)
+
+## Público-alvo
+
+Confeiteiros, doceiros, boleiros e profissionais de confeitaria que trabalham de forma autônoma ou em pequenos negócios.
+
+## Links
+
+- Site: https://precibake.com.br/
+- Instagram: https://instagram.com/precibake
