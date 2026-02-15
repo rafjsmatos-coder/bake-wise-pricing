@@ -30,10 +30,10 @@ export function PasswordChangeForm() {
       return;
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       toast({
         title: 'Senha muito curta',
-        description: 'A nova senha deve ter pelo menos 6 caracteres.',
+        description: 'A nova senha deve ter pelo menos 8 caracteres.',
         variant: 'destructive',
       });
       return;
@@ -73,7 +73,7 @@ export function PasswordChangeForm() {
   };
 
   const passwordRequirements = [
-    { met: newPassword.length >= 6, text: 'Pelo menos 6 caracteres' },
+    { met: newPassword.length >= 8, text: 'Pelo menos 8 caracteres' },
     { met: newPassword === confirmPassword && confirmPassword.length > 0, text: 'Senhas conferem' },
   ];
 
@@ -107,7 +107,7 @@ export function PasswordChangeForm() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Digite sua nova senha"
                 required
-                minLength={6}
+                minLength={8}
                 disabled={isLoading}
                 className="min-h-[44px] pr-10"
               />
@@ -131,7 +131,7 @@ export function PasswordChangeForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Digite novamente a nova senha"
                 required
-                minLength={6}
+                minLength={8}
                 disabled={isLoading}
                 className="min-h-[44px] pr-10"
               />
@@ -161,7 +161,7 @@ export function PasswordChangeForm() {
 
           <Button
             type="submit"
-            disabled={isLoading || newPassword.length < 6 || newPassword !== confirmPassword}
+            disabled={isLoading || newPassword.length < 8 || newPassword !== confirmPassword}
             className="w-full sm:w-auto min-h-[44px]"
           >
             {isLoading ? (
