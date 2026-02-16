@@ -1,21 +1,28 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useOrders } from '@/hooks/useOrders';
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
-import { Loader2, AlertTriangle, DollarSign } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, AlertTriangle, DollarSign, Search } from 'lucide-react';
 import { formatCurrency } from '@/lib/product-cost-calculator';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export function ReceivablesList() {
   const { orders, isLoading } = useOrders();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const receivables = useMemo(() => {
-    return orders
-      .filter((o) => {
-        const effectiveTotal = o.total_amount - (o.discount || 0);
-        return o.status !== 'cancelled' && o.paid_amount < effectiveTotal;
-      })
-      .sort((a, b) => {
+    let filtered = orders.filter((o) => {
+      const effectiveTotal = o.total_amount - (o.discount || 0);
+      return o.status !== 'cancelled' && o.paid_amount < effectiveTotal;
+    });
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(o => o.client?.name?.toLowerCase().includes(q));
+    }
+
+    return filtered.sort((a, b) => {
         const aOverdue = a.status === 'delivered' ? 0 : 1;
         const bOverdue = b.status === 'delivered' ? 0 : 1;
         if (aOverdue !== bOverdue) return aOverdue - bOverdue;
@@ -23,7 +30,7 @@ export function ReceivablesList() {
         const bDate = b.delivery_date ? new Date(b.delivery_date).getTime() : Infinity;
         return aDate - bDate;
       });
-  }, [orders]);
+  }, [orders, searchQuery]);
 
   const totalReceivable = useMemo(
     () => receivables.reduce((s, o) => s + (o.total_amount - (o.discount || 0) - o.paid_amount), 0),
@@ -45,6 +52,17 @@ export function ReceivablesList() {
         <p className="text-muted-foreground">
           {receivables.length} pedido{receivables.length !== 1 ? 's' : ''} com saldo pendente
         </p>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por nome do cliente..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 min-h-[44px]"
+        />
       </div>
 
       <div className="bg-card border border-border rounded-lg p-4">

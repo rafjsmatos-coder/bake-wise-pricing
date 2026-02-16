@@ -174,6 +174,45 @@ export function useIngredients() {
     },
   });
 
+  const duplicateIngredient = useMutation({
+    mutationFn: async (ingredient: Ingredient) => {
+      const userId = await ensureSessionUserId();
+      const { data, error } = await supabase
+        .from('ingredients')
+        .insert({
+          user_id: userId,
+          name: `${ingredient.name} (cópia)`,
+          purchase_price: ingredient.purchase_price,
+          package_quantity: ingredient.package_quantity,
+          unit: ingredient.unit,
+          category_id: ingredient.category_id,
+          brand: ingredient.brand,
+          supplier: ingredient.supplier,
+          stock_quantity: ingredient.stock_quantity,
+          min_stock_alert: ingredient.min_stock_alert,
+        })
+        .select(`*, categories (id, name, color)`)
+        .single();
+      if (error) throw error;
+      return data as Ingredient;
+    },
+    retry: 1,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
+      toast({
+        title: 'Ingrediente duplicado',
+        description: 'O ingrediente foi duplicado com sucesso.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao duplicar ingrediente',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     ingredients: ingredientsQuery.data || [],
     isLoading: ingredientsQuery.isLoading,
@@ -181,5 +220,6 @@ export function useIngredients() {
     createIngredient,
     updateIngredient,
     deleteIngredient,
+    duplicateIngredient,
   };
 }

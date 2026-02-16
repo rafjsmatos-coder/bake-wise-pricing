@@ -32,6 +32,7 @@ export function TransactionsList() {
   const [selected, setSelected] = useState<FinancialTransaction | null>(null);
   const [defaultType, setDefaultType] = useState<'income' | 'expense'>('income');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [monthFilter, setMonthFilter] = useState(format(new Date(), 'yyyy-MM'));
 
@@ -43,13 +44,19 @@ export function TransactionsList() {
       const d = parseISO(t.date);
       if (d < monthStart || d > monthEnd) return false;
       if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+      if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
       if (search) {
         const q = search.toLowerCase();
         if (!t.description.toLowerCase().includes(q) && !t.category.toLowerCase().includes(q)) return false;
       }
       return true;
     });
-  }, [transactions, typeFilter, search, monthFilter]);
+  }, [transactions, typeFilter, categoryFilter, search, monthFilter]);
+
+  const uniqueCategories = useMemo(() => {
+    const cats = transactions.map(t => t.category).filter(Boolean);
+    return [...new Set(cats)].sort();
+  }, [transactions]);
 
   const totals = useMemo(() => {
     const income = filtered.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
@@ -163,6 +170,19 @@ export function TransactionsList() {
             <SelectItem value="expense">Saídas</SelectItem>
           </SelectContent>
         </Select>
+        {uniqueCategories.length > 0 && (
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full sm:w-[180px] min-h-[44px]">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas categorias</SelectItem>
+              {uniqueCategories.map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* List */}

@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   CommandDialog,
   CommandEmpty,
@@ -15,6 +14,8 @@ import { useProducts } from '@/hooks/useProducts';
 import { useDecorations } from '@/hooks/useDecorations';
 import { usePackaging } from '@/hooks/usePackaging';
 import { useClients } from '@/hooks/useClients';
+import { useOrders } from '@/hooks/useOrders';
+import { useFinancial } from '@/hooks/useFinancial';
 import { 
   Package, 
   BookOpen, 
@@ -22,8 +23,12 @@ import {
   Sparkles, 
   Box,
   Search,
-  Users
+  Users,
+  ClipboardList,
+  Wallet
 } from 'lucide-react';
+import { formatCurrency } from '@/lib/product-cost-calculator';
+import { format, parseISO } from 'date-fns';
 
 interface GlobalSearchProps {
   open: boolean;
@@ -40,14 +45,13 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
   const { decorations } = useDecorations();
   const { packagingItems: packaging } = usePackaging();
   const { clients } = useClients();
-  // Reset search when dialog closes
+  const { orders } = useOrders();
+  const { transactions } = useFinancial();
+
   useEffect(() => {
-    if (!open) {
-      setSearch('');
-    }
+    if (!open) setSearch('');
   }, [open]);
 
-  // Keyboard shortcut
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
@@ -55,71 +59,97 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
         onOpenChange(!open);
       }
     };
-
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
   }, [open, onOpenChange]);
 
+  const q = search.toLowerCase();
+
   const filteredIngredients = useMemo(() => {
     if (!search) return ingredients.slice(0, 5);
     return ingredients.filter(i => 
-      i.name.toLowerCase().includes(search.toLowerCase())
+      i.name.toLowerCase().includes(q) ||
+      i.brand?.toLowerCase().includes(q) ||
+      i.supplier?.toLowerCase().includes(q)
     ).slice(0, 5);
-  }, [ingredients, search]);
+  }, [ingredients, q, search]);
 
   const filteredRecipes = useMemo(() => {
     if (!search) return recipes.slice(0, 5);
-    return recipes.filter(r => 
-      r.name.toLowerCase().includes(search.toLowerCase())
-    ).slice(0, 5);
-  }, [recipes, search]);
+    return recipes.filter(r => r.name.toLowerCase().includes(q)).slice(0, 5);
+  }, [recipes, q, search]);
 
   const filteredProducts = useMemo(() => {
     if (!search) return products.slice(0, 5);
-    return products.filter(p => 
-      p.name.toLowerCase().includes(search.toLowerCase())
-    ).slice(0, 5);
-  }, [products, search]);
+    return products.filter(p => p.name.toLowerCase().includes(q)).slice(0, 5);
+  }, [products, q, search]);
 
   const filteredDecorations = useMemo(() => {
     if (!search) return decorations.slice(0, 5);
     return decorations.filter(d => 
-      d.name.toLowerCase().includes(search.toLowerCase())
+      d.name.toLowerCase().includes(q) ||
+      d.brand?.toLowerCase().includes(q) ||
+      d.supplier?.toLowerCase().includes(q)
     ).slice(0, 5);
-  }, [decorations, search]);
+  }, [decorations, q, search]);
 
   const filteredPackaging = useMemo(() => {
     if (!search) return packaging.slice(0, 5);
     return packaging.filter(p => 
-      p.name.toLowerCase().includes(search.toLowerCase())
+      p.name.toLowerCase().includes(q) ||
+      p.brand?.toLowerCase().includes(q) ||
+      p.supplier?.toLowerCase().includes(q)
     ).slice(0, 5);
-  }, [packaging, search]);
+  }, [packaging, q, search]);
 
   const filteredClients = useMemo(() => {
     if (!search) return clients.slice(0, 5);
     return clients.filter(c => 
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone?.toLowerCase().includes(search.toLowerCase()) ||
-      c.email?.toLowerCase().includes(search.toLowerCase())
+      c.name.toLowerCase().includes(q) ||
+      c.phone?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
+      c.whatsapp?.toLowerCase().includes(q) ||
+      c.instagram?.toLowerCase().includes(q)
     ).slice(0, 5);
-  }, [clients, search]);
+  }, [clients, q, search]);
+
+  const filteredOrders = useMemo(() => {
+    if (!search) return [];
+    return orders.filter(o =>
+      o.client?.name?.toLowerCase().includes(q) ||
+      o.notes?.toLowerCase().includes(q) ||
+      o.order_items?.some(item => item.product?.name?.toLowerCase().includes(q))
+    ).slice(0, 5);
+  }, [orders, q, search]);
+
+  const filteredTransactions = useMemo(() => {
+    if (!search) return [];
+    return transactions.filter(t =>
+      t.description.toLowerCase().includes(q) ||
+      t.category.toLowerCase().includes(q)
+    ).slice(0, 5);
+  }, [transactions, q, search]);
 
   const hasResults = filteredIngredients.length > 0 || 
     filteredRecipes.length > 0 || 
     filteredProducts.length > 0 || 
     filteredDecorations.length > 0 || 
     filteredPackaging.length > 0 ||
-    filteredClients.length > 0;
+    filteredClients.length > 0 ||
+    filteredOrders.length > 0 ||
+    filteredTransactions.length > 0;
 
   const handleSelect = (page: string) => {
     onOpenChange(false);
     onNavigate?.(page);
   };
 
+  let groupIndex = 0;
+
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput 
-        placeholder="Buscar ingredientes, receitas, produtos..." 
+        placeholder="Buscar produtos, receitas, pedidos, clientes..." 
         value={search}
         onValueChange={setSearch}
       />
@@ -134,29 +164,32 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
         )}
 
         {filteredProducts.length > 0 && (
-          <CommandGroup heading="Produtos">
-            {filteredProducts.map((product) => (
-              <CommandItem
-                key={product.id}
-                value={`product-${product.name}`}
-                onSelect={() => handleSelect('products')}
-                className="flex items-center gap-2"
-              >
-                <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                <span>{product.name}</span>
-                {product.category && (
-                  <span className="text-xs text-muted-foreground ml-auto">
-                    {product.category.name}
-                  </span>
-                )}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          <>
+            {groupIndex++ > 0 && <CommandSeparator />}
+            <CommandGroup heading="Produtos">
+              {filteredProducts.map((product) => (
+                <CommandItem
+                  key={product.id}
+                  value={`product-${product.name}`}
+                  onSelect={() => handleSelect('products')}
+                  className="flex items-center gap-2"
+                >
+                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                  <span>{product.name}</span>
+                  {product.category && (
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {product.category.name}
+                    </span>
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
         )}
 
         {filteredRecipes.length > 0 && (
           <>
-            {filteredProducts.length > 0 && <CommandSeparator />}
+            {groupIndex++ > 0 && <CommandSeparator />}
             <CommandGroup heading="Receitas">
               {filteredRecipes.map((recipe) => (
                 <CommandItem
@@ -178,9 +211,31 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
           </>
         )}
 
+        {filteredOrders.length > 0 && (
+          <>
+            {groupIndex++ > 0 && <CommandSeparator />}
+            <CommandGroup heading="Pedidos">
+              {filteredOrders.map((order) => (
+                <CommandItem
+                  key={order.id}
+                  value={`order-${order.client?.name}-${order.id}`}
+                  onSelect={() => handleSelect('orders')}
+                  className="flex items-center gap-2"
+                >
+                  <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                  <span>{order.client?.name || 'Cliente removido'}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {formatCurrency(order.total_amount)}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
         {filteredIngredients.length > 0 && (
           <>
-            {(filteredProducts.length > 0 || filteredRecipes.length > 0) && <CommandSeparator />}
+            {groupIndex++ > 0 && <CommandSeparator />}
             <CommandGroup heading="Ingredientes">
               {filteredIngredients.map((ingredient) => (
                 <CommandItem
@@ -191,9 +246,9 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
                 >
                   <Package className="h-4 w-4 text-muted-foreground" />
                   <span>{ingredient.name}</span>
-                  {ingredient.categories && (
+                  {ingredient.brand && (
                     <span className="text-xs text-muted-foreground ml-auto">
-                      {ingredient.categories.name}
+                      {ingredient.brand}
                     </span>
                   )}
                 </CommandItem>
@@ -204,7 +259,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
 
         {filteredDecorations.length > 0 && (
           <>
-            <CommandSeparator />
+            {groupIndex++ > 0 && <CommandSeparator />}
             <CommandGroup heading="Decorações">
               {filteredDecorations.map((decoration) => (
                 <CommandItem
@@ -228,7 +283,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
 
         {filteredPackaging.length > 0 && (
           <>
-            <CommandSeparator />
+            {groupIndex++ > 0 && <CommandSeparator />}
             <CommandGroup heading="Embalagens">
               {filteredPackaging.map((pack) => (
                 <CommandItem
@@ -252,7 +307,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
 
         {filteredClients.length > 0 && (
           <>
-            <CommandSeparator />
+            {groupIndex++ > 0 && <CommandSeparator />}
             <CommandGroup heading="Clientes">
               {filteredClients.map((client) => (
                 <CommandItem
@@ -268,6 +323,28 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
                       {client.phone}
                     </span>
                   )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
+        {filteredTransactions.length > 0 && (
+          <>
+            {groupIndex++ > 0 && <CommandSeparator />}
+            <CommandGroup heading="Transações">
+              {filteredTransactions.map((t) => (
+                <CommandItem
+                  key={t.id}
+                  value={`transaction-${t.description}-${t.id}`}
+                  onSelect={() => handleSelect('cashflow')}
+                  className="flex items-center gap-2"
+                >
+                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                  <span>{t.description}</span>
+                  <span className={`text-xs ml-auto ${t.type === 'income' ? 'text-green-600' : 'text-destructive'}`}>
+                    {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                  </span>
                 </CommandItem>
               ))}
             </CommandGroup>

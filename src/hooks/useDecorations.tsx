@@ -98,5 +98,32 @@ export function useDecorations() {
     onError: (error: Error) => { toast({ title: 'Erro ao excluir decoração', description: error.message, variant: 'destructive' }); },
   });
 
-  return { decorations: decorationsQuery.data || [], isLoading: decorationsQuery.isLoading, error: decorationsQuery.error, createDecoration, updateDecoration, deleteDecoration };
+  const duplicateDecoration = useMutation({
+    mutationFn: async (decoration: Decoration) => {
+      const userId = await ensureSessionUserId();
+      const { data, error } = await supabase
+        .from('decorations')
+        .insert({
+          user_id: userId,
+          name: `${decoration.name} (cópia)`,
+          purchase_price: decoration.purchase_price,
+          package_quantity: decoration.package_quantity,
+          unit: decoration.unit,
+          category_id: decoration.category_id,
+          brand: decoration.brand,
+          supplier: decoration.supplier,
+          stock_quantity: decoration.stock_quantity,
+          min_stock_alert: decoration.min_stock_alert,
+        })
+        .select(`*, decoration_categories (id, name, color)`)
+        .single();
+      if (error) throw error;
+      return data as Decoration;
+    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); toast({ title: 'Decoração duplicada', description: 'A decoração foi duplicada com sucesso.' }); },
+    onError: (error: Error) => { toast({ title: 'Erro ao duplicar decoração', description: error.message, variant: 'destructive' }); },
+  });
+
+  return { decorations: decorationsQuery.data || [], isLoading: decorationsQuery.isLoading, error: decorationsQuery.error, createDecoration, updateDecoration, deleteDecoration, duplicateDecoration };
 }

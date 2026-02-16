@@ -15,28 +15,50 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Plus, Search, Users, Loader2 } from 'lucide-react';
 
 export function ClientsList() {
   const { clients, isLoading, createClient, updateClient, deleteClient } = useClients();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [cityFilter, setCityFilter] = useState('all');
   const [formOpen, setFormOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
+  const uniqueCities = useMemo(() => {
+    const cities = clients
+      .map(c => c.city)
+      .filter((city): city is string => !!city && city.trim() !== '')
+      .map(city => city.trim());
+    return [...new Set(cities)].sort();
+  }, [clients]);
+
   const filteredClients = useMemo(() => {
-    if (!searchQuery) return clients;
-    const query = searchQuery.toLowerCase();
-    return clients.filter(
-      (c) =>
-        c.name.toLowerCase().includes(query) ||
-        c.phone?.toLowerCase().includes(query) ||
-        c.whatsapp?.toLowerCase().includes(query) ||
-        c.email?.toLowerCase().includes(query)
-    );
-  }, [clients, searchQuery]);
+    let filtered = clients;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (c) =>
+          c.name.toLowerCase().includes(query) ||
+          c.phone?.toLowerCase().includes(query) ||
+          c.whatsapp?.toLowerCase().includes(query) ||
+          c.email?.toLowerCase().includes(query)
+      );
+    }
+    if (cityFilter !== 'all') {
+      filtered = filtered.filter(c => c.city?.trim() === cityFilter);
+    }
+    return filtered;
+  }, [clients, searchQuery, cityFilter]);
 
   const handleCreate = () => {
     setSelectedClient(null);
@@ -103,16 +125,31 @@ export function ClientsList() {
         </Button>
       </div>
 
-      {/* Search */}
+      {/* Filters */}
       {clients.length > 0 && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, telefone ou email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 min-h-[44px]"
-          />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, telefone ou email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 min-h-[44px]"
+            />
+          </div>
+          {uniqueCities.length > 0 && (
+            <Select value={cityFilter} onValueChange={setCityFilter}>
+              <SelectTrigger className="w-full sm:w-[180px] min-h-[44px]">
+                <SelectValue placeholder="Cidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as cidades</SelectItem>
+                {uniqueCities.map((city) => (
+                  <SelectItem key={city} value={city}>{city}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       )}
 

@@ -2,15 +2,17 @@ import { Ingredient } from '@/hooks/useIngredients';
 import { formatCurrency, formatNumber, getCostPerUnit } from '@/lib/unit-conversion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Eye, Copy, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 
 interface IngredientCardProps {
   ingredient: Ingredient;
+  onView: (ingredient: Ingredient) => void;
+  onDuplicate: (ingredient: Ingredient) => void;
   onEdit: (ingredient: Ingredient) => void;
   onDelete: (ingredient: Ingredient) => void;
 }
 
-export function IngredientCard({ ingredient, onEdit, onDelete }: IngredientCardProps) {
+export function IngredientCard({ ingredient, onView, onDuplicate, onEdit, onDelete }: IngredientCardProps) {
   const costInfo = getCostPerUnit(
     Number(ingredient.purchase_price),
     Number(ingredient.package_quantity),
@@ -49,6 +51,12 @@ export function IngredientCard({ ingredient, onEdit, onDelete }: IngredientCardP
           </div>
         </div>
         <div className="flex gap-1 shrink-0">
+          <Button variant="ghost" size="icon" onClick={() => onView(ingredient)} className="h-8 w-8">
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onDuplicate(ingredient)} className="h-8 w-8">
+            <Copy className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={() => onEdit(ingredient)} className="h-8 w-8">
             <Pencil className="h-4 w-4" />
           </Button>
@@ -70,6 +78,10 @@ export function IngredientCard({ ingredient, onEdit, onDelete }: IngredientCardP
 
         {ingredient.brand && (
           <p>Marca: {ingredient.brand}</p>
+        )}
+
+        {ingredient.supplier && (
+          <p>Fornecedor: {ingredient.supplier}</p>
         )}
 
         {ingredient.stock_quantity !== null && (

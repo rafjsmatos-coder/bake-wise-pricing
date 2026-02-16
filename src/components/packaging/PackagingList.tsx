@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export function PackagingList() {
-  const { packagingItems, isLoading, deletePackaging } = usePackaging();
+  const { packagingItems, isLoading, deletePackaging, duplicatePackaging } = usePackaging();
   const { categories } = usePackagingCategories();
   const [formOpen, setFormOpen] = useState(false);
   const [editingPackaging, setEditingPackaging] = useState<Packaging | null>(null);
@@ -160,6 +160,8 @@ export function PackagingList() {
             <PackagingCard
               key={packaging.id}
               packaging={packaging}
+              onView={() => handleEdit(packaging as Packaging)}
+              onDuplicate={() => duplicatePackaging.mutate(packaging as Packaging)}
               onEdit={() => handleEdit(packaging as Packaging)}
               onDelete={() => setDeletingPackaging(packaging as Packaging)}
             />
