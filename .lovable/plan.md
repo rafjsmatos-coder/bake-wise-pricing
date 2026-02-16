@@ -1,63 +1,81 @@
 
-
-## Correcao: Botao de Fechar dos Dialogs + Layout dos Cards
-
-### Problema 1: Botao X sobreposto nos dialogs
-
-O botao de fechar (X) no `DialogContent` usa `absolute right-4 top-4`, ficando em cima dos botoes de acao (Orcamento, Duplicar, Editar) no header dos dialogs. Isso afeta **todos os modulos** que usam Dialog: Pedidos, Produtos, Receitas, Ingredientes, Decoracoes, Embalagens, Clientes.
-
-**Solucao:** Adicionar `pr-10` ao `DialogHeader` no componente base `dialog.tsx`, garantindo que o conteudo do header nunca fique embaixo do X. Adicionalmente, nos dialogs que tem botoes de acao no header (como OrderDetails), reorganizar para que os botoes fiquem **abaixo** do titulo em vez de ao lado.
-
-### Problema 2: Cards com layout quebrado
-
-Na imagem dos Pedidos, o nome "R..." aparece truncado porque os 4 botoes de acao (Eye, Copy, Pencil, Trash) ficam ao lado do titulo, ocupando ~128px e comprimindo o nome. Isso acontece em **todos os cards**: OrderCard, IngredientCard, DecorationCard, PackagingCard, RecipeCard, ProductCard, ClientCard.
-
-**Solucao:** Mover os botoes de acao para uma **linha separada no rodape** do card, em vez de ao lado do titulo. O titulo passa a ocupar 100% da largura, sem truncamento desnecessario.
-
-Novo layout dos cards:
-```text
-+----------------------------------+
-|  [Categoria]                     |
-|  Nome do Item Completo           |
-|                                  |
-|  Informacoes / detalhes          |
-|                                  |
-|  ---- border ----                |
-|  Custo/Total    [Eye][Cp][Ed][Dl]|
-+----------------------------------+
-```
+## Plano Completo: Validade dos Ingredientes + Alertas + Limpeza de Cards + Tour
 
 ---
 
-### Arquivos a modificar
+### Parte 1: Ativar a data de validade nos Ingredientes
+
+Atualmente o campo `expiry_date` e coletado no formulario mas nunca exibido. Vamos ativa-lo:
+
+**No card do ingrediente (`IngredientCard.tsx`):**
+- Exibir a data de validade quando preenchida, com icone de calendario
+- Destacar em vermelho quando vencido (data passada)
+- Destacar em amarelo quando proximo do vencimento (7 dias ou menos)
+
+**Manter o botao "Ver" (Eye) no IngredientCard** -- pois o ingrediente tem dados extras (historico de precos, validade detalhada) que justificam uma visualizacao mais completa.
+
+---
+
+### Parte 2: Alertas de vencimento no Dashboard
+
+**No `StockAlertsCard.tsx`:**
+- Adicionar uma nova secao de alertas de validade, similar aos alertas de estoque
+- Verificar ingredientes com `expiry_date` preenchido
+- Classificar como: **Vencido** (data passada) ou **Vence em breve** (proximos 7 dias)
+- Exibir com icone de calendario e cores diferenciadas (vermelho para vencido, amarelo para vence em breve)
+
+---
+
+### Parte 3: Remover botao "Ver" de Decoracoes e Embalagens
+
+Decoracoes e Embalagens nao tem campos ocultos que justifiquem uma pagina de visualizacao -- todas as informacoes (marca, fornecedor, dimensoes, estoque) ja aparecem no card.
 
 | Arquivo | Alteracao |
 |---------|----------|
-| `src/components/ui/dialog.tsx` | Adicionar `pr-10` ao `DialogHeader` para reservar espaco do X |
-| `src/components/orders/OrderDetails.tsx` | Reorganizar header: titulo em cima, botoes de acao abaixo |
-| `src/components/orders/OrderCard.tsx` | Mover botoes de acao para o rodape do card |
-| `src/components/ingredients/IngredientCard.tsx` | Mover botoes de acao para o rodape do card |
-| `src/components/decorations/DecorationCard.tsx` | Mover botoes de acao para o rodape do card |
-| `src/components/packaging/PackagingCard.tsx` | Mover botoes de acao para o rodape do card |
-| `src/components/recipes/RecipeCard.tsx` | Mover botoes de acao para o rodape do card |
-| `src/components/products/ProductCard.tsx` | Mover botoes de acao para o rodape do card |
-| `src/components/clients/ClientCard.tsx` | Mover botoes de acao para o rodape do card |
+| `DecorationCard.tsx` | Remover `onView` da interface, remover prop, remover botao Eye |
+| `PackagingCard.tsx` | Remover `onView` da interface, remover prop, remover botao Eye |
+| `DecorationsList.tsx` | Remover prop `onView` do `<DecorationCard>` |
+| `PackagingList.tsx` | Remover prop `onView` do `<PackagingCard>` |
+
+Botoes restantes nesses cards: **Duplicar (Copy), Editar (Pencil), Excluir (Trash)**
 
 ---
 
-### Detalhes tecnicos
+### Parte 4: Consertar o Tour Guiado
 
-**Dialog close button fix (`dialog.tsx`):**
-- O `DialogHeader` recebe `pr-10` por padrao para nunca sobrepor o X
-- Isso e aplicado no componente base, corrigindo todos os dialogs de uma vez
+O tour quebrou porque os seletores `[data-tour="nav-*"]` apontam para o sidebar desktop, que nao existe no mobile. A solucao e criar dois conjuntos de passos:
 
-**Cards - novo padrao de layout:**
-- O header do card passa a ter apenas o titulo (e badge de categoria)
-- Os botoes de acao migram para o rodape, ao lado do valor/custo
-- Estrutura: `flex items-center justify-between` no footer com custo a esquerda e botoes a direita
-- Isso elimina o truncamento forcado do nome e melhora a acessibilidade dos botoes em telas menores
+**Tour Mobile (5 passos):**
 
-**OrderDetails header fix:**
-- Titulo "Detalhes do Pedido" fica na primeira linha com espaco para o X
-- Botoes (Orcamento, Duplicar, Editar) ficam na linha abaixo como `flex flex-wrap gap-2`
+| Passo | Selector | Conteudo |
+|-------|----------|----------|
+| 0 | `[data-tour="welcome"]` | Bem-vindo ao PreciBake! |
+| 1 | `[data-tour="summary-cards"]` | Visao Geral - clique nos cards para navegar |
+| 2 | `[data-tour="bottom-nav"]` | Barra de navegacao inferior |
+| 3 | `[data-tour="bottom-more"]` | Menu "Mais" para Ingredientes, Receitas, etc. |
+| 4 | `[data-tour="welcome"]` | Pronto para comecar! |
 
+**Tour Desktop (9 passos):**
+Mantido como esta atualmente (sidebar nav items).
+
+**Arquivos a modificar:**
+
+| Arquivo | Alteracao |
+|---------|----------|
+| `TourProvider.tsx` | Criar steps condicionais com `isMobile`. Remover logica de `onSidebarToggle` no mobile. |
+| `BottomNav.tsx` | Adicionar `data-tour="bottom-nav"` no `<nav>` e `data-tour="bottom-more"` no botao "Mais" |
+
+---
+
+### Resumo de todos os arquivos
+
+| Arquivo | Alteracoes |
+|---------|-----------|
+| `src/components/ingredients/IngredientCard.tsx` | Exibir `expiry_date` com indicadores visuais (vencido/vence em breve) |
+| `src/components/dashboard/StockAlertsCard.tsx` | Adicionar secao de alertas de validade (vencidos + proximos 7 dias) |
+| `src/components/decorations/DecorationCard.tsx` | Remover botao Eye e prop `onView` |
+| `src/components/packaging/PackagingCard.tsx` | Remover botao Eye e prop `onView` |
+| `src/components/decorations/DecorationsList.tsx` | Remover prop `onView` do card |
+| `src/components/packaging/PackagingList.tsx` | Remover prop `onView` do card |
+| `src/components/tour/TourProvider.tsx` | Steps condicionais mobile/desktop, remover sidebar toggle no mobile |
+| `src/components/layout/BottomNav.tsx` | Adicionar atributos `data-tour` |
