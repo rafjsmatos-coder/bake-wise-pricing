@@ -128,21 +128,21 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4" data-tour="summary-cards">
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none" data-tour="summary-cards">
         {summaryCards.map((card) => (
           <Card 
             key={card.title} 
-            className="cursor-pointer hover:shadow-md transition-shadow"
+            className="cursor-pointer hover:shadow-md transition-shadow shrink-0 min-w-[100px]"
             onClick={() => onNavigate(card.page)}
           >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${card.bgColor}`}>
-                  <card.icon className={`h-5 w-5 ${card.color}`} />
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${card.bgColor}`}>
+                  <card.icon className={`h-4 w-4 ${card.color}`} />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{card.count}</p>
-                  <p className="text-xs text-muted-foreground">{card.title}</p>
+                <div className="min-w-0">
+                  <p className="text-xl font-bold">{card.count}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{card.title}</p>
                 </div>
               </div>
             </CardContent>
