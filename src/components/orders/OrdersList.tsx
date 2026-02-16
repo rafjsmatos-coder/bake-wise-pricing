@@ -44,6 +44,8 @@ export function OrdersList() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
+  const [monthFilter, setMonthFilter] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -60,6 +62,17 @@ export function OrdersList() {
       filtered = filtered.filter((o) => o.status === statusFilter);
     }
 
+    if (paymentFilter !== 'all') {
+      filtered = filtered.filter((o) => o.payment_status === paymentFilter);
+    }
+
+    if (monthFilter) {
+      filtered = filtered.filter((o) => {
+        if (!o.delivery_date) return false;
+        return o.delivery_date.startsWith(monthFilter);
+      });
+    }
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -73,7 +86,7 @@ export function OrdersList() {
     }
 
     return filtered;
-  }, [orders, statusFilter, searchQuery]);
+  }, [orders, statusFilter, paymentFilter, monthFilter, searchQuery]);
 
   const handleCreate = () => {
     setSelectedOrder(null);
@@ -196,11 +209,11 @@ export function OrdersList() {
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[180px] min-h-[44px]">
-                  <SelectValue placeholder="Filtrar status" />
+                <SelectTrigger className="w-full sm:w-[160px] min-h-[44px]">
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
                   <SelectItem value="in_production">Em produção</SelectItem>
                   <SelectItem value="ready">Pronto</SelectItem>
@@ -208,6 +221,24 @@ export function OrdersList() {
                   <SelectItem value="cancelled">Cancelado</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                <SelectTrigger className="w-full sm:w-[160px] min-h-[44px]">
+                  <SelectValue placeholder="Pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos pagamentos</SelectItem>
+                  <SelectItem value="paid">Pago</SelectItem>
+                  <SelectItem value="partial">Parcial</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                type="month"
+                value={monthFilter}
+                onChange={(e) => setMonthFilter(e.target.value)}
+                className="w-full sm:w-[180px] min-h-[44px]"
+                placeholder="Período"
+              />
             </div>
           )}
 

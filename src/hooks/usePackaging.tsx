@@ -100,5 +100,31 @@ export function usePackaging() {
     onError: (error) => { console.error('Erro ao excluir embalagem:', error); toast.error('Erro ao excluir embalagem'); },
   });
 
-  return { packagingItems, isLoading, error, createPackaging, updatePackaging, deletePackaging };
+  const duplicatePackaging = useMutation({
+    mutationFn: async (packaging: Packaging) => {
+      const userId = await ensureSessionUserId();
+      const cost_per_unit = packaging.purchase_price / packaging.package_quantity;
+      const { data, error } = await supabase.from('packaging').insert({
+        user_id: userId,
+        name: `${packaging.name} (cópia)`,
+        purchase_price: packaging.purchase_price,
+        package_quantity: packaging.package_quantity,
+        unit: packaging.unit,
+        category_id: packaging.category_id,
+        brand: packaging.brand,
+        supplier: packaging.supplier,
+        dimensions: packaging.dimensions,
+        stock_quantity: packaging.stock_quantity,
+        min_stock_alert: packaging.min_stock_alert,
+        cost_per_unit,
+      }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['packaging'] }); toast.success('Embalagem duplicada com sucesso!'); },
+    onError: () => toast.error('Erro ao duplicar embalagem'),
+  });
+
+  return { packagingItems, isLoading, error, createPackaging, updatePackaging, deletePackaging, duplicatePackaging };
 }

@@ -27,7 +27,7 @@ import { DecorationCategoriesList } from '@/components/decoration-categories/Dec
 import { Plus, Search, Sparkles, Loader2, Tag } from 'lucide-react';
 
 export function DecorationsList() {
-  const { decorations, isLoading, deleteDecoration } = useDecorations();
+  const { decorations, isLoading, deleteDecoration, duplicateDecoration } = useDecorations();
   const { categories } = useDecorationCategories();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -195,6 +195,8 @@ export function DecorationsList() {
                   <DecorationCard
                     key={decoration.id}
                     decoration={decoration}
+                    onView={handleEdit}
+                    onDuplicate={(dec) => duplicateDecoration.mutate(dec)}
                     onEdit={handleEdit}
                     onDelete={setDeletingDecoration}
                   />

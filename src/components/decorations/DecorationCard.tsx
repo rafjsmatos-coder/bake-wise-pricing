@@ -2,15 +2,17 @@ import { type Decoration } from '@/hooks/useDecorations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, getCostPerUnit } from '@/lib/unit-conversion';
-import { Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Eye, Copy, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 
 interface DecorationCardProps {
   decoration: Decoration;
+  onView: (decoration: Decoration) => void;
+  onDuplicate: (decoration: Decoration) => void;
   onEdit: (decoration: Decoration) => void;
   onDelete: (decoration: Decoration) => void;
 }
 
-export function DecorationCard({ decoration, onEdit, onDelete }: DecorationCardProps) {
+export function DecorationCard({ decoration, onView, onDuplicate, onEdit, onDelete }: DecorationCardProps) {
   const costInfo = getCostPerUnit(
     Number(decoration.purchase_price),
     Number(decoration.package_quantity),
@@ -49,6 +51,12 @@ export function DecorationCard({ decoration, onEdit, onDelete }: DecorationCardP
           </div>
         </div>
         <div className="flex gap-1 shrink-0">
+          <Button variant="ghost" size="icon" onClick={() => onView(decoration)} className="h-8 w-8">
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onDuplicate(decoration)} className="h-8 w-8">
+            <Copy className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={() => onEdit(decoration)} className="h-8 w-8">
             <Pencil className="h-4 w-4" />
           </Button>
@@ -70,6 +78,10 @@ export function DecorationCard({ decoration, onEdit, onDelete }: DecorationCardP
 
         {decoration.brand && (
           <p>Marca: {decoration.brand}</p>
+        )}
+
+        {decoration.supplier && (
+          <p>Fornecedor: {decoration.supplier}</p>
         )}
 
         {decoration.stock_quantity !== null && (

@@ -45,7 +45,8 @@ export function RecipesList() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const matchesCategory =
-        categoryFilter === 'all' || recipe.category_id === categoryFilter;
+        categoryFilter === 'all' || 
+        (categoryFilter === 'uncategorized' ? !recipe.category_id : recipe.category_id === categoryFilter);
       return matchesSearch && matchesCategory;
     });
   }, [recipes, searchTerm, categoryFilter]);
@@ -134,6 +135,7 @@ export function RecipesList() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as categorias</SelectItem>
+            <SelectItem value="uncategorized">Sem categoria</SelectItem>
             {categories.map((cat) => (
               <SelectItem key={cat.id} value={cat.id}>
                 <div className="flex items-center gap-2">

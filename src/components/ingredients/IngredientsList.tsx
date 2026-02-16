@@ -27,7 +27,7 @@ import { CategoriesList } from '@/components/categories/CategoriesList';
 import { Plus, Search, Package, Loader2, Tag } from 'lucide-react';
 
 export function IngredientsList() {
-  const { ingredients, isLoading, deleteIngredient } = useIngredients();
+  const { ingredients, isLoading, deleteIngredient, duplicateIngredient } = useIngredients();
   const { categories } = useCategories();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -213,6 +213,8 @@ export function IngredientsList() {
                   <IngredientCard
                     key={ingredient.id}
                     ingredient={ingredient}
+                    onView={handleEdit}
+                    onDuplicate={(ing) => duplicateIngredient.mutate(ing)}
                     onEdit={handleEdit}
                     onDelete={setDeletingIngredient}
                   />
