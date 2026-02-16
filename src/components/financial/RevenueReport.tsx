@@ -116,7 +116,7 @@ export function RevenueReport() {
           type="month"
           value={monthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
-          className="w-full sm:w-[180px] text-base"
+          className="w-full sm:w-[180px] min-h-[44px]"
         />
       </div>
 

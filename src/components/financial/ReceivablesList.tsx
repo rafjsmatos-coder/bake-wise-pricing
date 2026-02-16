@@ -40,7 +40,7 @@ export function ReceivablesList() {
 
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">
-      <div>
+      <div className="min-w-0">
         <h1 className="text-2xl font-bold text-foreground">Contas a Receber</h1>
         <p className="text-muted-foreground">
           {receivables.length} pedido{receivables.length !== 1 ? 's' : ''} com saldo pendente

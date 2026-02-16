@@ -91,13 +91,13 @@ export function ClientsList() {
     <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-foreground truncate">Clientes</h1>
           <p className="text-muted-foreground">
             {clients.length} cliente{clients.length !== 1 ? 's' : ''} cadastrado{clients.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <Button onClick={handleCreate} className="gap-2 shrink-0">
+        <Button onClick={handleCreate} className="gap-2 w-full sm:w-auto shrink-0">
           <Plus className="h-4 w-4" />
           Novo Cliente
         </Button>
@@ -111,7 +111,7 @@ export function ClientsList() {
             placeholder="Buscar por nome, telefone ou email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 text-base"
+            className="pl-10 min-h-[44px]"
           />
         </div>
       )}

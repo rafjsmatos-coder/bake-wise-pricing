@@ -82,6 +82,13 @@
   }
 }
 
+/* Safe area for bottom nav on iOS */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
