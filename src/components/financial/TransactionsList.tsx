@@ -93,8 +93,8 @@ export function TransactionsList() {
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Fluxo de Caixa</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-foreground truncate">Fluxo de Caixa</h1>
           <p className="text-muted-foreground">Gerencie suas entradas e saídas</p>
         </div>
         <div className="flex gap-2">
@@ -142,7 +142,7 @@ export function TransactionsList() {
           type="month"
           value={monthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
-          className="w-full sm:w-[180px] text-base"
+          className="w-full sm:w-[180px] min-h-[44px]"
         />
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -150,11 +150,11 @@ export function TransactionsList() {
             placeholder="Buscar..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 text-base"
+            className="pl-10 min-h-[44px]"
           />
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-full sm:w-[150px]">
+          <SelectTrigger className="w-full sm:w-[150px] min-h-[44px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

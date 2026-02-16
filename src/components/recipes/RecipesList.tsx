@@ -18,12 +18,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRecipes, type Recipe } from '@/hooks/useRecipes';
 import { useRecipeCategories } from '@/hooks/useRecipeCategories';
 import { RecipeForm } from './RecipeForm';
 import { RecipeCard } from './RecipeCard';
 import { RecipeDetails } from './RecipeDetails';
-import { Plus, Search, Book, Loader2 } from 'lucide-react';
+import { RecipeCategoriesList } from '@/components/recipe-categories/RecipeCategoriesList';
+import { Plus, Search, Book, Loader2, Tag } from 'lucide-react';
 
 export function RecipesList() {
   const { recipes, isLoading, deleteRecipe, duplicateRecipe } = useRecipes();
@@ -104,8 +106,19 @@ export function RecipesList() {
         </Button>
       </div>
 
+      <Tabs defaultValue="list">
+        <TabsList>
+          <TabsTrigger value="list">Todas</TabsTrigger>
+          <TabsTrigger value="categories" className="gap-1.5">
+            <Tag className="h-3.5 w-3.5" />
+            Categorias
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-6 mt-4">
+
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -173,6 +186,12 @@ export function RecipesList() {
           )}
         </div>
       )}
+      </TabsContent>
+
+      <TabsContent value="categories" className="mt-4">
+        <RecipeCategoriesList />
+      </TabsContent>
+      </Tabs>
 
       {/* Recipe Form Modal */}
       <RecipeForm

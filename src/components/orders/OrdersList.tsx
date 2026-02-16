@@ -157,13 +157,13 @@ export function OrdersList() {
     <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Pedidos</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-foreground truncate">Pedidos</h1>
           <p className="text-muted-foreground">
             {orders.length} pedido{orders.length !== 1 ? 's' : ''} registrado{orders.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <Button onClick={handleCreate} className="gap-2 shrink-0">
+        <Button onClick={handleCreate} className="gap-2 w-full sm:w-auto shrink-0">
           <Plus className="h-4 w-4" />
           Novo Pedido
         </Button>
@@ -192,11 +192,11 @@ export function OrdersList() {
                   placeholder="Buscar por cliente ou produto..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 text-base"
+                  className="pl-10 min-h-[44px]"
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px] min-h-[44px]">
                   <SelectValue placeholder="Filtrar status" />
                 </SelectTrigger>
                 <SelectContent>

@@ -18,11 +18,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDecorations, type Decoration } from '@/hooks/useDecorations';
 import { useDecorationCategories } from '@/hooks/useDecorationCategories';
 import { DecorationCard } from './DecorationCard';
 import { DecorationForm } from './DecorationForm';
-import { Plus, Search, Sparkles, Loader2 } from 'lucide-react';
+import { DecorationCategoriesList } from '@/components/decoration-categories/DecorationCategoriesList';
+import { Plus, Search, Sparkles, Loader2, Tag } from 'lucide-react';
 
 export function DecorationsList() {
   const { decorations, isLoading, deleteDecoration } = useDecorations();
@@ -83,7 +85,7 @@ export function DecorationsList() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
@@ -105,15 +107,26 @@ export function DecorationsList() {
         </Button>
       </div>
 
+      <Tabs defaultValue="list">
+        <TabsList>
+          <TabsTrigger value="list">Todas</TabsTrigger>
+          <TabsTrigger value="categories" className="gap-1.5">
+            <Tag className="h-3.5 w-3.5" />
+            Categorias
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-6 mt-4">
+
       {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar decorações..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 min-h-[44px]"
+            className="pl-10 min-h-[44px]"
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -198,6 +211,13 @@ export function DecorationsList() {
         onOpenChange={handleFormClose}
         decoration={editingDecoration}
       />
+
+      </TabsContent>
+
+      <TabsContent value="categories" className="mt-4">
+        <DecorationCategoriesList />
+      </TabsContent>
+      </Tabs>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deletingDecoration} onOpenChange={() => setDeletingDecoration(null)}>

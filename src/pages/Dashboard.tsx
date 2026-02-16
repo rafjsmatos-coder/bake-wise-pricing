@@ -145,7 +145,7 @@ export function Dashboard() {
         onOpenChange={setSearchOpen} 
         onNavigate={handleSearchNavigate}
       />
-      <AppLayout currentPage={currentPage} onPageChange={handlePageChange} canAccess={canAccess}>
+      <AppLayout currentPage={currentPage} onPageChange={handlePageChange} canAccess={canAccess} onSearchOpen={() => setSearchOpen(true)}>
         {renderPageContent()}
       </AppLayout>
     </>

@@ -22,7 +22,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, Package, Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CategoriesList } from '@/components/categories/CategoriesList';
+import { Plus, Search, Package, Loader2, Tag } from 'lucide-react';
 
 export function IngredientsList() {
   const { ingredients, isLoading, deleteIngredient } = useIngredients();
@@ -101,7 +103,7 @@ export function IngredientsList() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
@@ -122,6 +124,17 @@ export function IngredientsList() {
           Novo Ingrediente
         </Button>
       </div>
+
+      <Tabs defaultValue="list">
+        <TabsList>
+          <TabsTrigger value="list">Todos</TabsTrigger>
+          <TabsTrigger value="categories" className="gap-1.5">
+            <Tag className="h-3.5 w-3.5" />
+            Categorias
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-6 mt-4">
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -216,6 +229,13 @@ export function IngredientsList() {
         onOpenChange={handleFormClose}
         ingredient={editingIngredient}
       />
+
+      </TabsContent>
+
+      <TabsContent value="categories" className="mt-4">
+        <CategoriesList />
+      </TabsContent>
+      </Tabs>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deletingIngredient} onOpenChange={() => setDeletingIngredient(null)}>
