@@ -1,99 +1,61 @@
 
+## Corrigir Atualização de Cache Após Baixa de Estoque
 
-## Integrar Resend para E-mails de Autenticacao em Portugues
+### Problema
 
-### Resumo
+Quando a baixa de estoque é confirmada, o sistema atualiza corretamente os valores no banco de dados, mas **não invalida os caches** dos ingredientes, decorações e embalagens na interface. O callback `onComplete` do diálogo de dedução só invalida o cache de `orders`, mas não os caches dos materiais que foram modificados.
 
-Criar uma funcao backend que envia os e-mails de autenticacao (confirmacao, recuperacao de senha, troca de e-mail) usando o Resend, com os templates em portugues que ja temos prontos. Isso substitui o e-mail padrao em ingles do sistema.
+Por isso, a tela continua mostrando os valores antigos até você sair e entrar novamente (o que força o recarregamento completo dos dados).
 
-### O que voce precisa fazer antes (fora do Lovable)
+### Solução
 
-**1. Criar conta gratuita no Resend**
-- Acesse https://resend.com e crie uma conta
-- Plano gratuito: 3.000 e-mails/mes (mais que suficiente)
+Adicionar invalidação dos caches de `ingredients`, `decorations` e `packaging` em dois pontos:
 
-**2. Verificar o dominio precibake.com.br**
-- No painel do Resend, va em "Domains" e adicione `precibake.com.br`
-- O Resend vai gerar registros DNS (MX, TXT, CNAME)
-- Adicione esses registros no painel DNS da Hostinger
-- Aguarde a verificacao (geralmente alguns minutos)
+**1. No `StockDeductionDialog` (após confirmar a baixa)**
 
-**3. Criar uma API Key**
-- No Resend, va em "API Keys" e crie uma chave
-- Eu vou solicitar essa chave de forma segura no Lovable
+Adicionar `useQueryClient` e invalidar diretamente os caches dos materiais após a atualização no banco:
 
-### O que eu vou implementar
+- `ingredients` 
+- `decorations`
+- `packaging`
+- `products` (pois exibem dados de estoque dos materiais vinculados)
 
-**1. Criar a funcao backend `send-auth-email`**
+**2. No `OrdersList` (callback `onComplete`)**
 
-Nova edge function que:
-- Recebe o tipo de e-mail (confirmation, recovery, email_change)
-- Recebe o e-mail do destinatario e a URL de confirmacao
-- Monta o HTML em portugues usando nossos templates existentes
-- Envia via API do Resend com remetente `PreciBake <noreply@precibake.com.br>`
+Expandir o callback para também invalidar os mesmos caches, garantindo cobertura dupla.
 
-**2. Criar funcao backend `auth-email-hook`**
+### Arquivos a editar
 
-Hook de autenticacao que:
-- Intercepta eventos de e-mail do sistema de auth
-- Redireciona para nossa funcao de envio personalizada
-- Garante que TODOS os e-mails saiam em portugues
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/orders/StockDeductionDialog.tsx` | Importar `useQueryClient`, invalidar caches de `ingredients`, `decorations`, `packaging` e `products` no `handleConfirm` |
+| `src/components/orders/OrdersList.tsx` | Adicionar invalidação de `ingredients`, `decorations`, `packaging` no callback `onComplete` |
 
-**3. Configurar o hook no banco de dados**
+### Detalhes técnicos
 
-Migracao SQL para registrar o hook que intercepta os e-mails de autenticacao e usa nossa funcao em vez do sistema padrao.
+No `StockDeductionDialog.tsx`, dentro do `handleConfirm`, após o loop de updates:
 
-### Arquivos a criar/editar
-
-| Arquivo | Acao | Descricao |
-|---------|------|-----------|
-| `supabase/functions/send-auth-email/index.ts` | Criar | Funcao que envia e-mail via Resend com templates PT-BR |
-| `supabase/config.toml` | Editar | Adicionar configuracao do hook e desabilitar JWT para a nova funcao |
-| Migracao SQL | Criar | Configurar hook de e-mail no sistema de autenticacao |
-
-### Detalhes tecnicos
-
-**Fluxo completo:**
-
-```text
-Usuario pede reset de senha
-        |
-        v
-Sistema de Auth gera token + URL
-        |
-        v
-Hook intercepta o envio de e-mail
-        |
-        v
-Chama send-auth-email com dados
-        |
-        v
-Funcao monta HTML em PT-BR
-        |
-        v
-Resend envia com remetente
-noreply@precibake.com.br
-        |
-        v
-Usuario recebe e-mail bonito,
-em portugues, fora do spam
+```typescript
+const queryClient = useQueryClient();
+// ... após os updates ...
+queryClient.invalidateQueries({ queryKey: ['ingredients'] });
+queryClient.invalidateQueries({ queryKey: ['decorations'] });
+queryClient.invalidateQueries({ queryKey: ['packaging'] });
+queryClient.invalidateQueries({ queryKey: ['products'] });
 ```
 
-**Estrutura da edge function `send-auth-email`:**
-- Recebe payload do hook com: tipo do e-mail, endereco do destinatario, token/URL
-- Seleciona o template correto (confirmation, recovery, email_change)
-- Injeta a URL de confirmacao no template HTML
-- Chama a API do Resend (POST https://api.resend.com/emails)
-- Retorna sucesso ou erro
+No `OrdersList.tsx`, expandir o `onComplete`:
 
-**Secret necessaria:**
-- `RESEND_API_KEY` - Chave de API do Resend (sera solicitada de forma segura)
+```typescript
+onComplete={() => {
+  queryClient.invalidateQueries({ queryKey: ['orders'] });
+  queryClient.invalidateQueries({ queryKey: ['ingredients'] });
+  queryClient.invalidateQueries({ queryKey: ['decorations'] });
+  queryClient.invalidateQueries({ queryKey: ['packaging'] });
+  queryClient.invalidateQueries({ queryKey: ['products'] });
+}}
+```
 
-### Resultado final
+### Resultado
 
-- E-mails de confirmacao, recuperacao e troca de e-mail em portugues
-- Remetente profissional: `PreciBake <noreply@precibake.com.br>`
-- Melhor entregabilidade (dominio verificado com SPF/DKIM)
-- Custo: R$ 0 (plano gratuito do Resend)
-- Sem precisar contratar plano de e-mail separado
-
+Após a baixa de estoque, todos os dados atualizados serão refletidos imediatamente na interface sem precisar recarregar a página ou fazer logout/login.
