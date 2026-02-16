@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { convertUnit, type MeasurementUnit } from '@/lib/unit-conversion';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface MaterialItem {
   id: string;
@@ -36,6 +37,7 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
   const [materials, setMaterials] = useState<MaterialItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (open && order) {
@@ -206,6 +208,10 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
         await supabase.from(table).update({ stock_quantity: newStock }).eq('id', m.id);
       }
 
+      queryClient.invalidateQueries({ queryKey: ['ingredients'] });
+      queryClient.invalidateQueries({ queryKey: ['decorations'] });
+      queryClient.invalidateQueries({ queryKey: ['packaging'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Estoque atualizado com sucesso!');
       onComplete();
       onOpenChange(false);

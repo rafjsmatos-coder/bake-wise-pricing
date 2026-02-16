@@ -336,6 +336,10 @@ export function OrdersList() {
         order={stockDeductionOrder}
         onComplete={() => {
           queryClient.invalidateQueries({ queryKey: ['orders'] });
+          queryClient.invalidateQueries({ queryKey: ['ingredients'] });
+          queryClient.invalidateQueries({ queryKey: ['decorations'] });
+          queryClient.invalidateQueries({ queryKey: ['packaging'] });
+          queryClient.invalidateQueries({ queryKey: ['products'] });
         }}
       />
     </div>
