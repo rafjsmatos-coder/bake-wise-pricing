@@ -13,7 +13,6 @@ import {
   Flame, 
   Eye,
   Copy,
-  TrendingUp
 } from 'lucide-react';
 
 interface RecipeCardProps {
@@ -79,37 +78,21 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
   return (
     <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex-1 min-w-0">
-          {recipe.recipe_categories && (
-            <Badge
-              variant="secondary"
-              className="text-xs max-w-[200px] truncate mb-1"
-              style={{
-                backgroundColor: `${recipe.recipe_categories.color}20`,
-                color: recipe.recipe_categories.color,
-                borderColor: recipe.recipe_categories.color,
-              }}
-            >
-              {recipe.recipe_categories.name}
-            </Badge>
-          )}
-          <h3 className="font-semibold text-foreground truncate">{recipe.name}</h3>
-        </div>
-        <div className="flex gap-1 shrink-0">
-          <Button variant="ghost" size="icon" onClick={onView} className="h-8 w-8" title="Ver detalhes">
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onDuplicate} className="h-8 w-8" title="Duplicar">
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8" title="Editar">
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8" title="Excluir">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </div>
+      <div className="mb-3">
+        {recipe.recipe_categories && (
+          <Badge
+            variant="secondary"
+            className="text-xs max-w-[200px] truncate mb-1"
+            style={{
+              backgroundColor: `${recipe.recipe_categories.color}20`,
+              color: recipe.recipe_categories.color,
+              borderColor: recipe.recipe_categories.color,
+            }}
+          >
+            {recipe.recipe_categories.name}
+          </Badge>
+        )}
+        <h3 className="font-semibold text-foreground truncate">{recipe.name}</h3>
       </div>
 
       {/* Components summary */}
@@ -136,18 +119,51 @@ export function RecipeCard({ recipe, onEdit, onDelete, onDuplicate, onView }: Re
         Rende: <span className="font-medium text-foreground">{recipe.yield_quantity} {recipe.yield_unit}</span>
       </div>
 
-      {/* Costs */}
-      {costBreakdown && (
+      {/* Footer with costs + actions */}
+      {costBreakdown ? (
         <div className="pt-3 border-t border-border space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Custo Total</span>
             <span className="font-medium text-foreground">{formatCurrency(costBreakdown.totalCost)}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Custo por {recipe.yield_unit}</span>
-            <span className="font-bold text-primary text-lg">
-              {formatCurrency(costBreakdown.costPerUnit)}
-            </span>
+            <div>
+              <span className="text-muted-foreground text-sm">Por {recipe.yield_unit}: </span>
+              <span className="font-bold text-primary text-lg">
+                {formatCurrency(costBreakdown.costPerUnit)}
+              </span>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <Button variant="ghost" size="icon" onClick={onView} className="h-8 w-8" title="Ver detalhes">
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onDuplicate} className="h-8 w-8" title="Duplicar">
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8" title="Editar">
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8" title="Excluir">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="pt-3 border-t border-border flex items-center justify-end">
+          <div className="flex gap-1 shrink-0">
+            <Button variant="ghost" size="icon" onClick={onView} className="h-8 w-8" title="Ver detalhes">
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onDuplicate} className="h-8 w-8" title="Duplicar">
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8" title="Editar">
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8" title="Excluir">
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
           </div>
         </div>
       )}

@@ -14,26 +14,13 @@ export function ClientCard({ client, onView, onEdit, onDelete }: ClientCardProps
   return (
     <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">{client.name}</h3>
-          {client.city && client.state && (
-            <p className="text-xs text-muted-foreground truncate">
-              {client.city}, {client.state}
-            </p>
-          )}
-        </div>
-        <div className="flex gap-1 shrink-0 flex-wrap justify-end">
-          <Button variant="ghost" size="icon" onClick={() => onView(client)} className="h-8 w-8">
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onEdit(client)} className="h-8 w-8">
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onDelete(client)} className="h-8 w-8">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </div>
+      <div className="mb-3">
+        <h3 className="font-semibold text-foreground truncate">{client.name}</h3>
+        {client.city && client.state && (
+          <p className="text-xs text-muted-foreground truncate">
+            {client.city}, {client.state}
+          </p>
+        )}
       </div>
 
       {/* Contact Info */}
@@ -52,17 +39,30 @@ export function ClientCard({ client, onView, onEdit, onDelete }: ClientCardProps
         )}
       </div>
 
-      {/* Footer */}
+      {/* Footer with orders + actions */}
       <div className="pt-3 border-t border-border flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <ShoppingBag className="h-3.5 w-3.5" />
-          <span>{client.orders_count || 0} pedido{(client.orders_count || 0) !== 1 ? 's' : ''}</span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <ShoppingBag className="h-3.5 w-3.5" />
+            <span>{client.orders_count || 0} pedido{(client.orders_count || 0) !== 1 ? 's' : ''}</span>
+          </div>
+          {client.instagram && (
+            <Badge variant="secondary" className="text-xs">
+              @{client.instagram.replace('@', '')}
+            </Badge>
+          )}
         </div>
-        {client.instagram && (
-          <Badge variant="secondary" className="text-xs">
-            @{client.instagram.replace('@', '')}
-          </Badge>
-        )}
+        <div className="flex gap-1 shrink-0">
+          <Button variant="ghost" size="icon" onClick={() => onView(client)} className="h-8 w-8">
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onEdit(client)} className="h-8 w-8">
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onDelete(client)} className="h-8 w-8">
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
       </div>
     </div>
   );

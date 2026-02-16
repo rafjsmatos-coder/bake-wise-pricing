@@ -31,39 +31,21 @@ export function ProductCard({
   return (
     <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            {product.category && (
-              <Badge 
-                variant="secondary" 
-                className="text-xs max-w-[200px] truncate"
-                style={{ 
-                  backgroundColor: `${product.category.color}20`,
-                  color: product.category.color || undefined,
-                  borderColor: product.category.color || undefined,
-                }}
-              >
-                {product.category.name}
-              </Badge>
-            )}
-          </div>
-          <h3 className="font-semibold text-foreground truncate">{product.name}</h3>
-        </div>
-        <div className="flex flex-wrap gap-1 shrink-0">
-          <Button variant="ghost" size="icon" onClick={onView} className="h-8 w-8" title="Ver detalhes">
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onDuplicate} className="h-8 w-8" title="Duplicar">
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8" title="Editar">
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8" title="Excluir">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </div>
+      <div className="mb-3">
+        {product.category && (
+          <Badge 
+            variant="secondary" 
+            className="text-xs max-w-[200px] truncate mb-1"
+            style={{ 
+              backgroundColor: `${product.category.color}20`,
+              color: product.category.color || undefined,
+              borderColor: product.category.color || undefined,
+            }}
+          >
+            {product.category.name}
+          </Badge>
+        )}
+        <h3 className="font-semibold text-foreground truncate">{product.name}</h3>
       </div>
 
       {/* Components summary */}
@@ -96,17 +78,33 @@ export function ProductCard({
         </div>
       </div>
 
-      {/* Costs */}
+      {/* Footer with costs + actions */}
       <div className="pt-3 border-t border-border space-y-2">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Custo de Produção</span>
           <span className="font-medium text-foreground">{formatCurrency(productionCost)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Preço de Venda Sugerido</span>
-          <span className="font-bold text-primary text-base sm:text-lg">
-            {formatCurrency(sellingPrice)}
-          </span>
+          <div>
+            <span className="text-muted-foreground text-sm">Venda: </span>
+            <span className="font-bold text-primary text-base sm:text-lg">
+              {formatCurrency(sellingPrice)}
+            </span>
+          </div>
+          <div className="flex gap-1 shrink-0">
+            <Button variant="ghost" size="icon" onClick={onView} className="h-8 w-8" title="Ver detalhes">
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onDuplicate} className="h-8 w-8" title="Duplicar">
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8" title="Editar">
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8" title="Excluir">
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
