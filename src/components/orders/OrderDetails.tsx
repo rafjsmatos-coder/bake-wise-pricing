@@ -71,26 +71,24 @@ export function OrderDetails({ open, onOpenChange, order, onEdit, onStatusChange
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[100dvh] overflow-y-auto overflow-x-hidden sm:max-h-[85vh]" style={{ touchAction: 'pan-y' }}>
         <DialogHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <DialogTitle>Detalhes do Pedido</DialogTitle>
-            <div className="flex gap-2 shrink-0 flex-wrap">
-              {hasWhatsapp && (
-                <Button variant="outline" size="sm" onClick={handleSendQuote} className="text-green-600 border-green-600 hover:bg-green-50">
-                  <MessageCircle className="h-4 w-4 mr-1" />
-                  Orçamento
-                </Button>
-              )}
-              {onDuplicate && (
-                <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); onDuplicate(order); }}>
-                  <Copy className="h-4 w-4 mr-1" />
-                  Duplicar
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={handleEdit}>
-                <Pencil className="h-4 w-4 mr-1" />
-                Editar
+          <DialogTitle>Detalhes do Pedido</DialogTitle>
+          <div className="flex gap-2 flex-wrap pt-1">
+            {hasWhatsapp && (
+              <Button variant="outline" size="sm" onClick={handleSendQuote} className="text-green-600 border-green-600 hover:bg-green-50">
+                <MessageCircle className="h-4 w-4 mr-1" />
+                Orçamento
               </Button>
-            </div>
+            )}
+            {onDuplicate && (
+              <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); onDuplicate(order); }}>
+                <Copy className="h-4 w-4 mr-1" />
+                Duplicar
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={handleEdit}>
+              <Pencil className="h-4 w-4 mr-1" />
+              Editar
+            </Button>
           </div>
         </DialogHeader>
 
