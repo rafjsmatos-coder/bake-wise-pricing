@@ -1,74 +1,71 @@
 
 
-## Adicionar Status "Orcamento" e Corrigir Filtro da Lista de Compras
+## Corrigir Entrada de Estoque com Unidade Independente
 
-### Problema atual
+### Problema
 
-1. O status `ready` (Pronto) esta sendo incluido na lista de compras, mas se o produto ja esta pronto, os materiais ja foram consumidos
-2. Nao existe forma de registrar orcamentos sem que eles afetem a lista de compras e o planejamento
+Quando um ingrediente e cadastrado em `kg` (ex: Acucar mascavo - 1 kg), os campos de estoque e alerta minimo tambem esperam valores em `kg`. Para registrar 100g de estoque, o usuario precisa digitar `0,1` -- pouco intuitivo. Enquanto isso, a lista de compras mostra necessidades em `g`, gerando confusao.
 
 ### Solucao
 
-Adicionar o status "Orcamento" (quote) como primeiro estagio do ciclo de vida do pedido, e corrigir o filtro da lista de compras.
+Adicionar um seletor de unidade independente ao lado dos campos de estoque e alerta minimo no formulario de ingredientes. O usuario escolhe em qual unidade quer informar (kg ou g, L ou ml, m ou cm), e o sistema converte automaticamente para a unidade principal antes de salvar no banco.
 
-### Fluxo atualizado dos pedidos
+### Como funciona
 
 ```text
-Orcamento -> Pendente -> Em producao -> Pronto -> Entregue
-                                                   (Cancelado em qualquer etapa)
+Exemplo: Ingrediente cadastrado em kg
+
+Estoque atual: [ 100 ] [ g ]  --> salva como 0.1 kg no banco
+Alerta minimo: [ 500 ] [ g ]  --> salva como 0.5 kg no banco
+
+Exemplo: Ingrediente cadastrado em g
+
+Estoque atual: [ 2 ] [ kg ]   --> salva como 2000 g no banco
+Alerta minimo: [ 1 ] [ kg ]   --> salva como 1000 g no banco
 ```
 
-### Regra da lista de compras
+O usuario digita no que for mais natural; o banco sempre recebe na unidade principal do ingrediente.
 
-| Status | Aparece na lista de compras |
-|--------|----------------------------|
-| Orcamento (quote) | Nao |
-| Pendente (pending) | Sim |
-| Em producao (in_production) | Sim |
-| Pronto (ready) | Nao |
-| Entregue (delivered) | Nao |
-| Cancelado (cancelled) | Nao |
+### Regras
 
-Somente pedidos com status `pending` ou `in_production` afetam a lista de compras, pois sao os que ainda precisam de materiais.
-
----
+- Para ingredientes em `un` (unidade), nao mostra seletor extra (nao faz sentido converter)
+- As opcoes de unidade sao limitadas ao mesmo tipo (peso: kg/g, volume: L/ml, comprimento: m/cm)
+- Ao editar um ingrediente existente, os campos mostram o valor ja convertido na unidade mais legivel (ex: 0.1 kg mostra como 100 g se for mais natural)
+- Os alertas no `StockAlertsCard` e `IngredientCard` continuam funcionando corretamente pois o banco armazena tudo na mesma unidade principal
 
 ### Alteracoes
 
 | Arquivo | O que muda |
 |---------|-----------|
-| `src/components/orders/OrderStatusBadge.tsx` | Adicionar `quote` ao `statusConfig`, `ORDER_STATUSES` e `getStatusColor` com label "Orcamento" e cor cinza/neutra |
-| `src/components/orders/ShoppingList.tsx` | Corrigir filtro: incluir apenas `pending` e `in_production` (atualmente exclui so `cancelled` e `delivered`, deixando `ready` entrar) |
-| `src/components/orders/OrderForm.tsx` | Adicionar "Orcamento" como opcao no select de status |
-| `src/components/orders/OrderCard.tsx` | Nenhuma alteracao necessaria (ja usa `OrderStatusBadge` que sera atualizado) |
-| `src/components/orders/OrdersList.tsx` | Verificar se filtros de status incluem a nova opcao |
-| `src/hooks/useOrders.tsx` | Ao duplicar pedido, manter status default como `pending` (nao muda) |
+| `src/components/ingredients/IngredientForm.tsx` | Adicionar estado `stockUnit` e `alertUnit` com seletores de unidade ao lado dos campos de estoque e alerta minimo. No `onSubmit`, converter para a unidade principal do ingrediente antes de salvar. No `useEffect` de edicao, detectar a melhor unidade para exibicao |
+| `src/lib/unit-conversion.ts` | Adicionar funcao `getCompatibleUnits(unit)` que retorna as unidades do mesmo tipo (ex: `kg` retorna `['kg', 'g']`), e funcao `getBestDisplayUnit(value, unit)` que escolhe a unidade mais legivel para exibicao |
 
-### Detalhe tecnico
+### O que NAO muda
 
-**OrderStatusBadge.tsx** - Adicionar ao statusConfig:
+- Banco de dados: nenhuma migracao necessaria (stock_quantity e min_stock_alert continuam em numeric)
+- `StockAlertsCard.tsx`: comparacao `stock_quantity <= min_stock_alert` continua valida (ambos na mesma unidade)
+- `IngredientCard.tsx`: exibicao continua usando a unidade principal do ingrediente
+- `ShoppingList.tsx`: calculo de necessidades nao muda
+- `StockDeductionDialog.tsx`: ja usa `convertUnit` para converter entre unidades
+
+### Exemplo visual do formulario
+
 ```text
-quote: { label: 'Orcamento', className: 'bg-gray-500/10 text-gray-600 border-gray-500/30' }
+Campos opcionais:
+  ┌─────────────────────────────────────┐
+  │ Estoque Atual                       │
+  │ ┌──────────────┐  ┌──────────────┐  │
+  │ │     100      │  │    g    ▼    │  │
+  │ └──────────────┘  └──────────────┘  │
+  │                                     │
+  │ Alerta de Estoque Minimo            │
+  │ ┌──────────────┐  ┌──────────────┐  │
+  │ │     500      │  │    g    ▼    │  │
+  │ └──────────────┘  └──────────────┘  │
+  └─────────────────────────────────────┘
 ```
 
-E ao ORDER_STATUSES (como primeiro item):
-```text
-{ value: 'quote', label: 'Orcamento' }
-```
+### Impacto nos alertas
 
-**ShoppingList.tsx** - Mudar o filtro de:
-```text
-if (!o.delivery_date || o.status === 'cancelled' || o.status === 'delivered') return false;
-```
-
-Para:
-```text
-if (!o.delivery_date || !['pending', 'in_production'].includes(o.status)) return false;
-```
-
-Isso garante que somente pedidos pendentes ou em producao entrem na lista de compras, excluindo orcamentos, prontos, entregues e cancelados.
-
-### Nenhuma migracao de banco necessaria
-
-O campo `status` na tabela `orders` e do tipo `text`, entao aceita qualquer valor sem precisar de migracao.
+Nenhum impacto negativo. Como a conversao acontece antes de salvar, os valores no banco permanecem consistentes na unidade principal. As comparacoes em `StockAlertsCard` e `IngredientCard` continuam corretas sem alteracao.
 
