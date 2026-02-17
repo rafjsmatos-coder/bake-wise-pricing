@@ -1,5 +1,5 @@
 import { Ingredient } from '@/hooks/useIngredients';
-import { formatCurrency, formatNumber, getCostPerUnit } from '@/lib/unit-conversion';
+import { formatCurrency, formatNumber, getCostPerUnit, getBestDisplayUnit, type MeasurementUnit } from '@/lib/unit-conversion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, Copy, Pencil, Trash2, AlertTriangle, Calendar } from 'lucide-react';
@@ -75,11 +75,14 @@ export function IngredientCard({ ingredient, onView, onDuplicate, onEdit, onDele
           <p>Fornecedor: {ingredient.supplier}</p>
         )}
 
-        {ingredient.stock_quantity !== null && (
-          <p className={isLowStock ? 'text-destructive' : ''}>
-            Estoque: {formatNumber(Number(ingredient.stock_quantity), 3)} {ingredient.unit}
-          </p>
-        )}
+        {ingredient.stock_quantity !== null && (() => {
+          const stockDisplay = getBestDisplayUnit(Number(ingredient.stock_quantity), ingredient.unit as MeasurementUnit);
+          return (
+            <p className={isLowStock ? 'text-destructive' : ''}>
+              Estoque: {formatNumber(stockDisplay.displayValue, 3)} {stockDisplay.displayUnit}
+            </p>
+          );
+        })()}
 
         {expiryDate && (
           <p className={`flex items-center gap-1 ${isExpired ? 'text-destructive font-medium' : isExpiringSoon ? 'text-amber-600 dark:text-amber-400 font-medium' : ''}`}>
