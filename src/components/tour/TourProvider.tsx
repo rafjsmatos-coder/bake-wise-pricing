@@ -28,7 +28,7 @@ export function TourWrapper({ children, onSidebarToggle }: TourWrapperProps) {
         <div className="space-y-2">
           <h3 className="font-bold text-lg">Visão Geral 📊</h3>
           <p>Aqui você vê um resumo de tudo: quantos produtos, receitas, ingredientes, decorações e embalagens você tem cadastrados.</p>
-          <p className="text-sm text-muted-foreground mt-2">Clique em qualquer card para acessar a lista completa.</p>
+          <p className="text-sm text-muted-foreground mt-2">👉 Deslize para o lado para ver todos os cards. Toque em qualquer um para acessar a lista completa.</p>
         </div>
       ),
     },
@@ -165,6 +165,7 @@ export function TourWrapper({ children, onSidebarToggle }: TourWrapperProps) {
 
   return (
     <ReactTourProvider
+      key={isMobile ? 'mobile' : 'desktop'}
       steps={steps}
       styles={{
         popover: (base) => ({
