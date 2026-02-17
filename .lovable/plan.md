@@ -1,60 +1,70 @@
 
 
-## Corrigir Limpeza Automatica do manual_override
+## Expandir Autonomias do Admin
 
-### Problema
+Quatro novas capacidades para dar controle total ao administrador sobre o ciclo de vida das assinaturas.
 
-Quando o admin ativa manualmente um trial ou premium, o campo `manual_override` e marcado como `true`. Porem, quando esse periodo manual expira, o `check-subscription` muda o status para `expired` mas NAO limpa o `manual_override`. Isso deixa o usuario num estado inconsistente onde:
+---
 
-- O acesso esta corretamente bloqueado (as datas sao verificadas)
-- Mas o "Sincronizar Stripe" no admin nao funciona porque ve `manual_override: true` e nao mexe no usuario
-- O admin perde visibilidade sobre o real motivo do status
+### 1. Cancelar/Expirar Manualmente
 
-### Solucao
-
-Atualizar a edge function `check-subscription` para limpar `manual_override` quando um periodo manual expira naturalmente.
+Adicionar opcoes no dropdown de acoes do usuario para forcar o status para "cancelado" ou "expirado", com confirmacao. Util quando um usuario solicita cancelamento direto ou quando o admin precisa revogar acesso imediatamente.
 
 | Arquivo | Alteracao |
 |---------|----------|
-| `supabase/functions/check-subscription/index.ts` | Adicionar `manual_override: false` nos dois pontos onde o status e atualizado para `expired` (trial expirado na linha ~109 e assinatura expirada na linha ~126) |
+| `src/components/admin/UserManagement.tsx` | Adicionar opcoes "Cancelar Assinatura" e "Expirar Assinatura" no dropdown, com dialogs de confirmacao. Reutilizar o `subscriptionDialog` existente com novas actions `cancel` e `expire` |
 
-### Detalhe tecnico
+O backend (`updateSubscription` na edge function) ja suporta qualquer status incluindo `expired` e `canceled`, e ja limpa `manual_override` nesses casos (linhas 388-391). Nenhuma alteracao no backend necessaria.
 
-Nos dois blocos onde o status e atualizado para `expired`, mudar de:
+---
 
-```text
-.update({ status: 'expired' })
-```
+### 2. Premium com Duracao Customizada
 
-Para:
+Atualmente "Ativar Premium" esta fixo em 30 dias. Mudar para permitir que o admin defina a quantidade de dias, assim como ja funciona para extensao de trial.
 
-```text
-.update({ status: 'expired', manual_override: false })
-```
+| Arquivo | Alteracao |
+|---------|----------|
+| `src/components/admin/UserManagement.tsx` | No dialog de acao `activate`, mostrar campo de input de dias (igual ao extend). Passar `daysToAdd` dinamico em vez de fixo 30 |
 
-Isso acontece em dois locais:
-1. Linha ~109: quando `status === 'trial'` e `trial_ends_at` ja passou
-2. Linha ~126: quando `status === 'active'` e `subscription_ends_at` ja passou
+Backend ja suporta `daysToAdd` dinamico na acao `updateSubscription`. Nenhuma alteracao no backend.
 
-### Resultado
+---
 
-```text
-Fluxo corrigido:
+### 3. Remover Override Manual
 
-Admin estende trial 15 dias
-  -> manual_override: true, status: trial
+Botao para limpar o `manual_override` sem alterar o status. Util quando o admin quer devolver o controle ao Stripe sem esperar expiracao.
 
-15 dias depois, check-subscription detecta expiracao
-  -> manual_override: false, status: expired
+| Arquivo | Alteracao |
+|---------|----------|
+| `src/components/admin/UserManagement.tsx` | Adicionar opcao "Remover Override Manual" no dropdown (so aparece se o usuario tiver `manual_override: true`). Chamar `updateSubscription` com apenas `manual_override: false` |
+| `supabase/functions/admin-users/index.ts` | Na acao `updateSubscription`, aceitar campo `manualOverride` explicito para permitir definir override independentemente do status |
 
-Admin pode agora sincronizar com Stripe normalmente
-  -> Stripe sync funciona sem bloqueio do override
-```
+Tambem precisa expor `manual_override` na listagem de usuarios para o frontend saber quando mostrar a opcao.
 
-### Nenhuma outra alteracao necessaria
+| Arquivo | Alteracao |
+|---------|----------|
+| `supabase/functions/admin-users/index.ts` | Na acao `list`, incluir `manual_override` no select de subscriptions e no mapeamento retornado |
 
-O resto do sistema ja funciona corretamente:
-- `syncFromStripe` ja limpa `manual_override` quando encontra assinatura ativa no Stripe
-- O admin ja pode definir `manual_override` via `updateSubscription`
-- A aba de Assinatura no modal ja mostra o estado do override
+---
+
+### 4. Log de Acoes Administrativas
+
+Criar tabela `admin_action_logs` para registrar toda acao do admin (extensao de trial, ativacao premium, cancelamento, sync, etc.) com timestamp, admin que executou e usuario afetado.
+
+| Arquivo | Alteracao |
+|---------|----------|
+| Migracao SQL | Criar tabela `admin_action_logs` com colunas: `id`, `admin_user_id`, `target_user_id`, `action`, `details` (jsonb), `created_at`. RLS: somente admins podem ler e inserir |
+| `supabase/functions/admin-users/index.ts` | Adicionar funcao helper `logAdminAction()` e chamar em cada acao relevante (extendTrial, updateSubscription, syncFromStripe, toggleAdmin, deleteUser) |
+| `src/components/admin/UserDetailsModal.tsx` | Adicionar aba "Historico" no modal de detalhes mostrando as ultimas acoes administrativas realizadas sobre aquele usuario |
+
+---
+
+### Resumo de arquivos
+
+| Arquivo | Tipo de alteracao |
+|---------|-------------------|
+| Migracao SQL | Nova tabela `admin_action_logs` |
+| `supabase/functions/admin-users/index.ts` | Aceitar `manualOverride` explicito, expor override na listagem, registrar logs de acao |
+| `src/components/admin/UserManagement.tsx` | Novas opcoes: cancelar, expirar, premium customizado, remover override |
+| `src/components/admin/UserDetailsModal.tsx` | Nova aba "Historico" com log de acoes do admin |
 
