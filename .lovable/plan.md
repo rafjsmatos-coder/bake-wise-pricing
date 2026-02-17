@@ -1,70 +1,60 @@
 
 
-## Fechar com Chave de Ouro: Assinaturas
+## Corrigir Limpeza Automatica do manual_override
 
-Analise completa do sistema de assinaturas revelou 4 pontos a corrigir para deixar tudo blindado.
+### Problema
 
----
+Quando o admin ativa manualmente um trial ou premium, o campo `manual_override` e marcado como `true`. Porem, quando esse periodo manual expira, o `check-subscription` muda o status para `expired` mas NAO limpa o `manual_override`. Isso deixa o usuario num estado inconsistente onde:
 
-### Correcao 1: extendTrial sem manual_override
+- O acesso esta corretamente bloqueado (as datas sao verificadas)
+- Mas o "Sincronizar Stripe" no admin nao funciona porque ve `manual_override: true` e nao mexe no usuario
+- O admin perde visibilidade sobre o real motivo do status
 
-**Problema**: Quando o admin estende o trial de um usuario, o campo `manual_override` nao e ativado. Se depois o admin clicar em "Sincronizar Stripe" para esse mesmo usuario, o trial estendido sera revertido para "expirado" porque nao ha assinatura ativa no Stripe.
+### Solucao
 
-**Solucao**: Adicionar `manual_override: true` na acao `extendTrial` da edge function `admin-users`.
-
-| Arquivo | Alteracao |
-|---------|----------|
-| `supabase/functions/admin-users/index.ts` | Adicionar `manual_override: true` no update do `extendTrial` (linha ~472) |
-
----
-
-### Correcao 2: Detalhes de assinatura invisiveis no admin
-
-**Problema**: O `UserDetailsModal` busca os dados completos da assinatura (status, datas, stripe IDs, manual_override) mas NAO exibe nada disso na interface. O admin so ve perfil e contagem de dados, sem visibilidade sobre a assinatura do usuario.
-
-**Solucao**: Adicionar uma terceira aba "Assinatura" no modal de detalhes com:
-- Status atual (badge colorido)
-- Data de expiracao do trial
-- Data de expiracao da assinatura
-- Flag manual_override (sim/nao)
-- Stripe Customer ID e Subscription ID (se existirem)
+Atualizar a edge function `check-subscription` para limpar `manual_override` quando um periodo manual expira naturalmente.
 
 | Arquivo | Alteracao |
 |---------|----------|
-| `src/components/admin/UserDetailsModal.tsx` | Adicionar tab "Assinatura" com exibicao detalhada dos campos da tabela subscriptions |
+| `supabase/functions/check-subscription/index.ts` | Adicionar `manual_override: false` nos dois pontos onde o status e atualizado para `expired` (trial expirado na linha ~109 e assinatura expirada na linha ~126) |
 
----
+### Detalhe tecnico
 
-### Correcao 3: Status "Pendente" ausente nas estatisticas
+Nos dois blocos onde o status e atualizado para `expired`, mudar de:
 
-**Problema**: O grid de stats mostra 4 cards (Trial, Premium, Expirado, Cancelado) mas ignora usuarios com status "Pendente" (boleto aguardando compensacao). O dado ja e calculado no backend mas nao e exibido.
+```text
+.update({ status: 'expired' })
+```
 
-**Solucao**: Expandir o grid para 5 cards, adicionando "Pendente" com icone de relogio amarelo.
+Para:
 
-| Arquivo | Alteracao |
-|---------|----------|
-| `src/components/admin/AdminStats.tsx` | Adicionar card "Pendente" ao grid de estatisticas, mudar grid para `grid-cols-5` ou usar layout responsivo adequado |
+```text
+.update({ status: 'expired', manual_override: false })
+```
 
----
+Isso acontece em dois locais:
+1. Linha ~109: quando `status === 'trial'` e `trial_ends_at` ja passou
+2. Linha ~126: quando `status === 'active'` e `subscription_ends_at` ja passou
 
-### Correcao 4: Remover stripeCustomerId da resposta do check-subscription
+### Resultado
 
-**Problema**: A edge function `check-subscription` retorna o `stripeCustomerId` para o frontend do usuario. Esse dado nao e usado em nenhum lugar do codigo do usuario e representa um vazamento desnecessario de informacao sensivel.
+```text
+Fluxo corrigido:
 
-**Solucao**: Remover o campo `stripeCustomerId` da resposta JSON.
+Admin estende trial 15 dias
+  -> manual_override: true, status: trial
 
-| Arquivo | Alteracao |
-|---------|----------|
-| `supabase/functions/check-subscription/index.ts` | Remover `stripeCustomerId` do JSON de resposta (linha ~147) |
+15 dias depois, check-subscription detecta expiracao
+  -> manual_override: false, status: expired
 
----
+Admin pode agora sincronizar com Stripe normalmente
+  -> Stripe sync funciona sem bloqueio do override
+```
 
-### Resumo de arquivos a modificar
+### Nenhuma outra alteracao necessaria
 
-| Arquivo | Tipo |
-|---------|------|
-| `supabase/functions/admin-users/index.ts` | Edge Function - fix extendTrial |
-| `supabase/functions/check-subscription/index.ts` | Edge Function - remover dado sensivel |
-| `src/components/admin/UserDetailsModal.tsx` | Frontend - adicionar aba Assinatura |
-| `src/components/admin/AdminStats.tsx` | Frontend - adicionar card Pendente |
+O resto do sistema ja funciona corretamente:
+- `syncFromStripe` ja limpa `manual_override` quando encontra assinatura ativa no Stripe
+- O admin ja pode definir `manual_override` via `updateSubscription`
+- A aba de Assinatura no modal ja mostra o estado do override
 
