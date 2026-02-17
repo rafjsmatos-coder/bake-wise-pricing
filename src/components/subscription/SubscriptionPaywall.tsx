@@ -6,8 +6,13 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 export function SubscriptionPaywall() {
-  const { startCheckout } = useSubscription();
+  const { startCheckout, status } = useSubscription();
   const [isLoading, setIsLoading] = useState(false);
+
+  const isExpiredPremium = status === 'expired' || status === 'canceled';
+  const title = isExpiredPremium 
+    ? 'Sua assinatura expirou' 
+    : 'Seu período de teste expirou';
 
   const handleSubscribe = async () => {
     try {
@@ -28,7 +33,7 @@ export function SubscriptionPaywall() {
           <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8 text-accent" />
           </div>
-          <CardTitle className="text-2xl">Seu período de teste expirou</CardTitle>
+          <CardTitle className="text-2xl">{title}</CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-6">
           <p className="text-muted-foreground">
