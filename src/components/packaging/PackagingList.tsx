@@ -160,7 +160,6 @@ export function PackagingList() {
             <PackagingCard
               key={packaging.id}
               packaging={packaging}
-              onView={() => handleEdit(packaging as Packaging)}
               onDuplicate={() => duplicatePackaging.mutate(packaging as Packaging)}
               onEdit={() => handleEdit(packaging as Packaging)}
               onDelete={() => setDeletingPackaging(packaging as Packaging)}

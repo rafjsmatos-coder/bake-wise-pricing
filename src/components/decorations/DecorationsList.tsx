@@ -195,7 +195,6 @@ export function DecorationsList() {
                   <DecorationCard
                     key={decoration.id}
                     decoration={decoration}
-                    onView={handleEdit}
                     onDuplicate={(dec) => duplicateDecoration.mutate(dec)}
                     onEdit={handleEdit}
                     onDelete={setDeletingDecoration}
