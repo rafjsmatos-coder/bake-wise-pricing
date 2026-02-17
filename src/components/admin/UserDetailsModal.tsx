@@ -9,9 +9,18 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, User, Database, Globe, Phone, MapPin, Instagram, Facebook, MessageCircle, CreditCard, ShieldCheck } from 'lucide-react';
+import { Loader2, User, Database, Globe, Phone, MapPin, Instagram, Facebook, MessageCircle, CreditCard, ShieldCheck, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+interface ActionLog {
+  id: string;
+  admin_user_id: string;
+  target_user_id: string;
+  action: string;
+  details: Record<string, unknown>;
+  created_at: string;
+}
 
 interface UserDetails {
   user: {
@@ -53,6 +62,7 @@ interface UserDetails {
     orders: number;
     clients: number;
   };
+  actionLogs: ActionLog[];
 }
 
 interface UserDetailsModalProps {
@@ -60,6 +70,14 @@ interface UserDetailsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const ACTION_LABELS: Record<string, string> = {
+  extendTrial: 'Extensão de Trial',
+  updateSubscription: 'Atualização de Assinatura',
+  syncFromStripe: 'Sincronização Stripe',
+  toggleAdmin: 'Alteração de Permissão',
+  deleteUser: 'Exclusão de Usuário',
+};
 
 export function UserDetailsModal({ userId, open, onOpenChange }: UserDetailsModalProps) {
   const { session } = useAuth();
@@ -105,6 +123,26 @@ export function UserDetailsModal({ userId, open, onOpenChange }: UserDetailsModa
     return format(new Date(date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
   };
 
+  const getActionDetails = (log: ActionLog): string => {
+    const d = log.details;
+    switch (log.action) {
+      case 'extendTrial':
+        return `+${d.days} dias`;
+      case 'updateSubscription':
+        if (d.status) return `Status → ${d.status}${d.daysToAdd ? ` (${d.daysToAdd}d)` : ''}`;
+        if (d.manualOverride === false) return 'Override removido';
+        return JSON.stringify(d);
+      case 'syncFromStripe':
+        return String(d.result || d.message || '');
+      case 'toggleAdmin':
+        return d.makeAdmin ? 'Promovido a admin' : 'Removido de admin';
+      case 'deleteUser':
+        return 'Usuário deletado';
+      default:
+        return JSON.stringify(d);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -118,7 +156,7 @@ export function UserDetailsModal({ userId, open, onOpenChange }: UserDetailsModa
           </div>
         ) : details ? (
           <Tabs defaultValue="profile" className="mt-4">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="profile">
                 <User className="h-4 w-4 mr-2" />
                 Perfil
@@ -130,6 +168,10 @@ export function UserDetailsModal({ userId, open, onOpenChange }: UserDetailsModa
               <TabsTrigger value="data">
                 <Database className="h-4 w-4 mr-2" />
                 Dados
+              </TabsTrigger>
+              <TabsTrigger value="history">
+                <History className="h-4 w-4 mr-2" />
+                Histórico
               </TabsTrigger>
             </TabsList>
 
@@ -325,6 +367,35 @@ export function UserDetailsModal({ userId, open, onOpenChange }: UserDetailsModa
                   <p className="text-sm text-muted-foreground">Decorações</p>
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="history" className="space-y-4 mt-4">
+              {details.actionLogs && details.actionLogs.length > 0 ? (
+                <div className="space-y-3">
+                  {details.actionLogs.map((log) => (
+                    <div key={log.id} className="flex items-start gap-3 border-b pb-3 last:border-0">
+                      <div className="bg-muted/50 rounded-full p-2 mt-0.5">
+                        <History className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">
+                          {ACTION_LABELS[log.action] || log.action}
+                        </p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {getActionDetails(log)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatDate(log.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-muted-foreground">
+                  Nenhuma ação registrada
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         ) : (
