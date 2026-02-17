@@ -1,40 +1,70 @@
 
 
-## Corrigir Tour Mobile + Dica do Carrossel
+## Fechar com Chave de Ouro: Assinaturas
+
+Analise completa do sistema de assinaturas revelou 4 pontos a corrigir para deixar tudo blindado.
 
 ---
 
-### Problema 1: Tour mobile nao ativa
+### Correcao 1: extendTrial sem manual_override
 
-O `ReactTourProvider` recebe os steps como prop, mas o hook `useIsMobile()` começa retornando `false` (porque o estado inicial eh `undefined`). Quando atualiza para `true`, o provider pode nao reagir a mudanca de steps.
+**Problema**: Quando o admin estende o trial de um usuario, o campo `manual_override` nao e ativado. Se depois o admin clicar em "Sincronizar Stripe" para esse mesmo usuario, o trial estendido sera revertido para "expirado" porque nao ha assinatura ativa no Stripe.
 
-**Solucao:** Adicionar `key={isMobile ? 'mobile' : 'desktop'}` no `ReactTourProvider` para forcar a recriacao do componente quando o modo muda. Isso garante que os steps corretos sejam usados.
-
-### Problema 2: Usuario nao sabe que pode deslizar os cards
-
-O passo "Visao Geral" atual diz apenas "Clique em qualquer card para acessar a lista completa", mas nao menciona que ha mais cards alem dos visiveis e que o usuario pode deslizar para ver todos.
-
-**Solucao:** Atualizar o texto do passo 1 (summary-cards) para mencionar o gesto de arrastar/deslizar:
-
-- **Mobile:** "Deslize para o lado para ver todos os cards. Toque em qualquer um para acessar a lista completa."
-- **Desktop:** Manter o texto atual (todos os cards sao visiveis no desktop).
-
----
-
-### Arquivo a modificar
+**Solucao**: Adicionar `manual_override: true` na acao `extendTrial` da edge function `admin-users`.
 
 | Arquivo | Alteracao |
 |---------|----------|
-| `src/components/tour/TourProvider.tsx` | Adicionar `key` no `ReactTourProvider` para forcar remount. Atualizar texto do passo summary-cards no mobile para mencionar o carrossel. |
+| `supabase/functions/admin-users/index.ts` | Adicionar `manual_override: true` no update do `extendTrial` (linha ~472) |
 
-### Detalhe tecnico
+---
 
-```text
-// No ReactTourProvider, adicionar:
-key={isMobile ? 'mobile' : 'desktop'}
+### Correcao 2: Detalhes de assinatura invisiveis no admin
 
-// No passo mobile summary-cards, atualizar texto para:
-"Deslize para o lado para ver todos os cards de resumo.
-Toque em qualquer um para acessar a lista completa."
-```
+**Problema**: O `UserDetailsModal` busca os dados completos da assinatura (status, datas, stripe IDs, manual_override) mas NAO exibe nada disso na interface. O admin so ve perfil e contagem de dados, sem visibilidade sobre a assinatura do usuario.
+
+**Solucao**: Adicionar uma terceira aba "Assinatura" no modal de detalhes com:
+- Status atual (badge colorido)
+- Data de expiracao do trial
+- Data de expiracao da assinatura
+- Flag manual_override (sim/nao)
+- Stripe Customer ID e Subscription ID (se existirem)
+
+| Arquivo | Alteracao |
+|---------|----------|
+| `src/components/admin/UserDetailsModal.tsx` | Adicionar tab "Assinatura" com exibicao detalhada dos campos da tabela subscriptions |
+
+---
+
+### Correcao 3: Status "Pendente" ausente nas estatisticas
+
+**Problema**: O grid de stats mostra 4 cards (Trial, Premium, Expirado, Cancelado) mas ignora usuarios com status "Pendente" (boleto aguardando compensacao). O dado ja e calculado no backend mas nao e exibido.
+
+**Solucao**: Expandir o grid para 5 cards, adicionando "Pendente" com icone de relogio amarelo.
+
+| Arquivo | Alteracao |
+|---------|----------|
+| `src/components/admin/AdminStats.tsx` | Adicionar card "Pendente" ao grid de estatisticas, mudar grid para `grid-cols-5` ou usar layout responsivo adequado |
+
+---
+
+### Correcao 4: Remover stripeCustomerId da resposta do check-subscription
+
+**Problema**: A edge function `check-subscription` retorna o `stripeCustomerId` para o frontend do usuario. Esse dado nao e usado em nenhum lugar do codigo do usuario e representa um vazamento desnecessario de informacao sensivel.
+
+**Solucao**: Remover o campo `stripeCustomerId` da resposta JSON.
+
+| Arquivo | Alteracao |
+|---------|----------|
+| `supabase/functions/check-subscription/index.ts` | Remover `stripeCustomerId` do JSON de resposta (linha ~147) |
+
+---
+
+### Resumo de arquivos a modificar
+
+| Arquivo | Tipo |
+|---------|------|
+| `supabase/functions/admin-users/index.ts` | Edge Function - fix extendTrial |
+| `supabase/functions/check-subscription/index.ts` | Edge Function - remover dado sensivel |
+| `src/components/admin/UserDetailsModal.tsx` | Frontend - adicionar aba Assinatura |
+| `src/components/admin/AdminStats.tsx` | Frontend - adicionar card Pendente |
 
