@@ -472,6 +472,7 @@ serve(async (req) => {
           .update({ 
             trial_ends_at: newTrialEnd.toISOString(),
             status: 'trial',
+            manual_override: true,
           })
           .eq("user_id", userId);
 

@@ -144,7 +144,6 @@ serve(async (req) => {
         trialEndsAt: subscription.trial_ends_at,
         subscriptionEndsAt: subscription.subscription_ends_at,
         daysRemaining,
-        stripeCustomerId: subscription.stripe_customer_id,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
