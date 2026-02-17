@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { isPast, differenceInDays, parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getBestDisplayUnit, formatNumber, type MeasurementUnit } from '@/lib/unit-conversion';
 
 interface StockAlertsCardProps {
   onNavigate: (page: string) => void;
@@ -177,10 +178,18 @@ export function StockAlertsCard({ onNavigate }: StockAlertsCardProps) {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                    {item.stockQuantity} {item.unit}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Mín: {item.minAlert} {item.unit}</p>
+                  {(() => {
+                    const stockDisplay = getBestDisplayUnit(item.stockQuantity, item.unit as MeasurementUnit);
+                    const alertDisplay = getBestDisplayUnit(item.minAlert, item.unit as MeasurementUnit);
+                    return (
+                      <>
+                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+                          {formatNumber(stockDisplay.displayValue, 3)} {stockDisplay.displayUnit}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Mín: {formatNumber(alertDisplay.displayValue, 3)} {alertDisplay.displayUnit}</p>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             ))}

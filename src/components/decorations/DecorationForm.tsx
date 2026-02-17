@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { useDecorationCategories } from '@/hooks/useDecorationCategories';
 import { useDecorations, type Decoration, type CreateDecorationData } from '@/hooks/useDecorations';
-import { UNITS, type MeasurementUnit, getCostPerUnit, formatCurrency } from '@/lib/unit-conversion';
+import { UNITS, type MeasurementUnit, getCostPerUnit, formatCurrency, getCompatibleUnits, getBestDisplayUnit, convertUnit } from '@/lib/unit-conversion';
 import { Loader2, Calculator, ChevronDown, ChevronUp } from 'lucide-react';
 
 const decorationSchema = z.object({
@@ -47,6 +47,10 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
   const { categories } = useDecorationCategories();
   const { createDecoration, updateDecoration } = useDecorations();
   const [showOptional, setShowOptional] = useState(false);
+  const [stockUnit, setStockUnit] = useState<MeasurementUnit>('un');
+  const [alertUnit, setAlertUnit] = useState<MeasurementUnit>('un');
+  const [stockDisplayValue, setStockDisplayValue] = useState<string>('');
+  const [alertDisplayValue, setAlertDisplayValue] = useState<string>('');
 
   const {
     register,
@@ -72,6 +76,22 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
 
   useEffect(() => {
     if (decoration) {
+      const mainUnit = decoration.unit as MeasurementUnit;
+
+      const stockDisplay = getBestDisplayUnit(
+        decoration.stock_quantity ? Number(decoration.stock_quantity) : null,
+        mainUnit
+      );
+      const alertDisplay = getBestDisplayUnit(
+        decoration.min_stock_alert ? Number(decoration.min_stock_alert) : null,
+        mainUnit
+      );
+
+      setStockUnit(stockDisplay.displayUnit);
+      setAlertUnit(alertDisplay.displayUnit);
+      setStockDisplayValue(stockDisplay.displayValue ? String(stockDisplay.displayValue) : '');
+      setAlertDisplayValue(alertDisplay.displayValue ? String(alertDisplay.displayValue) : '');
+
       reset({
         name: decoration.name,
         purchase_price: Number(decoration.purchase_price),
@@ -96,19 +116,55 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
         stock_quantity: null,
         min_stock_alert: null,
       });
+      setStockUnit('un');
+      setAlertUnit('un');
+      setStockDisplayValue('');
+      setAlertDisplayValue('');
       setShowOptional(false);
     }
   }, [decoration, reset, open]);
 
+  const watchUnit = watch('unit');
   const watchPrice = watch('purchase_price');
   const watchQuantity = watch('package_quantity');
-  const watchUnit = watch('unit');
+
+  // When main unit changes, reset stock/alert units if incompatible
+  useEffect(() => {
+    const compatibleUnits = getCompatibleUnits(watchUnit);
+    if (!compatibleUnits.includes(stockUnit)) {
+      setStockUnit(watchUnit);
+    }
+    if (!compatibleUnits.includes(alertUnit)) {
+      setAlertUnit(watchUnit);
+    }
+  }, [watchUnit]);
 
   const costInfo = watchPrice > 0 && watchQuantity > 0
     ? getCostPerUnit(watchPrice, watchQuantity, watchUnit)
     : null;
 
+  const compatibleUnits = getCompatibleUnits(watchUnit);
+  const showUnitSelector = compatibleUnits.length > 1;
+
   const onSubmit = async (data: DecorationFormData) => {
+    // Convert stock and alert values from display unit to main unit
+    let stockInMainUnit: number | null = null;
+    let alertInMainUnit: number | null = null;
+
+    const stockVal = stockDisplayValue ? Number(stockDisplayValue) : null;
+    if (stockVal != null && stockVal > 0) {
+      stockInMainUnit = stockUnit === data.unit
+        ? stockVal
+        : (convertUnit(stockVal, stockUnit, data.unit) ?? stockVal);
+    }
+
+    const alertVal = alertDisplayValue ? Number(alertDisplayValue) : null;
+    if (alertVal != null && alertVal > 0) {
+      alertInMainUnit = alertUnit === data.unit
+        ? alertVal
+        : (convertUnit(alertVal, alertUnit, data.unit) ?? alertVal);
+    }
+
     const submitData: CreateDecorationData = {
       name: data.name.trim(),
       purchase_price: data.purchase_price,
@@ -117,8 +173,8 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
       category_id: data.category_id || null,
       brand: data.brand?.trim() || null,
       supplier: data.supplier?.trim() || null,
-      stock_quantity: data.stock_quantity || null,
-      min_stock_alert: data.min_stock_alert || null,
+      stock_quantity: stockInMainUnit,
+      min_stock_alert: alertInMainUnit,
     };
 
     if (decoration) {
@@ -290,30 +346,77 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="stock_quantity">Estoque Atual</Label>
+              {/* Stock Quantity with unit selector */}
+              <div className="space-y-2">
+                <Label>Estoque Atual</Label>
+                <div className="flex gap-2">
                   <Input
-                    id="stock_quantity"
                     type="number"
-                    step="0.01"
+                    step="0.001"
                     min="0"
                     placeholder="Opcional"
-                    className="min-h-[44px]"
-                    {...register('stock_quantity', { setValueAs: (v: string) => v === '' || v === null || v === undefined ? null : Number(v) })}
+                    className="min-h-[44px] flex-1"
+                    value={stockDisplayValue}
+                    onChange={(e) => setStockDisplayValue(e.target.value)}
                   />
+                  {showUnitSelector ? (
+                    <Select
+                      value={stockUnit}
+                      onValueChange={(v: MeasurementUnit) => setStockUnit(v)}
+                    >
+                      <SelectTrigger className="min-h-[44px] w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {compatibleUnits.map((u) => (
+                          <SelectItem key={u} value={u} className="py-3">
+                            {u}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="min-h-[44px] w-16 flex items-center justify-center text-sm text-muted-foreground border rounded-md bg-muted/50">
+                      {watchUnit}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="min_stock_alert">Alerta de Estoque Mínimo</Label>
+              </div>
+
+              {/* Min Stock Alert with unit selector */}
+              <div className="space-y-2">
+                <Label>Alerta de Estoque Mínimo</Label>
+                <div className="flex gap-2">
                   <Input
-                    id="min_stock_alert"
                     type="number"
-                    step="0.01"
+                    step="0.001"
                     min="0"
                     placeholder="Opcional"
-                    className="min-h-[44px]"
-                    {...register('min_stock_alert', { setValueAs: (v: string) => v === '' || v === null || v === undefined ? null : Number(v) })}
+                    className="min-h-[44px] flex-1"
+                    value={alertDisplayValue}
+                    onChange={(e) => setAlertDisplayValue(e.target.value)}
                   />
+                  {showUnitSelector ? (
+                    <Select
+                      value={alertUnit}
+                      onValueChange={(v: MeasurementUnit) => setAlertUnit(v)}
+                    >
+                      <SelectTrigger className="min-h-[44px] w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {compatibleUnits.map((u) => (
+                          <SelectItem key={u} value={u} className="py-3">
+                            {u}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="min-h-[44px] w-16 flex items-center justify-center text-sm text-muted-foreground border rounded-md bg-muted/50">
+                      {watchUnit}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

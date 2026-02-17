@@ -1,7 +1,7 @@
 import { type Decoration } from '@/hooks/useDecorations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, getCostPerUnit } from '@/lib/unit-conversion';
+import { formatCurrency, formatNumber, getCostPerUnit, getBestDisplayUnit, type MeasurementUnit } from '@/lib/unit-conversion';
 import { Copy, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 
 interface DecorationCardProps {
@@ -67,11 +67,14 @@ export function DecorationCard({ decoration, onDuplicate, onEdit, onDelete }: De
           <p>Fornecedor: {decoration.supplier}</p>
         )}
 
-        {decoration.stock_quantity !== null && (
-          <p className={isLowStock ? 'text-destructive' : ''}>
-            Estoque: {decoration.stock_quantity} {decoration.unit}
-          </p>
-        )}
+        {decoration.stock_quantity !== null && (() => {
+          const stockDisplay = getBestDisplayUnit(Number(decoration.stock_quantity), decoration.unit as MeasurementUnit);
+          return (
+            <p className={isLowStock ? 'text-destructive' : ''}>
+              Estoque: {formatNumber(stockDisplay.displayValue, 3)} {stockDisplay.displayUnit}
+            </p>
+          );
+        })()}
       </div>
 
       {/* Footer with cost + actions */}

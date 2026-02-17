@@ -3,6 +3,7 @@ import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { convertUnit, type MeasurementUnit } from '@/lib/unit-conversion';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
@@ -65,7 +66,10 @@ export function ShoppingList() {
 
         prodIngredients?.forEach((pi: any) => {
           if (pi.ingredient) {
-            const stock = pi.ingredient.stock_quantity || 0;
+            const stockRaw = pi.ingredient.stock_quantity || 0;
+            const stockConverted = pi.ingredient.unit !== pi.unit
+              ? (convertUnit(stockRaw, pi.ingredient.unit as MeasurementUnit, pi.unit as MeasurementUnit) ?? stockRaw)
+              : stockRaw;
             const needed = pi.quantity * quantity;
             allItems.push({
               id: pi.ingredient.id,
@@ -73,8 +77,8 @@ export function ShoppingList() {
               type: 'ingredient',
               needed,
               unit: pi.unit,
-              currentStock: stock,
-              toBuy: Math.max(0, needed - stock),
+              currentStock: stockConverted,
+              toBuy: Math.max(0, needed - stockConverted),
             });
           }
         });
@@ -97,7 +101,10 @@ export function ShoppingList() {
 
           recipeIngredients?.forEach((ri: any) => {
             if (ri.ingredient) {
-              const stock = ri.ingredient.stock_quantity || 0;
+              const stockRaw = ri.ingredient.stock_quantity || 0;
+              const stockConverted = ri.ingredient.unit !== ri.unit
+                ? (convertUnit(stockRaw, ri.ingredient.unit as MeasurementUnit, ri.unit as MeasurementUnit) ?? stockRaw)
+                : stockRaw;
               const needed = ri.quantity * mult;
               allItems.push({
                 id: ri.ingredient.id,
@@ -105,8 +112,8 @@ export function ShoppingList() {
                 type: 'ingredient',
                 needed,
                 unit: ri.unit,
-                currentStock: stock,
-                toBuy: Math.max(0, needed - stock),
+                currentStock: stockConverted,
+                toBuy: Math.max(0, needed - stockConverted),
               });
             }
           });
@@ -120,7 +127,10 @@ export function ShoppingList() {
 
         prodDecorations?.forEach((pd: any) => {
           if (pd.decoration) {
-            const stock = pd.decoration.stock_quantity || 0;
+            const stockRaw = pd.decoration.stock_quantity || 0;
+            const stockConverted = pd.decoration.unit !== pd.unit
+              ? (convertUnit(stockRaw, pd.decoration.unit as MeasurementUnit, pd.unit as MeasurementUnit) ?? stockRaw)
+              : stockRaw;
             const needed = pd.quantity * quantity;
             allItems.push({
               id: pd.decoration.id,
@@ -128,8 +138,8 @@ export function ShoppingList() {
               type: 'decoration',
               needed,
               unit: pd.unit,
-              currentStock: stock,
-              toBuy: Math.max(0, needed - stock),
+              currentStock: stockConverted,
+              toBuy: Math.max(0, needed - stockConverted),
             });
           }
         });
@@ -142,7 +152,7 @@ export function ShoppingList() {
 
         prodPackaging?.forEach((pp: any) => {
           if (pp.packaging) {
-            const stock = pp.packaging.stock_quantity || 0;
+            const stockRaw = pp.packaging.stock_quantity || 0;
             const needed = pp.quantity * quantity;
             allItems.push({
               id: pp.packaging.id,
@@ -150,8 +160,8 @@ export function ShoppingList() {
               type: 'packaging',
               needed,
               unit: pp.packaging.unit,
-              currentStock: stock,
-              toBuy: Math.max(0, needed - stock),
+              currentStock: stockRaw,
+              toBuy: Math.max(0, needed - stockRaw),
             });
           }
         });

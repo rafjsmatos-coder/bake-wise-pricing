@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Copy, Pencil, Trash2, Ruler, AlertTriangle } from 'lucide-react';
-import { formatCurrency } from '@/lib/unit-conversion';
+import { formatCurrency, formatNumber, getBestDisplayUnit, type MeasurementUnit } from '@/lib/unit-conversion';
 
 interface PackagingCardProps {
   packaging: {
@@ -82,11 +82,14 @@ export function PackagingCard({ packaging, onDuplicate, onEdit, onDelete }: Pack
           </div>
         )}
 
-        {packaging.stock_quantity !== null && (
-          <p className={isLowStock ? 'text-destructive' : ''}>
-            Estoque: {packaging.stock_quantity} {packaging.unit}
-          </p>
-        )}
+        {packaging.stock_quantity !== null && (() => {
+          const stockDisplay = getBestDisplayUnit(Number(packaging.stock_quantity), packaging.unit as MeasurementUnit);
+          return (
+            <p className={isLowStock ? 'text-destructive' : ''}>
+              Estoque: {formatNumber(stockDisplay.displayValue, 3)} {stockDisplay.displayUnit}
+            </p>
+          );
+        })()}
       </div>
 
       {/* Footer with cost + actions */}
