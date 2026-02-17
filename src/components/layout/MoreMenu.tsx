@@ -98,12 +98,12 @@ export function MoreMenu({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[85dvh] rounded-t-2xl pb-[env(safe-area-inset-bottom)]">
+      <SheetContent side="bottom" className="max-h-[85dvh] rounded-t-2xl pb-0 flex flex-col">
         <SheetHeader className="pb-2">
           <SheetTitle className="text-left">Menu</SheetTitle>
         </SheetHeader>
 
-        <div className="overflow-y-auto space-y-4 pb-4">
+        <div className="overflow-y-auto space-y-4 pb-2 flex-1 min-h-0">
           {/* User profile section */}
           <button
             onClick={() => handleNavigate('profile')}
@@ -163,9 +163,9 @@ export function MoreMenu({
               </div>
             </div>
           ))}
+        </div>
 
-          <Separator />
-
+        <div className="border-t pt-3 px-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button
             variant="outline"
             className="w-full min-h-[44px]"
