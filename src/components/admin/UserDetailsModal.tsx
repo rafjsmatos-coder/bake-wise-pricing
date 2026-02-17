@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, User, Database, Globe, Phone, MapPin, Instagram, Facebook, MessageCircle } from 'lucide-react';
+import { Loader2, User, Database, Globe, Phone, MapPin, Instagram, Facebook, MessageCircle, CreditCard, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -35,6 +35,15 @@ interface UserDetails {
     avatar_url: string | null;
   } | null;
   roles: string[];
+  subscription: {
+    status: string;
+    trial_ends_at: string | null;
+    subscription_ends_at: string | null;
+    stripe_customer_id: string | null;
+    stripe_subscription_id: string | null;
+    manual_override: boolean;
+    created_at: string;
+  } | null;
   dataCounts: {
     ingredients: number;
     recipes: number;
@@ -109,10 +118,14 @@ export function UserDetailsModal({ userId, open, onOpenChange }: UserDetailsModa
           </div>
         ) : details ? (
           <Tabs defaultValue="profile" className="mt-4">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="profile">
                 <User className="h-4 w-4 mr-2" />
                 Perfil
+              </TabsTrigger>
+              <TabsTrigger value="subscription">
+                <CreditCard className="h-4 w-4 mr-2" />
+                Assinatura
               </TabsTrigger>
               <TabsTrigger value="data">
                 <Database className="h-4 w-4 mr-2" />
@@ -208,6 +221,77 @@ export function UserDetailsModal({ userId, open, onOpenChange }: UserDetailsModa
                   </div>
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="subscription" className="space-y-4 mt-4">
+              {details.subscription ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <Badge variant={
+                        details.subscription.status === 'active' ? 'default' :
+                        details.subscription.status === 'trial' ? 'secondary' :
+                        'destructive'
+                      } className="mt-1">
+                        {details.subscription.status === 'active' ? 'Premium' :
+                         details.subscription.status === 'trial' ? 'Trial' :
+                         details.subscription.status === 'pending' ? 'Pendente' :
+                         details.subscription.status === 'canceled' ? 'Cancelado' : 'Expirado'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Override Manual</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <ShieldCheck className={`h-4 w-4 ${details.subscription.manual_override ? 'text-green-500' : 'text-muted-foreground'}`} />
+                        <span className="font-medium">{details.subscription.manual_override ? 'Sim' : 'Não'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3">Datas</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Fim do Trial</p>
+                        <p className="font-medium">{formatDate(details.subscription.trial_ends_at)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Fim da Assinatura</p>
+                        <p className="font-medium">{formatDate(details.subscription.subscription_ends_at)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Criada em</p>
+                        <p className="font-medium">{formatDate(details.subscription.created_at)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {(details.subscription.stripe_customer_id || details.subscription.stripe_subscription_id) && (
+                    <div className="border-t pt-4">
+                      <h4 className="font-medium mb-3">Stripe</h4>
+                      <div className="space-y-2">
+                        {details.subscription.stripe_customer_id && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Customer ID</p>
+                            <p className="font-mono text-sm">{details.subscription.stripe_customer_id}</p>
+                          </div>
+                        )}
+                        {details.subscription.stripe_subscription_id && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Subscription ID</p>
+                            <p className="font-mono text-sm">{details.subscription.stripe_subscription_id}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="py-8 text-center text-muted-foreground">
+                  Nenhuma assinatura encontrada
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="data" className="space-y-4 mt-4">

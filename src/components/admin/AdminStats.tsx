@@ -111,7 +111,7 @@ export function AdminStats() {
 
       {/* Subscription Stats */}
       {stats?.subscriptions && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -147,6 +147,19 @@ export function AdminStats() {
                 <div>
                   <p className="text-2xl font-bold">{stats.subscriptions.expired}</p>
                   <p className="text-xs text-muted-foreground">Expirados</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-orange-500/10">
+                  <CreditCard className="h-5 w-5 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.subscriptions.pending}</p>
+                  <p className="text-xs text-muted-foreground">Pendentes</p>
                 </div>
               </div>
             </CardContent>
