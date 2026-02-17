@@ -106,7 +106,7 @@ serve(async (req) => {
         // Atualizar no banco
         await supabaseAdmin
           .from("subscriptions")
-          .update({ status: 'expired' })
+          .update({ status: 'expired', manual_override: false })
           .eq("user_id", userId);
       }
     } else if (subscription.status === 'active') {
@@ -123,7 +123,7 @@ serve(async (req) => {
         // Atualizar no banco
         await supabaseAdmin
           .from("subscriptions")
-          .update({ status: 'expired' })
+          .update({ status: 'expired', manual_override: false })
           .eq("user_id", userId);
       }
     } else if (subscription.status === 'pending') {
