@@ -113,6 +113,46 @@ export function formatNumber(value: number, decimals: number = 2): string {
   }).format(value);
 }
 
+export function getCompatibleUnits(unit: MeasurementUnit): MeasurementUnit[] {
+  const info = UNITS[unit];
+  if (info.type === 'unit') return [unit];
+  return (Object.entries(UNITS) as [MeasurementUnit, UnitInfo][])
+    .filter(([, u]) => u.type === info.type)
+    .map(([key]) => key);
+}
+
+export function getBestDisplayUnit(
+  value: number | null | undefined,
+  mainUnit: MeasurementUnit
+): { displayValue: number; displayUnit: MeasurementUnit } {
+  if (value == null || value === 0) {
+    return { displayValue: value ?? 0, displayUnit: mainUnit };
+  }
+
+  const info = UNITS[mainUnit];
+  if (info.type === 'unit' || !info.baseUnit) {
+    return { displayValue: value, displayUnit: mainUnit };
+  }
+
+  // Convert to base unit and check if it's a cleaner number
+  const baseValue = convertToBaseUnit(value, mainUnit);
+  // If the base value is a whole number or has fewer decimals, use it
+  const mainDecimals = countSignificantDecimals(value);
+  const baseDecimals = countSignificantDecimals(baseValue);
+
+  if (baseDecimals < mainDecimals || (baseValue >= 1 && value < 1)) {
+    return { displayValue: baseValue, displayUnit: info.baseUnit };
+  }
+
+  return { displayValue: value, displayUnit: mainUnit };
+}
+
+function countSignificantDecimals(n: number): number {
+  const s = n.toString();
+  const dot = s.indexOf('.');
+  return dot === -1 ? 0 : s.length - dot - 1;
+}
+
 export function getCostPerUnit(
   purchasePrice: number,
   packageQuantity: number,
