@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 
 const statusConfig: Record<string, { label: string; className: string }> = {
+  quote: { label: 'Orçamento', className: 'bg-gray-500/10 text-gray-600 border-gray-500/30' },
   pending: { label: 'Pendente', className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30' },
   in_production: { label: 'Em produção', className: 'bg-blue-500/10 text-blue-600 border-blue-500/30' },
   ready: { label: 'Pronto', className: 'bg-green-500/10 text-green-600 border-green-500/30' },
@@ -32,6 +33,7 @@ export function OrderStatusBadge({ status, type = 'order' }: OrderStatusBadgePro
 
 export function getStatusColor(status: string): string {
   const colorMap: Record<string, string> = {
+    quote: '#6b7280',
     pending: '#eab308',
     in_production: '#3b82f6',
     ready: '#22c55e',
@@ -42,6 +44,7 @@ export function getStatusColor(status: string): string {
 }
 
 export const ORDER_STATUSES = [
+  { value: 'quote', label: 'Orçamento' },
   { value: 'pending', label: 'Pendente' },
   { value: 'in_production', label: 'Em produção' },
   { value: 'ready', label: 'Pronto' },

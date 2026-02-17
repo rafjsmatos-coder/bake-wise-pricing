@@ -214,6 +214,7 @@ export function OrdersList() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="quote">Orçamento</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
                   <SelectItem value="in_production">Em produção</SelectItem>
                   <SelectItem value="ready">Pronto</SelectItem>
