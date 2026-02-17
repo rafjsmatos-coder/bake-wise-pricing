@@ -53,6 +53,9 @@ import {
   CreditCard,
   RefreshCw,
   Plus,
+  Ban,
+  XCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -64,6 +67,7 @@ interface Subscription {
   status: string;
   trialEndsAt: string | null;
   subscriptionEndsAt: string | null;
+  manualOverride?: boolean;
 }
 
 interface User {
@@ -150,7 +154,7 @@ export function UserManagement() {
   const [subscriptionDialog, setSubscriptionDialog] = useState<{
     open: boolean;
     user: User | null;
-    action: 'extend' | 'activate' | 'sync';
+    action: 'extend' | 'activate' | 'sync' | 'cancel' | 'expire' | 'removeOverride';
     days: number;
   }>({ open: false, user: null, action: 'extend', days: 7 });
 
@@ -231,24 +235,32 @@ export function UserManagement() {
     if (!subscriptionDialog.user || !session?.access_token) return;
 
     try {
-      let actionName = '';
       let body: Record<string, unknown> = { userId: subscriptionDialog.user.id };
 
       switch (subscriptionDialog.action) {
         case 'extend':
-          actionName = 'extendTrial';
           body.action = 'extendTrial';
           body.days = subscriptionDialog.days;
           break;
         case 'activate':
-          actionName = 'updateSubscription';
           body.action = 'updateSubscription';
           body.status = 'active';
-          body.daysToAdd = 30;
+          body.daysToAdd = subscriptionDialog.days;
           break;
         case 'sync':
-          actionName = 'syncFromStripe';
           body.action = 'syncFromStripe';
+          break;
+        case 'cancel':
+          body.action = 'updateSubscription';
+          body.status = 'canceled';
+          break;
+        case 'expire':
+          body.action = 'updateSubscription';
+          body.status = 'expired';
+          break;
+        case 'removeOverride':
+          body.action = 'updateSubscription';
+          body.manualOverride = false;
           break;
       }
 
@@ -266,8 +278,11 @@ export function UserManagement() {
 
       const messages: Record<string, string> = {
         extend: `Trial estendido em ${subscriptionDialog.days} dias`,
-        activate: 'Assinatura ativada por 30 dias',
+        activate: `Assinatura ativada por ${subscriptionDialog.days} dias`,
         sync: 'Sincronizado com Stripe',
+        cancel: 'Assinatura cancelada',
+        expire: 'Assinatura expirada',
+        removeOverride: 'Override manual removido',
       };
       toast.success(messages[subscriptionDialog.action]);
       fetchUsers();
@@ -280,6 +295,33 @@ export function UserManagement() {
   };
 
   const totalPages = Math.ceil(total / perPage);
+
+  const getDialogTitle = () => {
+    switch (subscriptionDialog.action) {
+      case 'extend': return 'Estender Trial';
+      case 'activate': return 'Ativar Premium';
+      case 'sync': return 'Sincronizar com Stripe';
+      case 'cancel': return 'Cancelar Assinatura';
+      case 'expire': return 'Expirar Assinatura';
+      case 'removeOverride': return 'Remover Override Manual';
+      default: return '';
+    }
+  };
+
+  const getDialogDescription = () => {
+    const email = subscriptionDialog.user?.email;
+    switch (subscriptionDialog.action) {
+      case 'extend': return `Adicionar dias ao trial de ${email}`;
+      case 'activate': return `Definir duração do premium para ${email}`;
+      case 'sync': return `Sincronizar dados de assinatura do Stripe para ${email}`;
+      case 'cancel': return `Tem certeza que deseja cancelar a assinatura de ${email}? O acesso será revogado.`;
+      case 'expire': return `Tem certeza que deseja expirar a assinatura de ${email}? O acesso será revogado imediatamente.`;
+      case 'removeOverride': return `Remover o override manual de ${email}? O controle será devolvido ao Stripe.`;
+      default: return '';
+    }
+  };
+
+  const showDaysInput = subscriptionDialog.action === 'extend' || subscriptionDialog.action === 'activate';
 
   return (
     <>
@@ -384,7 +426,7 @@ export function UserManagement() {
                                   })}
                                 >
                                   <CreditCard className="h-4 w-4 mr-2" />
-                                  Ativar Premium (30d)
+                                  Ativar Premium
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => setSubscriptionDialog({ 
@@ -397,6 +439,47 @@ export function UserManagement() {
                                   <RefreshCw className="h-4 w-4 mr-2" />
                                   Sincronizar Stripe
                                 </DropdownMenuItem>
+
+                                <DropdownMenuSeparator />
+
+                                {/* Cancel / Expire */}
+                                <DropdownMenuItem
+                                  onClick={() => setSubscriptionDialog({ 
+                                    open: true, 
+                                    user, 
+                                    action: 'cancel',
+                                    days: 0 
+                                  })}
+                                >
+                                  <Ban className="h-4 w-4 mr-2" />
+                                  Cancelar Assinatura
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setSubscriptionDialog({ 
+                                    open: true, 
+                                    user, 
+                                    action: 'expire',
+                                    days: 0 
+                                  })}
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Expirar Assinatura
+                                </DropdownMenuItem>
+
+                                {/* Remove Override - only if manual_override is true */}
+                                {user.subscription?.manualOverride && (
+                                  <DropdownMenuItem
+                                    onClick={() => setSubscriptionDialog({ 
+                                      open: true, 
+                                      user, 
+                                      action: 'removeOverride',
+                                      days: 0 
+                                    })}
+                                  >
+                                    <ShieldCheck className="h-4 w-4 mr-2" />
+                                    Remover Override Manual
+                                  </DropdownMenuItem>
+                                )}
                                 
                                 <DropdownMenuSeparator />
                                 {user.isAdmin ? (
@@ -523,22 +606,11 @@ export function UserManagement() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {subscriptionDialog.action === 'extend' && 'Estender Trial'}
-              {subscriptionDialog.action === 'activate' && 'Ativar Premium'}
-              {subscriptionDialog.action === 'sync' && 'Sincronizar com Stripe'}
-            </DialogTitle>
-            <DialogDescription>
-              {subscriptionDialog.action === 'extend' && 
-                `Adicionar dias ao trial de ${subscriptionDialog.user?.email}`}
-              {subscriptionDialog.action === 'activate' && 
-                `Ativar assinatura premium por 30 dias para ${subscriptionDialog.user?.email}`}
-              {subscriptionDialog.action === 'sync' && 
-                `Sincronizar dados de assinatura do Stripe para ${subscriptionDialog.user?.email}`}
-            </DialogDescription>
+            <DialogTitle>{getDialogTitle()}</DialogTitle>
+            <DialogDescription>{getDialogDescription()}</DialogDescription>
           </DialogHeader>
           
-          {subscriptionDialog.action === 'extend' && (
+          {showDaysInput && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="days" className="text-right">
@@ -567,7 +639,10 @@ export function UserManagement() {
             >
               Cancelar
             </Button>
-            <Button onClick={handleSubscriptionAction}>
+            <Button 
+              onClick={handleSubscriptionAction}
+              variant={subscriptionDialog.action === 'cancel' || subscriptionDialog.action === 'expire' ? 'destructive' : 'default'}
+            >
               Confirmar
             </Button>
           </DialogFooter>

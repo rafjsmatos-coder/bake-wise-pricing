@@ -8,6 +8,28 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[ADMIN-USERS] ${step}${detailsStr}`);
 };
 
+// Helper to log admin actions
+async function logAdminAction(
+  supabaseAdmin: ReturnType<typeof createAdminClient>,
+  adminUserId: string,
+  targetUserId: string,
+  action: string,
+  details: Record<string, unknown> = {}
+) {
+  try {
+    await supabaseAdmin
+      .from("admin_action_logs")
+      .insert({
+        admin_user_id: adminUserId,
+        target_user_id: targetUserId,
+        action,
+        details,
+      });
+  } catch (err) {
+    logStep("Failed to log admin action", { error: String(err) });
+  }
+}
+
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
   if (corsResponse) return corsResponse;
@@ -78,10 +100,10 @@ serve(async (req) => {
           .from("user_roles")
           .select("user_id, role");
 
-        // Get all subscriptions
+        // Get all subscriptions (include manual_override)
         const { data: subscriptions } = await supabaseAdmin
           .from("subscriptions")
-          .select("user_id, status, trial_ends_at, subscription_ends_at");
+          .select("user_id, status, trial_ends_at, subscription_ends_at, manual_override");
 
         // Combine data
         let users = authUsers.users.map((authUser) => {
@@ -101,6 +123,7 @@ serve(async (req) => {
               status: subscription.status,
               trialEndsAt: subscription.trial_ends_at,
               subscriptionEndsAt: subscription.subscription_ends_at,
+              manualOverride: subscription.manual_override,
             } : null,
           };
         });
@@ -209,7 +232,6 @@ serve(async (req) => {
         }
 
         if (makeAdmin) {
-          // Add admin role
           const { error: insertError } = await supabaseAdmin
             .from("user_roles")
             .insert({ user_id: userId, role: "admin" });
@@ -219,7 +241,6 @@ serve(async (req) => {
           }
           logStep("Admin role added", { userId });
         } else {
-          // Remove admin role
           const { error: deleteError } = await supabaseAdmin
             .from("user_roles")
             .delete()
@@ -231,6 +252,8 @@ serve(async (req) => {
           }
           logStep("Admin role removed", { userId });
         }
+
+        await logAdminAction(supabaseAdmin, requestingUserId, userId, 'toggleAdmin', { makeAdmin });
 
         return new Response(
           JSON.stringify({ success: true }),
@@ -293,6 +316,14 @@ serve(async (req) => {
           supabaseAdmin.from("clients").select("*", { count: "exact", head: true }).eq("user_id", userId),
         ]);
 
+        // Get admin action logs for this user
+        const { data: actionLogs } = await supabaseAdmin
+          .from("admin_action_logs")
+          .select("*")
+          .eq("target_user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(50);
+
         logStep("User details retrieved", { userId });
 
         return new Response(
@@ -315,6 +346,7 @@ serve(async (req) => {
               orders: ordersCount || 0,
               clients: clientsCount || 0,
             },
+            actionLogs: actionLogs || [],
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -355,7 +387,7 @@ serve(async (req) => {
       }
 
       case "updateSubscription": {
-        const { userId, status, daysToAdd } = params;
+        const { userId, status, daysToAdd, manualOverride } = params;
 
         if (!userId) {
           throw new Error("User ID is required");
@@ -365,6 +397,11 @@ serve(async (req) => {
         
         if (status) {
           updateData.status = status;
+        }
+
+        // Handle explicit manualOverride parameter (for removing override without changing status)
+        if (manualOverride !== undefined && !status) {
+          updateData.manual_override = manualOverride;
         }
 
         // Se o admin está ativando premium manualmente, marca como override
@@ -427,6 +464,7 @@ serve(async (req) => {
         }
 
         logStep("Subscription updated", { userId, ...updateData });
+        await logAdminAction(supabaseAdmin, requestingUserId, userId, 'updateSubscription', { status, daysToAdd, manualOverride });
 
         return new Response(
           JSON.stringify({ success: true }),
@@ -455,7 +493,6 @@ serve(async (req) => {
         
         if (subscription?.trial_ends_at) {
           const currentEnd = new Date(subscription.trial_ends_at);
-          // Se a data já passou, começar de agora
           if (currentEnd < new Date()) {
             newTrialEnd = new Date();
           } else {
@@ -481,6 +518,7 @@ serve(async (req) => {
         }
 
         logStep("Trial extended", { userId, days, newTrialEnd: newTrialEnd.toISOString() });
+        await logAdminAction(supabaseAdmin, requestingUserId, userId, 'extendTrial', { days, newTrialEnd: newTrialEnd.toISOString() });
 
         return new Response(
           JSON.stringify({ success: true, newTrialEnd: newTrialEnd.toISOString() }),
@@ -529,10 +567,9 @@ serve(async (req) => {
         const customers = await stripe.customers.list({ email: authUser.user.email, limit: 1 });
         
         if (customers.data.length === 0) {
-          // Sem cliente no Stripe
           if (currentSub?.manual_override) {
-            // Se foi ativado manualmente, mantém como está
             logStep("No Stripe customer, but manual override is active - keeping current status", { userId });
+            await logAdminAction(supabaseAdmin, requestingUserId, userId, 'syncFromStripe', { result: 'manual_override_kept', reason: 'no_stripe_customer' });
             return new Response(
               JSON.stringify({ success: true, message: "Ativação manual mantida (sem cliente no Stripe)" }),
               {
@@ -541,6 +578,7 @@ serve(async (req) => {
               }
             );
           }
+          await logAdminAction(supabaseAdmin, requestingUserId, userId, 'syncFromStripe', { result: 'no_customer_found' });
           return new Response(
             JSON.stringify({ success: true, message: "Nenhum cliente encontrado no Stripe" }),
             {
@@ -563,7 +601,6 @@ serve(async (req) => {
           const sub = subscriptions.data[0];
           const endDate = new Date(sub.current_period_end * 1000);
 
-          // Assinatura ativa no Stripe - sincroniza e remove override manual
           await supabaseAdmin
             .from("subscriptions")
             .update({
@@ -571,11 +608,12 @@ serve(async (req) => {
               stripe_customer_id: customerId,
               stripe_subscription_id: sub.id,
               subscription_ends_at: endDate.toISOString(),
-              manual_override: false, // Agora é gerenciado pelo Stripe
+              manual_override: false,
             })
             .eq("user_id", userId);
 
           logStep("Synced active subscription from Stripe", { userId, subscriptionId: sub.id });
+          await logAdminAction(supabaseAdmin, requestingUserId, userId, 'syncFromStripe', { result: 'active_synced', stripeSubscriptionId: sub.id });
           
           return new Response(
             JSON.stringify({ success: true, message: "Assinatura ativa sincronizada do Stripe" }),
@@ -585,15 +623,14 @@ serve(async (req) => {
             }
           );
         } else {
-          // Sem assinatura ativa no Stripe
           if (currentSub?.manual_override) {
-            // Se foi ativado manualmente, mantém status mas atualiza customer ID
             await supabaseAdmin
               .from("subscriptions")
               .update({ stripe_customer_id: customerId })
               .eq("user_id", userId);
 
             logStep("No active Stripe subscription, but manual override - keeping status", { userId, customerId });
+            await logAdminAction(supabaseAdmin, requestingUserId, userId, 'syncFromStripe', { result: 'manual_override_kept', reason: 'no_active_stripe_sub' });
             
             return new Response(
               JSON.stringify({ success: true, message: "Ativação manual mantida (sem assinatura ativa no Stripe)" }),
@@ -603,13 +640,13 @@ serve(async (req) => {
               }
             );
           } else if (hasActiveTrial()) {
-            // User has active trial - preserve it, just update customer ID
             await supabaseAdmin
               .from("subscriptions")
               .update({ stripe_customer_id: customerId })
               .eq("user_id", userId);
 
             logStep("No active Stripe subscription, but user has active trial - keeping trial", { userId, customerId });
+            await logAdminAction(supabaseAdmin, requestingUserId, userId, 'syncFromStripe', { result: 'trial_kept' });
             
             return new Response(
               JSON.stringify({ success: true, message: "Trial ativo mantido (sem assinatura no Stripe)" }),
@@ -619,7 +656,6 @@ serve(async (req) => {
               }
             );
           } else {
-            // No override, no active trial - revert to expired
             await supabaseAdmin
               .from("subscriptions")
               .update({ 
@@ -630,6 +666,7 @@ serve(async (req) => {
               .eq("user_id", userId);
 
             logStep("No active subscription in Stripe, no trial, reverted to expired", { userId, customerId });
+            await logAdminAction(supabaseAdmin, requestingUserId, userId, 'syncFromStripe', { result: 'reverted_to_expired' });
             
             return new Response(
               JSON.stringify({ success: true, message: "Sem assinatura ativa no Stripe - status alterado para expirado" }),
@@ -649,12 +686,10 @@ serve(async (req) => {
           throw new Error("User ID is required");
         }
 
-        // Cannot delete yourself
         if (userId === requestingUserId) {
           throw new Error("Cannot delete your own account");
         }
 
-        // Check if target user is admin
         const { data: targetRoles } = await supabaseAdmin
           .from("user_roles")
           .select("role")
@@ -666,7 +701,9 @@ serve(async (req) => {
           throw new Error("Cannot delete another admin user");
         }
 
-        // Delete user (cascade will handle related data)
+        // Log before deletion since user will be gone
+        await logAdminAction(supabaseAdmin, requestingUserId, userId, 'deleteUser', {});
+
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
         if (deleteError) {
