@@ -21,6 +21,7 @@ import { ShoppingList } from '@/components/orders/ShoppingList';
 import { TransactionsList } from '@/components/financial/TransactionsList';
 import { RevenueReport } from '@/components/financial/RevenueReport';
 import { ReceivablesList } from '@/components/financial/ReceivablesList';
+import { FinancialPage } from '@/components/financial/FinancialPage';
 
 import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
@@ -126,9 +127,9 @@ export function Dashboard() {
       case 'clients': return <ClientsList />;
       case 'orders': return <OrdersList />;
       case 'shopping-list': return <ShoppingList />;
-      case 'cash-flow': return <TransactionsList />;
-      case 'reports': return <RevenueReport />;
-      case 'receivables': return <ReceivablesList />;
+      case 'cash-flow': return <FinancialPage initialTab="cash-flow" />;
+      case 'reports': return <FinancialPage initialTab="reports" />;
+      case 'receivables': return <FinancialPage initialTab="receivables" />;
       case 'settings': return <UserSettings />;
       case 'profile': return <ProfileSettings />;
       case 'support': return <SupportPage />;
