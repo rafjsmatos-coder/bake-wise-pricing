@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/collapsible';
 import { useCategories } from '@/hooks/useCategories';
 import { useIngredients, type Ingredient, type CreateIngredientData } from '@/hooks/useIngredients';
-import { UNITS, type MeasurementUnit, getCostPerUnit, formatCurrency } from '@/lib/unit-conversion';
+import { UNITS, type MeasurementUnit, getCostPerUnit, formatCurrency, getCompatibleUnits, getBestDisplayUnit, convertUnit } from '@/lib/unit-conversion';
 import { PriceHistoryChart } from './PriceHistoryChart';
 import { Loader2, Calculator, History, ChevronDown } from 'lucide-react';
 
@@ -55,6 +55,10 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
   const { createIngredient, updateIngredient } = useIngredients();
   const [showOptional, setShowOptional] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [stockUnit, setStockUnit] = useState<MeasurementUnit>('kg');
+  const [alertUnit, setAlertUnit] = useState<MeasurementUnit>('kg');
+  const [stockDisplayValue, setStockDisplayValue] = useState<string>('');
+  const [alertDisplayValue, setAlertDisplayValue] = useState<string>('');
 
   const {
     register,
@@ -81,6 +85,23 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
 
   useEffect(() => {
     if (ingredient) {
+      const mainUnit = ingredient.unit as MeasurementUnit;
+      
+      // Determine best display units for stock and alert
+      const stockDisplay = getBestDisplayUnit(
+        ingredient.stock_quantity ? Number(ingredient.stock_quantity) : null,
+        mainUnit
+      );
+      const alertDisplay = getBestDisplayUnit(
+        ingredient.min_stock_alert ? Number(ingredient.min_stock_alert) : null,
+        mainUnit
+      );
+
+      setStockUnit(stockDisplay.displayUnit);
+      setAlertUnit(alertDisplay.displayUnit);
+      setStockDisplayValue(stockDisplay.displayValue ? String(stockDisplay.displayValue) : '');
+      setAlertDisplayValue(alertDisplay.displayValue ? String(alertDisplay.displayValue) : '');
+
       reset({
         name: ingredient.name,
         purchase_price: Number(ingredient.purchase_price),
@@ -108,20 +129,60 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
         stock_quantity: null,
         min_stock_alert: null,
       });
+      setStockUnit('kg');
+      setAlertUnit('kg');
+      setStockDisplayValue('');
+      setAlertDisplayValue('');
       setShowOptional(false);
       setShowHistory(false);
     }
   }, [ingredient, reset, open]);
 
+  // When main unit changes, reset stock/alert units to match
+  const watchUnit = watch('unit');
+  useEffect(() => {
+    const compatibleUnits = getCompatibleUnits(watchUnit);
+    if (!compatibleUnits.includes(stockUnit)) {
+      setStockUnit(watchUnit);
+    }
+    if (!compatibleUnits.includes(alertUnit)) {
+      setAlertUnit(watchUnit);
+    }
+  }, [watchUnit]);
+
   const watchPrice = watch('purchase_price');
   const watchQuantity = watch('package_quantity');
-  const watchUnit = watch('unit');
 
   const costInfo = watchPrice > 0 && watchQuantity > 0
     ? getCostPerUnit(watchPrice, watchQuantity, watchUnit)
     : null;
 
+  const compatibleUnits = getCompatibleUnits(watchUnit);
+  const showUnitSelector = compatibleUnits.length > 1;
+
   const onSubmit = async (data: IngredientFormData) => {
+    // Convert stock and alert values from display unit to main unit
+    let stockInMainUnit: number | null = null;
+    let alertInMainUnit: number | null = null;
+
+    const stockVal = stockDisplayValue ? Number(stockDisplayValue) : null;
+    if (stockVal != null && stockVal > 0) {
+      if (stockUnit === data.unit) {
+        stockInMainUnit = stockVal;
+      } else {
+        stockInMainUnit = convertUnit(stockVal, stockUnit, data.unit);
+      }
+    }
+
+    const alertVal = alertDisplayValue ? Number(alertDisplayValue) : null;
+    if (alertVal != null && alertVal > 0) {
+      if (alertUnit === data.unit) {
+        alertInMainUnit = alertVal;
+      } else {
+        alertInMainUnit = convertUnit(alertVal, alertUnit, data.unit);
+      }
+    }
+
     const submitData: CreateIngredientData = {
       name: data.name.trim(),
       purchase_price: data.purchase_price,
@@ -131,8 +192,8 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
       brand: data.brand?.trim() || null,
       supplier: data.supplier?.trim() || null,
       expiry_date: data.expiry_date || null,
-      stock_quantity: data.stock_quantity || null,
-      min_stock_alert: data.min_stock_alert || null,
+      stock_quantity: stockInMainUnit,
+      min_stock_alert: alertInMainUnit,
     };
 
     if (ingredient) {
@@ -333,42 +394,88 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="expiry_date">Data de Validade</Label>
-                  <Input
-                    id="expiry_date"
-                    type="date"
-                    className="min-h-[44px]"
-                    {...register('expiry_date')}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="expiry_date">Data de Validade</Label>
+                <Input
+                  id="expiry_date"
+                  type="date"
+                  className="min-h-[44px]"
+                  {...register('expiry_date')}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="stock_quantity">Estoque Atual</Label>
+              {/* Stock Quantity with unit selector */}
+              <div className="space-y-2">
+                <Label>Estoque Atual</Label>
+                <div className="flex gap-2">
                   <Input
-                    id="stock_quantity"
                     type="number"
                     step="0.001"
                     min="0"
                     placeholder="Opcional"
-                    className="min-h-[44px]"
-                    {...register('stock_quantity', { setValueAs: (v: string) => v === '' || v === null || v === undefined ? null : Number(v) })}
+                    className="min-h-[44px] flex-1"
+                    value={stockDisplayValue}
+                    onChange={(e) => setStockDisplayValue(e.target.value)}
                   />
+                  {showUnitSelector ? (
+                    <Select
+                      value={stockUnit}
+                      onValueChange={(v: MeasurementUnit) => setStockUnit(v)}
+                    >
+                      <SelectTrigger className="min-h-[44px] w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {compatibleUnits.map((u) => (
+                          <SelectItem key={u} value={u} className="py-3">
+                            {u}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="min-h-[44px] w-16 flex items-center justify-center text-sm text-muted-foreground border rounded-md bg-muted/50">
+                      {watchUnit}
+                    </div>
+                  )}
                 </div>
               </div>
 
+              {/* Min Stock Alert with unit selector */}
               <div className="space-y-2">
-                <Label htmlFor="min_stock_alert">Alerta de Estoque Mínimo</Label>
-                <Input
-                  id="min_stock_alert"
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  placeholder="Opcional"
-                  className="min-h-[44px]"
-                  {...register('min_stock_alert', { setValueAs: (v: string) => v === '' || v === null || v === undefined ? null : Number(v) })}
-                />
+                <Label>Alerta de Estoque Mínimo</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    placeholder="Opcional"
+                    className="min-h-[44px] flex-1"
+                    value={alertDisplayValue}
+                    onChange={(e) => setAlertDisplayValue(e.target.value)}
+                  />
+                  {showUnitSelector ? (
+                    <Select
+                      value={alertUnit}
+                      onValueChange={(v: MeasurementUnit) => setAlertUnit(v)}
+                    >
+                      <SelectTrigger className="min-h-[44px] w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {compatibleUnits.map((u) => (
+                          <SelectItem key={u} value={u} className="py-3">
+                            {u}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="min-h-[44px] w-16 flex items-center justify-center text-sm text-muted-foreground border rounded-md bg-muted/50">
+                      {watchUnit}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
