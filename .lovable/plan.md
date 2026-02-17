@@ -1,71 +1,89 @@
 
 
-## Corrigir Entrada de Estoque com Unidade Independente
+## Exibicao Inteligente de Unidades e Conversao Correta em Todo o Sistema
 
-### Problema
+### Problemas identificados
 
-Quando um ingrediente e cadastrado em `kg` (ex: Acucar mascavo - 1 kg), os campos de estoque e alerta minimo tambem esperam valores em `kg`. Para registrar 100g de estoque, o usuario precisa digitar `0,1` -- pouco intuitivo. Enquanto isso, a lista de compras mostra necessidades em `g`, gerando confusao.
+1. **Cards de ingredientes** mostram `0,100 kg` em vez de `100 g` (linha 80 do IngredientCard)
+2. **Cards de decoracoes** mostram estoque na unidade principal sem conversao inteligente (linha 72 do DecorationCard)
+3. **Cards de embalagens** mostram estoque na unidade principal sem conversao inteligente (linha 87 do PackagingCard)
+4. **Dashboard (StockAlertsCard)** mostra estoque e alerta minimo na unidade principal sem conversao (linhas 181-183)
+5. **Lista de Compras (ShoppingList)** nao converte estoque da unidade principal para a unidade da receita, resultando em "Estoque: 0,10 g" quando deveria ser "100 g" (bug ja identificado no plano anterior, ainda nao implementado)
+6. **Formularios de decoracoes e embalagens** nao tem seletor de unidade independente para estoque/alerta (so ingredientes tem)
+7. **Dialogo de deducao de estoque (StockDeductionDialog)** - ja funciona corretamente com `convertUnit`, nao precisa de alteracao
 
 ### Solucao
 
-Adicionar um seletor de unidade independente ao lado dos campos de estoque e alerta minimo no formulario de ingredientes. O usuario escolhe em qual unidade quer informar (kg ou g, L ou ml, m ou cm), e o sistema converte automaticamente para a unidade principal antes de salvar no banco.
-
-### Como funciona
-
-```text
-Exemplo: Ingrediente cadastrado em kg
-
-Estoque atual: [ 100 ] [ g ]  --> salva como 0.1 kg no banco
-Alerta minimo: [ 500 ] [ g ]  --> salva como 0.5 kg no banco
-
-Exemplo: Ingrediente cadastrado em g
-
-Estoque atual: [ 2 ] [ kg ]   --> salva como 2000 g no banco
-Alerta minimo: [ 1 ] [ kg ]   --> salva como 1000 g no banco
-```
-
-O usuario digita no que for mais natural; o banco sempre recebe na unidade principal do ingrediente.
-
-### Regras
-
-- Para ingredientes em `un` (unidade), nao mostra seletor extra (nao faz sentido converter)
-- As opcoes de unidade sao limitadas ao mesmo tipo (peso: kg/g, volume: L/ml, comprimento: m/cm)
-- Ao editar um ingrediente existente, os campos mostram o valor ja convertido na unidade mais legivel (ex: 0.1 kg mostra como 100 g se for mais natural)
-- Os alertas no `StockAlertsCard` e `IngredientCard` continuam funcionando corretamente pois o banco armazena tudo na mesma unidade principal
+Usar a funcao `getBestDisplayUnit` (que ja existe em `unit-conversion.ts`) para exibir valores de estoque na unidade mais legivel em todos os cards e alertas. Adicionar conversao de unidades na lista de compras. Adicionar seletores de unidade nos formularios de decoracoes e embalagens.
 
 ### Alteracoes
 
 | Arquivo | O que muda |
 |---------|-----------|
-| `src/components/ingredients/IngredientForm.tsx` | Adicionar estado `stockUnit` e `alertUnit` com seletores de unidade ao lado dos campos de estoque e alerta minimo. No `onSubmit`, converter para a unidade principal do ingrediente antes de salvar. No `useEffect` de edicao, detectar a melhor unidade para exibicao |
-| `src/lib/unit-conversion.ts` | Adicionar funcao `getCompatibleUnits(unit)` que retorna as unidades do mesmo tipo (ex: `kg` retorna `['kg', 'g']`), e funcao `getBestDisplayUnit(value, unit)` que escolhe a unidade mais legivel para exibicao |
+| `src/components/ingredients/IngredientCard.tsx` | Importar `getBestDisplayUnit` e usar para exibir `stock_quantity` e `min_stock_alert` na unidade mais legivel |
+| `src/components/decorations/DecorationCard.tsx` | Importar `getBestDisplayUnit` e `formatNumber` para exibir estoque inteligente |
+| `src/components/packaging/PackagingCard.tsx` | Importar `getBestDisplayUnit` e `formatNumber` para exibir estoque inteligente |
+| `src/components/dashboard/StockAlertsCard.tsx` | Importar `getBestDisplayUnit` e `formatNumber` para exibir estoque e alerta minimo na melhor unidade |
+| `src/components/orders/ShoppingList.tsx` | Importar `convertUnit` e converter `stock_quantity` da unidade do ingrediente para a unidade da receita antes de calcular `toBuy` |
+| `src/components/decorations/DecorationForm.tsx` | Adicionar estados `stockUnit`/`alertUnit` com seletores de unidade e conversao no submit (mesmo padrao do IngredientForm) |
+| `src/components/packaging/PackagingForm.tsx` | Adicionar estados `stockUnit`/`alertUnit` com seletores de unidade e conversao no submit (mesmo padrao do IngredientForm) |
 
-### O que NAO muda
+### Detalhes por arquivo
 
-- Banco de dados: nenhuma migracao necessaria (stock_quantity e min_stock_alert continuam em numeric)
-- `StockAlertsCard.tsx`: comparacao `stock_quantity <= min_stock_alert` continua valida (ambos na mesma unidade)
-- `IngredientCard.tsx`: exibicao continua usando a unidade principal do ingrediente
-- `ShoppingList.tsx`: calculo de necessidades nao muda
-- `StockDeductionDialog.tsx`: ja usa `convertUnit` para converter entre unidades
-
-### Exemplo visual do formulario
-
+**IngredientCard.tsx** - Exibicao inteligente do estoque:
 ```text
-Campos opcionais:
-  ┌─────────────────────────────────────┐
-  │ Estoque Atual                       │
-  │ ┌──────────────┐  ┌──────────────┐  │
-  │ │     100      │  │    g    ▼    │  │
-  │ └──────────────┘  └──────────────┘  │
-  │                                     │
-  │ Alerta de Estoque Minimo            │
-  │ ┌──────────────┐  ┌──────────────┐  │
-  │ │     500      │  │    g    ▼    │  │
-  │ └──────────────┘  └──────────────┘  │
-  └─────────────────────────────────────┘
+Antes:  Estoque: 0,100 kg
+Depois: Estoque: 100 g
+
+Logica:
+  const { displayValue, displayUnit } = getBestDisplayUnit(stock_quantity, ingredient.unit);
+  // Exibir: formatNumber(displayValue) displayUnit
+  // A comparacao isLowStock continua usando valores originais (ambos na mesma unidade principal)
 ```
+
+**DecorationCard.tsx** e **PackagingCard.tsx** - Mesma logica do IngredientCard.
+
+**StockAlertsCard.tsx** - Exibicao inteligente nos alertas do dashboard:
+```text
+Antes:  0.1 kg  / Min: 0.5 kg
+Depois: 100 g   / Min: 500 g
+
+Logica: usar getBestDisplayUnit para stockQuantity e minAlert, ambos com a mesma unidade do item
+```
+A comparacao `stock_quantity <= min_stock_alert` continua usando valores brutos do banco (sem conversao), mantendo a logica correta.
+
+**ShoppingList.tsx** - Conversao de estoque para unidade da receita:
+```text
+Antes:
+  stock = pi.ingredient.stock_quantity  (ex: 0.1, em kg)
+  unit = pi.unit  (ex: g)
+  Mostra: "Estoque: 0,10 g"  --> ERRADO
+
+Depois:
+  stock = convertUnit(0.1, 'kg', 'g') = 100
+  Mostra: "Estoque: 100 g"   --> CORRETO
+  toBuy = max(0, 16.29 - 100) = 0
+```
+
+Aplicar a conversao nos 4 blocos: ingredientes diretos, ingredientes de receitas, decoracoes e embalagens.
+
+**DecorationForm.tsx** e **PackagingForm.tsx** - Adicionar seletores de unidade:
+- Adicionar estados `stockUnit`, `alertUnit`, `stockDisplayValue`, `alertDisplayValue`
+- Importar `getCompatibleUnits`, `getBestDisplayUnit`, `convertUnit`
+- No `useEffect` de edicao: usar `getBestDisplayUnit` para preencher os valores na unidade mais legivel
+- No `onSubmit`: converter de volta para a unidade principal usando `convertUnit` antes de salvar
+- No template: adicionar `Select` ao lado dos campos de estoque e alerta (mesmo layout do IngredientForm)
+
+### Dialogo de Deducao de Estoque
+
+O `StockDeductionDialog.tsx` ja funciona corretamente:
+- Armazena `stockUnit` separado do `unit` da receita (linha 24)
+- Usa `getConvertedQty` com `convertUnit` para calcular a deducao na unidade correta (linha 190-193)
+- Exibe a quantidade a descontar na unidade do estoque (linha 295-296)
+
+Nenhuma alteracao necessaria.
 
 ### Impacto nos alertas
 
-Nenhum impacto negativo. Como a conversao acontece antes de salvar, os valores no banco permanecem consistentes na unidade principal. As comparacoes em `StockAlertsCard` e `IngredientCard` continuam corretas sem alteracao.
+As comparacoes de alerta (`stock_quantity <= min_stock_alert`) continuam usando os valores brutos do banco, que estao todos na mesma unidade principal. A conversao e apenas visual (para exibicao). Portanto, os alertas funcionam corretamente sem nenhuma alteracao logica.
 
