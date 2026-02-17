@@ -14,8 +14,6 @@ import {
   Box,
   Users,
   ShoppingCart,
-  BarChart3,
-  Receipt,
   Settings,
   Newspaper,
   Headphones,
@@ -86,13 +84,6 @@ export function MoreMenu({
       items: [
         { id: 'clients', label: 'Clientes', icon: Users },
         { id: 'shopping-list', label: 'Lista de Compras', icon: ShoppingCart },
-      ],
-    },
-    {
-      label: 'Financeiro',
-      items: [
-        { id: 'reports', label: 'Relatórios', icon: BarChart3 },
-        { id: 'receivables', label: 'Contas a Receber', icon: Receipt },
       ],
     },
     {

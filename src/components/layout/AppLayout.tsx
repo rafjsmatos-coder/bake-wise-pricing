@@ -82,7 +82,7 @@ const PAGE_TITLES: Record<PageType, string> = {
   clients: 'Clientes',
   orders: 'Pedidos',
   'shopping-list': 'Lista de Compras',
-  'cash-flow': 'Fluxo de Caixa',
+  'cash-flow': 'Financeiro',
   reports: 'Relatórios',
   receivables: 'Contas a Receber',
   settings: 'Configurações',
