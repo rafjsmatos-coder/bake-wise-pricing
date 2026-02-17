@@ -33,7 +33,7 @@ export function ShoppingList() {
 
   const periodOrders = useMemo(() => {
     return orders.filter((o) => {
-      if (!o.delivery_date || o.status === 'cancelled' || o.status === 'delivered') return false;
+      if (!o.delivery_date || !['pending', 'in_production'].includes(o.status)) return false;
       const d = new Date(o.delivery_date);
       return d >= weekStart && d <= weekEnd;
     });
