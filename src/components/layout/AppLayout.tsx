@@ -165,9 +165,7 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
     {
       label: 'Financeiro',
       items: [
-        { id: 'cash-flow', label: 'Fluxo de Caixa', icon: DollarSign },
-        { id: 'reports', label: 'Relatórios', icon: BarChart3 },
-        { id: 'receivables', label: 'Contas a Receber', icon: Receipt },
+        { id: 'cash-flow', label: 'Financeiro', icon: DollarSign },
       ],
     },
   ];
