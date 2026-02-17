@@ -1,70 +1,74 @@
 
 
-## Expandir Autonomias do Admin
+## Adicionar Status "Orcamento" e Corrigir Filtro da Lista de Compras
 
-Quatro novas capacidades para dar controle total ao administrador sobre o ciclo de vida das assinaturas.
+### Problema atual
 
----
+1. O status `ready` (Pronto) esta sendo incluido na lista de compras, mas se o produto ja esta pronto, os materiais ja foram consumidos
+2. Nao existe forma de registrar orcamentos sem que eles afetem a lista de compras e o planejamento
 
-### 1. Cancelar/Expirar Manualmente
+### Solucao
 
-Adicionar opcoes no dropdown de acoes do usuario para forcar o status para "cancelado" ou "expirado", com confirmacao. Util quando um usuario solicita cancelamento direto ou quando o admin precisa revogar acesso imediatamente.
+Adicionar o status "Orcamento" (quote) como primeiro estagio do ciclo de vida do pedido, e corrigir o filtro da lista de compras.
 
-| Arquivo | Alteracao |
-|---------|----------|
-| `src/components/admin/UserManagement.tsx` | Adicionar opcoes "Cancelar Assinatura" e "Expirar Assinatura" no dropdown, com dialogs de confirmacao. Reutilizar o `subscriptionDialog` existente com novas actions `cancel` e `expire` |
+### Fluxo atualizado dos pedidos
 
-O backend (`updateSubscription` na edge function) ja suporta qualquer status incluindo `expired` e `canceled`, e ja limpa `manual_override` nesses casos (linhas 388-391). Nenhuma alteracao no backend necessaria.
+```text
+Orcamento -> Pendente -> Em producao -> Pronto -> Entregue
+                                                   (Cancelado em qualquer etapa)
+```
 
----
+### Regra da lista de compras
 
-### 2. Premium com Duracao Customizada
+| Status | Aparece na lista de compras |
+|--------|----------------------------|
+| Orcamento (quote) | Nao |
+| Pendente (pending) | Sim |
+| Em producao (in_production) | Sim |
+| Pronto (ready) | Nao |
+| Entregue (delivered) | Nao |
+| Cancelado (cancelled) | Nao |
 
-Atualmente "Ativar Premium" esta fixo em 30 dias. Mudar para permitir que o admin defina a quantidade de dias, assim como ja funciona para extensao de trial.
-
-| Arquivo | Alteracao |
-|---------|----------|
-| `src/components/admin/UserManagement.tsx` | No dialog de acao `activate`, mostrar campo de input de dias (igual ao extend). Passar `daysToAdd` dinamico em vez de fixo 30 |
-
-Backend ja suporta `daysToAdd` dinamico na acao `updateSubscription`. Nenhuma alteracao no backend.
-
----
-
-### 3. Remover Override Manual
-
-Botao para limpar o `manual_override` sem alterar o status. Util quando o admin quer devolver o controle ao Stripe sem esperar expiracao.
-
-| Arquivo | Alteracao |
-|---------|----------|
-| `src/components/admin/UserManagement.tsx` | Adicionar opcao "Remover Override Manual" no dropdown (so aparece se o usuario tiver `manual_override: true`). Chamar `updateSubscription` com apenas `manual_override: false` |
-| `supabase/functions/admin-users/index.ts` | Na acao `updateSubscription`, aceitar campo `manualOverride` explicito para permitir definir override independentemente do status |
-
-Tambem precisa expor `manual_override` na listagem de usuarios para o frontend saber quando mostrar a opcao.
-
-| Arquivo | Alteracao |
-|---------|----------|
-| `supabase/functions/admin-users/index.ts` | Na acao `list`, incluir `manual_override` no select de subscriptions e no mapeamento retornado |
+Somente pedidos com status `pending` ou `in_production` afetam a lista de compras, pois sao os que ainda precisam de materiais.
 
 ---
 
-### 4. Log de Acoes Administrativas
+### Alteracoes
 
-Criar tabela `admin_action_logs` para registrar toda acao do admin (extensao de trial, ativacao premium, cancelamento, sync, etc.) com timestamp, admin que executou e usuario afetado.
+| Arquivo | O que muda |
+|---------|-----------|
+| `src/components/orders/OrderStatusBadge.tsx` | Adicionar `quote` ao `statusConfig`, `ORDER_STATUSES` e `getStatusColor` com label "Orcamento" e cor cinza/neutra |
+| `src/components/orders/ShoppingList.tsx` | Corrigir filtro: incluir apenas `pending` e `in_production` (atualmente exclui so `cancelled` e `delivered`, deixando `ready` entrar) |
+| `src/components/orders/OrderForm.tsx` | Adicionar "Orcamento" como opcao no select de status |
+| `src/components/orders/OrderCard.tsx` | Nenhuma alteracao necessaria (ja usa `OrderStatusBadge` que sera atualizado) |
+| `src/components/orders/OrdersList.tsx` | Verificar se filtros de status incluem a nova opcao |
+| `src/hooks/useOrders.tsx` | Ao duplicar pedido, manter status default como `pending` (nao muda) |
 
-| Arquivo | Alteracao |
-|---------|----------|
-| Migracao SQL | Criar tabela `admin_action_logs` com colunas: `id`, `admin_user_id`, `target_user_id`, `action`, `details` (jsonb), `created_at`. RLS: somente admins podem ler e inserir |
-| `supabase/functions/admin-users/index.ts` | Adicionar funcao helper `logAdminAction()` e chamar em cada acao relevante (extendTrial, updateSubscription, syncFromStripe, toggleAdmin, deleteUser) |
-| `src/components/admin/UserDetailsModal.tsx` | Adicionar aba "Historico" no modal de detalhes mostrando as ultimas acoes administrativas realizadas sobre aquele usuario |
+### Detalhe tecnico
 
----
+**OrderStatusBadge.tsx** - Adicionar ao statusConfig:
+```text
+quote: { label: 'Orcamento', className: 'bg-gray-500/10 text-gray-600 border-gray-500/30' }
+```
 
-### Resumo de arquivos
+E ao ORDER_STATUSES (como primeiro item):
+```text
+{ value: 'quote', label: 'Orcamento' }
+```
 
-| Arquivo | Tipo de alteracao |
-|---------|-------------------|
-| Migracao SQL | Nova tabela `admin_action_logs` |
-| `supabase/functions/admin-users/index.ts` | Aceitar `manualOverride` explicito, expor override na listagem, registrar logs de acao |
-| `src/components/admin/UserManagement.tsx` | Novas opcoes: cancelar, expirar, premium customizado, remover override |
-| `src/components/admin/UserDetailsModal.tsx` | Nova aba "Historico" com log de acoes do admin |
+**ShoppingList.tsx** - Mudar o filtro de:
+```text
+if (!o.delivery_date || o.status === 'cancelled' || o.status === 'delivered') return false;
+```
+
+Para:
+```text
+if (!o.delivery_date || !['pending', 'in_production'].includes(o.status)) return false;
+```
+
+Isso garante que somente pedidos pendentes ou em producao entrem na lista de compras, excluindo orcamentos, prontos, entregues e cancelados.
+
+### Nenhuma migracao de banco necessaria
+
+O campo `status` na tabela `orders` e do tipo `text`, entao aceita qualquer valor sem precisar de migracao.
 
