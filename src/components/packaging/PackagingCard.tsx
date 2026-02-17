@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Copy, Pencil, Trash2, Ruler, AlertTriangle } from 'lucide-react';
+import { Copy, Pencil, Trash2, Ruler, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '@/lib/unit-conversion';
 
 interface PackagingCardProps {
@@ -22,13 +22,12 @@ interface PackagingCardProps {
       color: string | null;
     } | null;
   };
-  onView: () => void;
   onDuplicate: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export function PackagingCard({ packaging, onView, onDuplicate, onEdit, onDelete }: PackagingCardProps) {
+export function PackagingCard({ packaging, onDuplicate, onEdit, onDelete }: PackagingCardProps) {
   const isLowStock = packaging.stock_quantity !== null && 
     packaging.min_stock_alert !== null && 
     packaging.stock_quantity <= packaging.min_stock_alert;
@@ -99,9 +98,6 @@ export function PackagingCard({ packaging, onView, onDuplicate, onEdit, onDelete
           </span>
         </div>
         <div className="flex gap-1 shrink-0">
-          <Button variant="ghost" size="icon" onClick={onView} className="h-8 w-8">
-            <Eye className="h-4 w-4" />
-          </Button>
           <Button variant="ghost" size="icon" onClick={onDuplicate} className="h-8 w-8">
             <Copy className="h-4 w-4" />
           </Button>

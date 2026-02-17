@@ -32,7 +32,7 @@ export function BottomNav({ currentPage, onPageChange, onMoreClick, canAccess = 
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border lg:hidden pb-[env(safe-area-inset-bottom)]">
+    <nav data-tour="bottom-nav" className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border lg:hidden pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const active = isActive(item.id);
@@ -40,6 +40,7 @@ export function BottomNav({ currentPage, onPageChange, onMoreClick, canAccess = 
             <button
               key={item.id}
               onClick={() => handleClick(item.id)}
+              {...(item.id === 'more' ? { 'data-tour': 'bottom-more' } : {})}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-0 transition-colors',
                 active ? 'text-accent' : 'text-muted-foreground'

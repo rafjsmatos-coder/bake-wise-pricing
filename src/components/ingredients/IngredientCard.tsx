@@ -2,7 +2,9 @@ import { Ingredient } from '@/hooks/useIngredients';
 import { formatCurrency, formatNumber, getCostPerUnit } from '@/lib/unit-conversion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Copy, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Eye, Copy, Pencil, Trash2, AlertTriangle, Calendar } from 'lucide-react';
+import { format, isPast, differenceInDays, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface IngredientCardProps {
   ingredient: Ingredient;
@@ -18,6 +20,11 @@ export function IngredientCard({ ingredient, onView, onDuplicate, onEdit, onDele
     Number(ingredient.package_quantity),
     ingredient.unit
   );
+
+  const expiryDate = ingredient.expiry_date ? parseISO(ingredient.expiry_date) : null;
+  const isExpired = expiryDate ? isPast(expiryDate) : false;
+  const daysUntilExpiry = expiryDate ? differenceInDays(expiryDate, new Date()) : null;
+  const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry >= 0 && daysUntilExpiry <= 7;
 
   const isLowStock = ingredient.min_stock_alert && 
     ingredient.stock_quantity !== null && 
@@ -71,6 +78,18 @@ export function IngredientCard({ ingredient, onView, onDuplicate, onEdit, onDele
         {ingredient.stock_quantity !== null && (
           <p className={isLowStock ? 'text-destructive' : ''}>
             Estoque: {formatNumber(Number(ingredient.stock_quantity), 3)} {ingredient.unit}
+          </p>
+        )}
+
+        {expiryDate && (
+          <p className={`flex items-center gap-1 ${isExpired ? 'text-destructive font-medium' : isExpiringSoon ? 'text-amber-600 dark:text-amber-400 font-medium' : ''}`}>
+            <Calendar className="h-3 w-3" />
+            {isExpired
+              ? `Vencido em ${format(expiryDate, "dd/MM/yyyy", { locale: ptBR })}`
+              : isExpiringSoon
+                ? `Vence em ${daysUntilExpiry} dia${daysUntilExpiry !== 1 ? 's' : ''}`
+                : `Val: ${format(expiryDate, "dd/MM/yyyy", { locale: ptBR })}`
+            }
           </p>
         )}
       </div>
