@@ -248,6 +248,7 @@ export type Database = {
           is_published: boolean
           question: string
           updated_at: string
+          view_count: number
         }
         Insert: {
           answer: string
@@ -258,6 +259,7 @@ export type Database = {
           is_published?: boolean
           question: string
           updated_at?: string
+          view_count?: number
         }
         Update: {
           answer?: string
@@ -268,6 +270,7 @@ export type Database = {
           is_published?: boolean
           question?: string
           updated_at?: string
+          view_count?: number
         }
         Relationships: [
           {
@@ -1324,6 +1327,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_faq_view: { Args: { item_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"

@@ -16,6 +16,7 @@ export interface FAQItem {
   answer: string;
   is_published: boolean;
   display_order: number;
+  view_count: number;
   created_at: string;
   updated_at: string;
 }
