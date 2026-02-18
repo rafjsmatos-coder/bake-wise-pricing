@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/accordion';
 import { Search, HelpCircle, Headphones } from 'lucide-react';
 import { useFAQ } from '@/hooks/useFAQ';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 interface FAQTabProps {
@@ -86,7 +87,12 @@ export function FAQTab({ onOpenTicket }: FAQTabProps) {
                         value={item.id}
                         className="border-0 border-b last:border-b-0"
                       >
-                        <AccordionTrigger className="text-sm hover:no-underline py-3">
+                        <AccordionTrigger
+                          className="text-sm hover:no-underline py-3"
+                          onClick={() => {
+                            supabase.rpc('increment_faq_view', { item_id: item.id });
+                          }}
+                        >
                           {item.question}
                         </AccordionTrigger>
                         <AccordionContent className="text-sm text-muted-foreground whitespace-pre-line">
