@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface Profile {
   id: string;
@@ -39,7 +39,6 @@ export interface UpdateProfileData {
 
 export function useProfile() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const profileQuery = useQuery({
@@ -73,17 +72,10 @@ export function useProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
-      toast({
-        title: 'Perfil atualizado',
-        description: 'Suas informações foram salvas com sucesso.',
-      });
+      toast.success('Perfil atualizado com sucesso!');
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro ao salvar perfil',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao salvar perfil', { description: error.message });
     },
   });
 
@@ -98,11 +90,7 @@ export function useProfile() {
       .upload(fileName, file, { upsert: true });
 
     if (uploadError) {
-      toast({
-        title: 'Erro ao fazer upload',
-        description: uploadError.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao fazer upload', { description: uploadError.message });
       return null;
     }
 

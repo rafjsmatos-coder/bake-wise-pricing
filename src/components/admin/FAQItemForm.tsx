@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { FAQItem, FAQCategory } from '@/hooks/useFAQ';
 
 interface FAQItemFormProps {
@@ -18,7 +18,7 @@ interface FAQItemFormProps {
 }
 
 export function FAQItemForm({ item, categories, defaultCategoryId, onSuccess, onCancel }: FAQItemFormProps) {
-  const { toast } = useToast();
+  
   const [question, setQuestion] = useState(item?.question || '');
   const [answer, setAnswer] = useState(item?.answer || '');
   const [categoryId, setCategoryId] = useState(item?.category_id || defaultCategoryId || '');
@@ -42,7 +42,7 @@ export function FAQItemForm({ item, categories, defaultCategoryId, onSuccess, on
           })
           .eq('id', item.id);
         if (error) throw error;
-        toast({ title: 'Pergunta atualizada!' });
+        toast.success('Pergunta atualizada!');
       } else {
         const { data: maxOrder } = await supabase
           .from('faq_items')
@@ -62,11 +62,11 @@ export function FAQItemForm({ item, categories, defaultCategoryId, onSuccess, on
             display_order: (maxOrder?.display_order || 0) + 1,
           });
         if (error) throw error;
-        toast({ title: 'Pergunta criada!' });
+        toast.success('Pergunta criada!');
       }
       onSuccess();
     } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      toast.error('Erro', { description: error.message });
     } finally {
       setIsSubmitting(false);
     }

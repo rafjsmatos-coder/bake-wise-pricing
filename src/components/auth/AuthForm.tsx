@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, ArrowLeft, Eye, EyeOff, CheckCircle2, Info } from 'lucide-react';
 import precibakeLogoFull from '@/assets/precibake-logo-full.jpeg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { ForgotPasswordForm } from './ForgotPasswordForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -23,7 +23,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [signupPassword, setSignupPassword] = useState('');
   const { signIn, signUp } = useAuth();
-  const { toast } = useToast();
+  
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,12 +36,10 @@ export function AuthForm({ onBack }: AuthFormProps) {
     const { error } = await signIn(email, password);
 
     if (error) {
-      toast({
-        title: 'Erro ao entrar',
+      toast.error('Erro ao entrar', {
         description: error.message === 'Invalid login credentials' 
           ? 'E-mail ou senha incorretos. Verifique seus dados e tente novamente.'
           : error.message,
-        variant: 'destructive',
       });
     }
 
@@ -58,10 +56,8 @@ export function AuthForm({ onBack }: AuthFormProps) {
     const fullName = formData.get('fullName') as string;
 
     if (password.length < 8) {
-      toast({
-        title: 'Senha muito curta',
+      toast.error('Senha muito curta', {
         description: 'A senha deve ter pelo menos 8 caracteres para sua segurança.',
-        variant: 'destructive',
       });
       setIsLoading(false);
       return;
@@ -70,14 +66,9 @@ export function AuthForm({ onBack }: AuthFormProps) {
     const { error } = await signUp(email, password, fullName);
 
     if (error) {
-      toast({
-        title: 'Erro ao criar conta',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao criar conta', { description: error.message });
     } else {
-      toast({
-        title: 'Conta criada com sucesso! 🎉',
+      toast.success('Conta criada com sucesso! 🎉', {
         description: 'Enviamos um e-mail de confirmação. Verifique sua caixa de entrada para ativar sua conta.',
       });
     }

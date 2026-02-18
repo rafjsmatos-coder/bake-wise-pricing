@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { ensureSessionUserId } from '@/lib/ensure-session';
 import type { MeasurementUnit } from '@/lib/unit-conversion';
 
@@ -82,7 +82,6 @@ const RECIPE_SELECT = `
 
 export function useRecipes() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const recipesQuery = useQuery({
@@ -136,10 +135,10 @@ export function useRecipes() {
     retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes', user?.id] });
-      toast({ title: 'Receita criada', description: 'A receita foi adicionada com sucesso.' });
+      toast.success('Receita criada com sucesso!');
     },
     onError: (error: Error) => {
-      toast({ title: 'Erro ao criar receita', description: error.message, variant: 'destructive' });
+      toast.error('Erro ao criar receita', { description: error.message });
     },
   });
 
@@ -180,10 +179,10 @@ export function useRecipes() {
     retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes', user?.id] });
-      toast({ title: 'Receita atualizada', description: 'A receita foi atualizada com sucesso.' });
+      toast.success('Receita atualizada com sucesso!');
     },
     onError: (error: Error) => {
-      toast({ title: 'Erro ao atualizar receita', description: error.message, variant: 'destructive' });
+      toast.error('Erro ao atualizar receita', { description: error.message });
     },
   });
 
@@ -196,10 +195,10 @@ export function useRecipes() {
     retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes', user?.id] });
-      toast({ title: 'Receita excluída', description: 'A receita foi excluída com sucesso.' });
+      toast.success('Receita excluída com sucesso!');
     },
     onError: (error: Error) => {
-      toast({ title: 'Erro ao excluir receita', description: error.message, variant: 'destructive' });
+      toast.error('Erro ao excluir receita', { description: error.message });
     },
   });
 
@@ -226,10 +225,10 @@ export function useRecipes() {
       return createRecipe.mutateAsync(newRecipeData);
     },
     onSuccess: () => {
-      toast({ title: 'Receita duplicada', description: 'A cópia da receita foi criada com sucesso.' });
+      toast.success('Receita duplicada com sucesso!');
     },
     onError: (error: Error) => {
-      toast({ title: 'Erro ao duplicar receita', description: error.message, variant: 'destructive' });
+      toast.error('Erro ao duplicar receita', { description: error.message });
     },
   });
 

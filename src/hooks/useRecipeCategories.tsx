@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { ensureSessionUserId } from '@/lib/ensure-session';
 
 export interface RecipeCategory { id: string; user_id: string; name: string; color: string | null; description: string | null; created_at: string; updated_at: string; }
@@ -10,7 +10,6 @@ export interface UpdateRecipeCategoryData extends Partial<CreateRecipeCategoryDa
 
 export function useRecipeCategories() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const categoriesQuery = useQuery({
@@ -27,8 +26,8 @@ export function useRecipeCategories() {
       return category as RecipeCategory;
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recipe-categories', user?.id] }); toast({ title: 'Categoria criada', description: 'A categoria de receita foi adicionada com sucesso.' }); },
-    onError: (error: Error) => { toast({ title: 'Erro ao criar categoria', description: error.message, variant: 'destructive' }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recipe-categories', user?.id] }); toast.success('Categoria criada com sucesso!'); },
+    onError: (error: Error) => { toast.error('Erro ao criar categoria', { description: error.message }); },
   });
 
   const updateCategory = useMutation({
@@ -39,8 +38,8 @@ export function useRecipeCategories() {
       return category as RecipeCategory;
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recipe-categories', user?.id] }); toast({ title: 'Categoria atualizada', description: 'A categoria de receita foi atualizada com sucesso.' }); },
-    onError: (error: Error) => { toast({ title: 'Erro ao atualizar categoria', description: error.message, variant: 'destructive' }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recipe-categories', user?.id] }); toast.success('Categoria atualizada com sucesso!'); },
+    onError: (error: Error) => { toast.error('Erro ao atualizar categoria', { description: error.message }); },
   });
 
   const deleteCategory = useMutation({
@@ -50,8 +49,8 @@ export function useRecipeCategories() {
       if (error) throw error;
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recipe-categories', user?.id] }); toast({ title: 'Categoria excluída', description: 'A categoria de receita foi excluída com sucesso.' }); },
-    onError: (error: Error) => { toast({ title: 'Erro ao excluir categoria', description: error.message, variant: 'destructive' }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recipe-categories', user?.id] }); toast.success('Categoria excluída com sucesso!'); },
+    onError: (error: Error) => { toast.error('Erro ao excluir categoria', { description: error.message }); },
   });
 
   return { categories: categoriesQuery.data || [], isLoading: categoriesQuery.isLoading, error: categoriesQuery.error, createCategory, updateCategory, deleteCategory };
