@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { FAQCategory } from '@/hooks/useFAQ';
 
 interface FAQCategoryFormProps {
@@ -13,7 +13,7 @@ interface FAQCategoryFormProps {
 }
 
 export function FAQCategoryForm({ category, onSuccess, onCancel }: FAQCategoryFormProps) {
-  const { toast } = useToast();
+  
   const [name, setName] = useState(category?.name || '');
   const [icon, setIcon] = useState(category?.icon || '📋');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,7 +30,7 @@ export function FAQCategoryForm({ category, onSuccess, onCancel }: FAQCategoryFo
           .update({ name: name.trim(), icon })
           .eq('id', category.id);
         if (error) throw error;
-        toast({ title: 'Categoria atualizada!' });
+        toast.success('Categoria atualizada!');
       } else {
         // Get max display_order
         const { data: maxOrder } = await supabase
@@ -48,11 +48,11 @@ export function FAQCategoryForm({ category, onSuccess, onCancel }: FAQCategoryFo
             display_order: (maxOrder?.display_order || 0) + 1,
           });
         if (error) throw error;
-        toast({ title: 'Categoria criada!' });
+        toast.success('Categoria criada!');
       }
       onSuccess();
     } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      toast.error('Erro', { description: error.message });
     } finally {
       setIsSubmitting(false);
     }

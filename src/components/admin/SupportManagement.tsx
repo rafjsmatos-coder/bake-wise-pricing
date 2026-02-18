@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,7 +48,7 @@ const priorityConfig: Record<TicketPriority, { label: string; className: string 
 };
 
 export function SupportManagement() {
-  const { toast } = useToast();
+  
   const [tickets, setTickets] = useState<AdminTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,15 +86,11 @@ export function SupportManagement() {
       setTickets(typedTickets);
     } catch (error: any) {
       console.error('Error fetching tickets:', error);
-      toast({
-        title: 'Erro ao carregar tickets',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao carregar tickets', { description: error.message });
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     fetchTickets();

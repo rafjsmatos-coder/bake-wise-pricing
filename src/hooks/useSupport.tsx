@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export type TicketType = 'support' | 'suggestion';
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
@@ -51,7 +51,6 @@ interface UseSupportOptions {
 export function useSupport(options: UseSupportOptions = {}) {
   const { user } = useAuth();
   const { isAdmin = false } = options;
-  const { toast } = useToast();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [ticketsWithAdminStatus, setTicketsWithAdminStatus] = useState<Map<string, boolean>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
@@ -61,7 +60,6 @@ export function useSupport(options: UseSupportOptions = {}) {
     
     setIsLoading(true);
     try {
-      // Buscar tickets
       const { data: ticketsData, error: ticketsError } = await supabase
         .from('support_tickets')
         .select('*')
@@ -69,7 +67,6 @@ export function useSupport(options: UseSupportOptions = {}) {
 
       if (ticketsError) throw ticketsError;
 
-      // Buscar perfis dos usuários dos tickets
       const userIds = [...new Set((ticketsData || []).map(t => t.user_id))];
       let profilesMap: Record<string, string> = {};
       
@@ -84,7 +81,6 @@ export function useSupport(options: UseSupportOptions = {}) {
         });
       }
 
-      // Type cast the data to match our interface
       const typedTickets: SupportTicket[] = (ticketsData || []).map(ticket => ({
         ...ticket,
         type: ticket.type as TicketType,
@@ -95,7 +91,6 @@ export function useSupport(options: UseSupportOptions = {}) {
 
       setTickets(typedTickets);
 
-      // Buscar status de respostas de admin para cada ticket aberto
       const openTicketIds = typedTickets
         .filter(t => t.status === 'open' || t.status === 'in_progress')
         .map(t => t.id);
@@ -107,24 +102,19 @@ export function useSupport(options: UseSupportOptions = {}) {
           .in('ticket_id', openTicketIds)
           .order('created_at', { ascending: false });
 
-        // Mapear: ticket_id -> tem resposta de admin?
         const adminStatusMap = new Map<string, boolean>();
         const lastReplyMap = new Map<string, { is_admin_reply: boolean }>();
 
-        // Agrupar última resposta por ticket
         repliesData?.forEach(reply => {
           if (!lastReplyMap.has(reply.ticket_id)) {
             lastReplyMap.set(reply.ticket_id, { is_admin_reply: reply.is_admin_reply });
           }
         });
 
-        // Para cada ticket aberto, verificar se tem alguma resposta de admin
         openTicketIds.forEach(ticketId => {
           const hasAnyAdminReply = repliesData?.some(r => r.ticket_id === ticketId && r.is_admin_reply) || false;
           const lastReply = lastReplyMap.get(ticketId);
-          // Guardar: última resposta foi de admin?
           adminStatusMap.set(ticketId, lastReply?.is_admin_reply || false);
-          // Também guardar se tem qualquer resposta de admin (para admin saber se já respondeu)
           adminStatusMap.set(`has_admin_${ticketId}`, hasAnyAdminReply);
         });
 
@@ -134,15 +124,11 @@ export function useSupport(options: UseSupportOptions = {}) {
       }
     } catch (error: any) {
       console.error('Error fetching tickets:', error);
-      toast({
-        title: 'Erro ao carregar tickets',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao carregar tickets', { description: error.message });
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [user]);
 
   useEffect(() => {
     fetchTickets();
@@ -164,19 +150,14 @@ export function useSupport(options: UseSupportOptions = {}) {
 
       if (error) throw error;
 
-      toast({
-        title: data.type === 'support' ? 'Ticket criado!' : 'Sugestão enviada!',
+      toast.success(data.type === 'support' ? 'Ticket criado!' : 'Sugestão enviada!', {
         description: 'Obrigado pelo seu feedback. Responderemos em breve.',
       });
 
       await fetchTickets();
     } catch (error: any) {
       console.error('Error creating ticket:', error);
-      toast({
-        title: 'Erro ao criar ticket',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao criar ticket', { description: error.message });
       throw error;
     }
   };
@@ -195,19 +176,12 @@ export function useSupport(options: UseSupportOptions = {}) {
 
       if (error) throw error;
 
-      toast({
-        title: 'Ticket atualizado!',
-        description: 'As alterações foram salvas.',
-      });
+      toast.success('Ticket atualizado!');
 
       await fetchTickets();
     } catch (error: any) {
       console.error('Error updating ticket:', error);
-      toast({
-        title: 'Erro ao atualizar ticket',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao atualizar ticket', { description: error.message });
       throw error;
     }
   };
@@ -225,14 +199,10 @@ export function useSupport(options: UseSupportOptions = {}) {
       return data || [];
     } catch (error: any) {
       console.error('Error fetching replies:', error);
-      toast({
-        title: 'Erro ao carregar respostas',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao carregar respostas', { description: error.message });
       return [];
     }
-  }, [toast]);
+  }, []);
 
   const addReply = async (ticketId: string, message: string) => {
     if (!user) return;
@@ -249,37 +219,26 @@ export function useSupport(options: UseSupportOptions = {}) {
 
       if (error) throw error;
 
-      toast({
-        title: 'Resposta enviada!',
-      });
+      toast.success('Resposta enviada!');
 
-      // Recarregar tickets para atualizar contadores de notificação
       await fetchTickets();
     } catch (error: any) {
       console.error('Error adding reply:', error);
-      toast({
-        title: 'Erro ao enviar resposta',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao enviar resposta', { description: error.message });
       throw error;
     }
   };
 
-  // Filter helpers
   const supportTickets = tickets.filter(t => t.type === 'support');
   const suggestions = tickets.filter(t => t.type === 'suggestion');
   
-  // Contadores de notificação contextuais
   const pendingTicketsCount = (() => {
     if (isAdmin) {
-      // Admin: tickets abertos que NÃO têm resposta de admin ainda
       return tickets.filter(t => 
         (t.status === 'open' || t.status === 'in_progress') &&
         !ticketsWithAdminStatus.get(`has_admin_${t.id}`)
       ).length;
     } else {
-      // Usuário: tickets próprios onde a última resposta foi de admin (resposta não lida)
       return tickets.filter(t => 
         t.user_id === user?.id &&
         (t.status === 'open' || t.status === 'in_progress') &&

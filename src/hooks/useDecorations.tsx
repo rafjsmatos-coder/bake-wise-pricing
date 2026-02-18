@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { ensureSessionUserId } from '@/lib/ensure-session';
 import type { MeasurementUnit } from '@/lib/unit-conversion';
 
@@ -43,7 +43,6 @@ export interface UpdateDecorationData extends Partial<CreateDecorationData> {}
 
 export function useDecorations() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const decorationsQuery = useQuery({
@@ -71,8 +70,8 @@ export function useDecorations() {
       return decoration as Decoration;
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); toast({ title: 'Decoração criada', description: 'A decoração foi adicionada com sucesso.' }); },
-    onError: (error: Error) => { toast({ title: 'Erro ao criar decoração', description: error.message, variant: 'destructive' }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); toast.success('Decoração criada com sucesso!'); },
+    onError: (error: Error) => { toast.error('Erro ao criar decoração', { description: error.message }); },
   });
 
   const updateDecoration = useMutation({
@@ -83,8 +82,8 @@ export function useDecorations() {
       return decoration as Decoration;
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); queryClient.invalidateQueries({ queryKey: ['products'] }); toast({ title: 'Decoração atualizada', description: 'A decoração foi atualizada com sucesso.' }); },
-    onError: (error: Error) => { toast({ title: 'Erro ao atualizar decoração', description: error.message, variant: 'destructive' }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); queryClient.invalidateQueries({ queryKey: ['products'] }); toast.success('Decoração atualizada com sucesso!'); },
+    onError: (error: Error) => { toast.error('Erro ao atualizar decoração', { description: error.message }); },
   });
 
   const deleteDecoration = useMutation({
@@ -94,8 +93,8 @@ export function useDecorations() {
       if (error) throw error;
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); toast({ title: 'Decoração excluída', description: 'A decoração foi excluída com sucesso.' }); },
-    onError: (error: Error) => { toast({ title: 'Erro ao excluir decoração', description: error.message, variant: 'destructive' }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); toast.success('Decoração excluída com sucesso!'); },
+    onError: (error: Error) => { toast.error('Erro ao excluir decoração', { description: error.message }); },
   });
 
   const duplicateDecoration = useMutation({
@@ -121,8 +120,8 @@ export function useDecorations() {
       return data as Decoration;
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); toast({ title: 'Decoração duplicada', description: 'A decoração foi duplicada com sucesso.' }); },
-    onError: (error: Error) => { toast({ title: 'Erro ao duplicar decoração', description: error.message, variant: 'destructive' }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); toast.success('Decoração duplicada com sucesso!'); },
+    onError: (error: Error) => { toast.error('Erro ao duplicar decoração', { description: error.message }); },
   });
 
   return { decorations: decorationsQuery.data || [], isLoading: decorationsQuery.isLoading, error: decorationsQuery.error, createDecoration, updateDecoration, deleteDecoration, duplicateDecoration };

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Lock, Loader2, Eye, EyeOff, Info, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -16,25 +16,21 @@ export function PasswordChangeForm() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { toast } = useToast();
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (newPassword !== confirmPassword) {
-      toast({
-        title: 'Senhas não conferem',
+      toast.error('Senhas não conferem', {
         description: 'A nova senha e a confirmação precisam ser iguais.',
-        variant: 'destructive',
       });
       return;
     }
 
     if (newPassword.length < 8) {
-      toast({
-        title: 'Senha muito curta',
+      toast.error('Senha muito curta', {
         description: 'A nova senha deve ter pelo menos 8 caracteres.',
-        variant: 'destructive',
       });
       return;
     }
@@ -50,8 +46,7 @@ export function PasswordChangeForm() {
         throw error;
       }
 
-      toast({
-        title: 'Senha alterada com sucesso!',
+      toast.success('Senha alterada com sucesso!', {
         description: 'Sua nova senha já está ativa. Use-a no próximo login.',
       });
 
@@ -60,12 +55,10 @@ export function PasswordChangeForm() {
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      toast({
-        title: 'Erro ao alterar senha',
+      toast.error('Erro ao alterar senha', {
         description: error.message === 'New password should be different from the old password.'
           ? 'A nova senha deve ser diferente da senha atual.'
           : 'Ocorreu um erro ao alterar sua senha. Tente novamente.',
-        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);

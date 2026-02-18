@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Loader2, Eye, EyeOff } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AdminAuthFormProps {
   onLoginSuccess: () => void;
@@ -14,7 +14,7 @@ interface AdminAuthFormProps {
 
 export function AdminAuthForm({ onLoginSuccess, onAccessDenied }: AdminAuthFormProps) {
   const { signIn } = useAuth();
-  const { toast } = useToast();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,11 +24,7 @@ export function AdminAuthForm({ onLoginSuccess, onAccessDenied }: AdminAuthFormP
     e.preventDefault();
     
     if (!email || !password) {
-      toast({
-        title: 'Campos obrigatórios',
-        description: 'Preencha email e senha.',
-        variant: 'destructive',
-      });
+      toast.error('Campos obrigatórios', { description: 'Preencha email e senha.' });
       return;
     }
 
@@ -38,12 +34,10 @@ export function AdminAuthForm({ onLoginSuccess, onAccessDenied }: AdminAuthFormP
       const { error } = await signIn(email, password);
       
       if (error) {
-        toast({
-          title: 'Erro ao entrar',
+        toast.error('Erro ao entrar', {
           description: error.message === 'Invalid login credentials' 
             ? 'Credenciais inválidas.' 
             : error.message,
-          variant: 'destructive',
         });
         setIsLoading(false);
         return;
@@ -52,11 +46,7 @@ export function AdminAuthForm({ onLoginSuccess, onAccessDenied }: AdminAuthFormP
       // Login succeeded - parent component will verify admin role
       onLoginSuccess();
     } catch (err) {
-      toast({
-        title: 'Erro inesperado',
-        description: 'Tente novamente mais tarde.',
-        variant: 'destructive',
-      });
+      toast.error('Erro inesperado', { description: 'Tente novamente mais tarde.' });
       setIsLoading(false);
     }
   };

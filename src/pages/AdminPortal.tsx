@@ -6,7 +6,7 @@ import { AdminDashboard } from './AdminDashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, ShieldX, LogOut } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 const ADMIN_CHECK_TIMEOUT = 5000;
 
@@ -35,7 +35,7 @@ type PortalState = 'loading' | 'login' | 'checking' | 'denied' | 'admin';
 
 export function AdminPortal() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { toast } = useToast();
+  
   const [state, setState] = useState<PortalState>('loading');
   const checkedUserRef = useRef<string | null>(null);
 
@@ -54,10 +54,8 @@ export function AdminPortal() {
 
     const freshToken = await getFreshAccessToken();
     if (!freshToken) {
-      toast({
-        title: 'Erro de autenticação',
+      toast.error('Erro de autenticação', {
         description: 'Sessão expirada. Faça login novamente.',
-        variant: 'destructive',
       });
       await signOut();
       setState('login');
@@ -86,7 +84,7 @@ export function AdminPortal() {
       console.error('[AdminPortal] Exception:', err);
       setState('denied');
     }
-  }, [user, signOut, toast]);
+  }, [user, signOut]);
 
   useEffect(() => {
     if (authLoading) {
@@ -110,10 +108,8 @@ export function AdminPortal() {
   };
 
   const handleAccessDenied = async () => {
-    toast({
-      title: 'Acesso negado',
+    toast.error('Acesso negado', {
       description: 'Esta conta não possui permissão de administrador.',
-      variant: 'destructive',
     });
     await signOut();
     setState('login');

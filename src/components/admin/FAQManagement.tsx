@@ -24,11 +24,11 @@ import { useFAQ } from '@/hooks/useFAQ';
 import { FAQCategoryForm } from './FAQCategoryForm';
 import { FAQItemForm } from './FAQItemForm';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { FAQCategory, FAQItem } from '@/hooks/useFAQ';
 
 export function FAQManagement() {
-  const { toast } = useToast();
+  
   const { categories, items, isLoading, refetch } = useFAQ({ includeUnpublished: true });
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
@@ -44,7 +44,7 @@ export function FAQManagement() {
       .update({ is_published: !item.is_published })
       .eq('id', item.id);
     if (error) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      toast.error('Erro', { description: error.message });
     } else {
       refetch();
     }
@@ -55,9 +55,9 @@ export function FAQManagement() {
     const table = deleteTarget.type === 'category' ? 'faq_categories' : 'faq_items';
     const { error } = await supabase.from(table).delete().eq('id', deleteTarget.id);
     if (error) {
-      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+      toast.error('Erro ao excluir', { description: error.message });
     } else {
-      toast({ title: 'Excluído com sucesso!' });
+      toast.success('Excluído com sucesso!');
       refetch();
     }
     setDeleteTarget(null);

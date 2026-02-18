@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -46,7 +46,7 @@ const priorityOptions: { value: TicketPriority; label: string }[] = [
 
 export function AdminTicketModal({ ticket, onClose }: AdminTicketModalProps) {
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const [replies, setReplies] = useState<SupportReply[]>([]);
   const [isLoadingReplies, setIsLoadingReplies] = useState(true);
   const [status, setStatus] = useState<TicketStatus>(ticket.status);
@@ -95,17 +95,10 @@ export function AdminTicketModal({ ticket, onClose }: AdminTicketModalProps) {
 
       if (error) throw error;
 
-      toast({
-        title: 'Ticket atualizado!',
-        description: 'As alterações foram salvas.',
-      });
+      toast.success('Ticket atualizado!');
     } catch (error: any) {
       console.error('Error updating ticket:', error);
-      toast({
-        title: 'Erro ao atualizar',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao atualizar', { description: error.message });
     } finally {
       setIsSaving(false);
     }
@@ -137,16 +130,10 @@ export function AdminTicketModal({ ticket, onClose }: AdminTicketModalProps) {
       setReplies(data || []);
       setNewMessage('');
 
-      toast({
-        title: 'Resposta enviada!',
-      });
+      toast.success('Resposta enviada!');
     } catch (error: any) {
       console.error('Error sending reply:', error);
-      toast({
-        title: 'Erro ao enviar resposta',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao enviar resposta', { description: error.message });
     } finally {
       setIsSending(false);
     }

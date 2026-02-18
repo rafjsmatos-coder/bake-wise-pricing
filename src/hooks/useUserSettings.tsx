@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface UserSettings {
   id: string;
@@ -37,7 +37,6 @@ export interface UpdateUserSettingsData {
 
 export function useUserSettings() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const settingsQuery = useQuery({
@@ -51,7 +50,6 @@ export function useUserSettings() {
 
       if (error) throw error;
       
-      // If no settings exist, create default ones
       if (!data) {
         const { data: newSettings, error: insertError } = await supabase
           .from('user_settings')
@@ -84,20 +82,12 @@ export function useUserSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings', user?.id] });
-      // Invalidate recipes and products to trigger cost recalculation with updated settings
       queryClient.invalidateQueries({ queryKey: ['recipes'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast({
-        title: 'Configurações salvas',
-        description: 'Suas configurações foram atualizadas com sucesso.',
-      });
+      toast.success('Configurações salvas com sucesso!');
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro ao salvar configurações',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao salvar configurações', { description: error.message });
     },
   });
 

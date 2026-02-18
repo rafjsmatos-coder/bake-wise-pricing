@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
 import precibakeIcon from '@/assets/precibake-icon.jpeg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ForgotPasswordFormProps {
@@ -17,7 +17,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const { toast } = useToast();
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,10 +39,8 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
 
       setEmailSent(true);
     } catch (error: any) {
-      toast({
-        title: 'Erro ao enviar e-mail',
+      toast.error('Erro ao enviar e-mail', {
         description: 'Verifique se o e-mail está correto e tente novamente.',
-        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);

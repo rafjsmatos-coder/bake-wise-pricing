@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { ensureSessionUserId } from '@/lib/ensure-session';
 import type { MeasurementUnit } from '@/lib/unit-conversion';
 
@@ -45,7 +45,6 @@ export interface UpdateIngredientData extends Partial<CreateIngredientData> {}
 
 export function useIngredients() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const ingredientsQuery = useQuery({
@@ -95,17 +94,10 @@ export function useIngredients() {
     retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
-      toast({
-        title: 'Ingrediente criado',
-        description: 'O ingrediente foi adicionado com sucesso.',
-      });
+      toast.success('Ingrediente criado com sucesso!');
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro ao criar ingrediente',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao criar ingrediente', { description: error.message });
     },
   });
 
@@ -133,17 +125,10 @@ export function useIngredients() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['recipes'] });
-      toast({
-        title: 'Ingrediente atualizado',
-        description: 'O ingrediente foi atualizado com sucesso.',
-      });
+      toast.success('Ingrediente atualizado com sucesso!');
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro ao atualizar ingrediente',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao atualizar ingrediente', { description: error.message });
     },
   });
 
@@ -160,17 +145,10 @@ export function useIngredients() {
     retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
-      toast({
-        title: 'Ingrediente excluído',
-        description: 'O ingrediente foi excluído com sucesso.',
-      });
+      toast.success('Ingrediente excluído com sucesso!');
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro ao excluir ingrediente',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao excluir ingrediente', { description: error.message });
     },
   });
 
@@ -199,17 +177,10 @@ export function useIngredients() {
     retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
-      toast({
-        title: 'Ingrediente duplicado',
-        description: 'O ingrediente foi duplicado com sucesso.',
-      });
+      toast.success('Ingrediente duplicado com sucesso!');
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro ao duplicar ingrediente',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao duplicar ingrediente', { description: error.message });
     },
   });
 
