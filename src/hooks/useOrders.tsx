@@ -116,7 +116,7 @@ export function useOrders() {
       return order;
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['clients'] }); queryClient.invalidateQueries({ queryKey: ['financial'] }); toast.success('Pedido criado com sucesso!'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['clients'] }); queryClient.invalidateQueries({ queryKey: ['financial-transactions'] }); toast.success('Pedido criado com sucesso!'); },
     onError: (error) => { console.error('Erro ao criar pedido:', error); toast.error('Erro ao criar pedido'); },
   });
 
@@ -127,39 +127,52 @@ export function useOrders() {
       const effectiveTotal = totalAmount - (data.discount || 0);
       const paymentStatus = calculatePaymentStatus(data.paid_amount, effectiveTotal);
 
-      const { error: orderError } = await supabase.from('orders').update({
-        client_id: data.client_id, status: data.status, payment_status: paymentStatus,
-        delivery_date: data.delivery_date || null, total_amount: totalAmount,
-        paid_amount: data.paid_amount, discount: data.discount || 0, notes: data.notes || null,
-      }).eq('id', id);
-      if (orderError) throw orderError;
+      // Step 1: Update order + fetch client name in parallel
+      const [orderResult, clientResult] = await Promise.all([
+        supabase.from('orders').update({
+          client_id: data.client_id, status: data.status, payment_status: paymentStatus,
+          delivery_date: data.delivery_date || null, total_amount: totalAmount,
+          paid_amount: data.paid_amount, discount: data.discount || 0, notes: data.notes || null,
+        }).eq('id', id),
+        supabase.from('clients').select('name').eq('id', data.client_id).single(),
+      ]);
+      if (orderResult.error) throw orderResult.error;
+      const clientName = clientResult.data?.name || 'Cliente';
 
-      await supabase.from('order_items').delete().eq('order_id', id);
+      // Step 2: Replace items + check existing transaction in parallel
+      const deleteItems = supabase.from('order_items').delete().eq('order_id', id);
+      const checkTransaction = supabase.from('financial_transactions').select('id').eq('order_id', id).eq('user_id', userId).maybeSingle();
+      const [deleteResult, txResult] = await Promise.all([deleteItems, checkTransaction]);
+      if (deleteResult.error) throw deleteResult.error;
+
+      // Step 3: Insert new items + upsert transaction in parallel
+      const parallelOps: Promise<any>[] = [];
       if (data.items.length > 0) {
-        const { error: itemsError } = await supabase.from('order_items').insert(
-          data.items.map((item) => ({
-            order_id: id, product_id: item.product_id, quantity: item.quantity,
-            unit_price: item.unit_price, total_price: item.total_price, notes: item.notes || null,
-          }))
-        );
-        if (itemsError) throw itemsError;
+        parallelOps.push((async () => {
+          const { error } = await supabase.from('order_items').insert(
+            data.items.map((item) => ({
+              order_id: id, product_id: item.product_id, quantity: item.quantity,
+              unit_price: item.unit_price, total_price: item.total_price, notes: item.notes || null,
+            }))
+          );
+          if (error) throw error;
+        })());
       }
 
       if (data.paid_amount > 0) {
-        const { data: clientData } = await supabase.from('clients').select('name').eq('id', data.client_id).single();
-        const clientName = clientData?.name || 'Cliente';
-        const { data: existing } = await supabase.from('financial_transactions').select('id').eq('order_id', id).eq('user_id', userId).maybeSingle();
-        if (existing) {
-          await supabase.from('financial_transactions').update({ amount: data.paid_amount, date: new Date().toISOString().split('T')[0] }).eq('id', existing.id);
+        if (txResult.data) {
+          parallelOps.push((async () => { const { error } = await supabase.from('financial_transactions').update({ amount: data.paid_amount, description: `Pagamento pedido - ${clientName}`, date: new Date().toISOString().split('T')[0] }).eq('id', txResult.data.id); if (error) throw error; })());
         } else {
-          await supabase.from('financial_transactions').insert({ user_id: userId, type: 'income', category: 'Venda de Pedido', description: `Pagamento pedido - ${clientName}`, amount: data.paid_amount, date: new Date().toISOString().split('T')[0], order_id: id });
+          parallelOps.push((async () => { const { error } = await supabase.from('financial_transactions').insert({ user_id: userId, type: 'income', category: 'Venda de Pedido', description: `Pagamento pedido - ${clientName}`, amount: data.paid_amount, date: new Date().toISOString().split('T')[0], order_id: id }); if (error) throw error; })());
         }
       } else {
-        await supabase.from('financial_transactions').delete().eq('order_id', id).eq('user_id', userId);
+        parallelOps.push((async () => { const { error } = await supabase.from('financial_transactions').delete().eq('order_id', id).eq('user_id', userId); if (error) throw error; })());
       }
+
+      await Promise.all(parallelOps);
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['clients'] }); queryClient.invalidateQueries({ queryKey: ['financial'] }); toast.success('Pedido atualizado com sucesso!'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['clients'] }); queryClient.invalidateQueries({ queryKey: ['financial-transactions'] }); toast.success('Pedido atualizado com sucesso!'); },
     onError: (error) => { console.error('Erro ao atualizar pedido:', error); toast.error('Erro ao atualizar pedido'); },
   });
 
