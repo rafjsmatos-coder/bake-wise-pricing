@@ -214,6 +214,71 @@ export type Database = {
           },
         ]
       }
+      faq_categories: {
+        Row: {
+          created_at: string
+          display_order: number
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      faq_items: {
+        Row: {
+          answer: string
+          category_id: string
+          created_at: string
+          display_order: number
+          id: string
+          is_published: boolean
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          category_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_published?: boolean
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          category_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_published?: boolean
+          question?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "faq_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_transactions: {
         Row: {
           amount: number

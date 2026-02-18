@@ -1,19 +1,23 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Headphones, Lightbulb, Plus, Loader2 } from 'lucide-react';
+import { Headphones, Lightbulb, Plus, Loader2, HelpCircle } from 'lucide-react';
 import { useSupport } from '@/hooks/useSupport';
 import { TicketList } from './TicketList';
 import { TicketForm } from './TicketForm';
 import { SuggestionForm } from './SuggestionForm';
 import { TicketDetails } from './TicketDetails';
+import { FAQTab } from './FAQTab';
+import { FAQInterceptor } from './FAQInterceptor';
 import type { SupportTicket } from '@/hooks/useSupport';
 
 export function SupportPage() {
   const { supportTickets, suggestions, isLoading, refetch } = useSupport();
   const [showTicketForm, setShowTicketForm] = useState(false);
+  const [showFAQInterceptor, setShowFAQInterceptor] = useState(false);
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [activeTab, setActiveTab] = useState('faq');
 
   const hasActiveTicket = supportTickets.some(t => t.status === 'open' || t.status === 'in_progress');
   const hasActiveSuggestion = suggestions.some(s => s.status === 'open' || s.status === 'in_progress');
@@ -50,6 +54,18 @@ export function SupportPage() {
     );
   }
 
+  if (showFAQInterceptor) {
+    return (
+      <FAQInterceptor
+        onProceedToTicket={() => {
+          setShowFAQInterceptor(false);
+          setShowTicketForm(true);
+        }}
+        onCancel={() => setShowFAQInterceptor(false)}
+      />
+    );
+  }
+
   if (showSuggestionForm) {
     return (
       <SuggestionForm
@@ -62,6 +78,11 @@ export function SupportPage() {
     );
   }
 
+  const handleNewTicket = () => {
+    if (hasActiveTicket) return;
+    setShowFAQInterceptor(true);
+  };
+
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">
       <div className="flex items-center gap-3">
@@ -71,17 +92,21 @@ export function SupportPage() {
         <div>
           <h1 className="text-2xl font-bold">Suporte</h1>
           <p className="text-sm text-muted-foreground">
-            Abra tickets de suporte ou envie sugestões para melhorar o sistema
+            Consulte o FAQ, abra tickets ou envie sugestões
           </p>
         </div>
       </div>
 
-      <Tabs defaultValue="tickets" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <TabsList>
+            <TabsTrigger value="faq" className="flex items-center gap-2">
+              <HelpCircle className="h-4 w-4" />
+              FAQ
+            </TabsTrigger>
             <TabsTrigger value="tickets" className="flex items-center gap-2">
               <Headphones className="h-4 w-4" />
-              Meus Tickets
+              Tickets
               {supportTickets.length > 0 && (
                 <span className="ml-1 bg-muted px-2 py-0.5 rounded-full text-xs">
                   {supportTickets.length}
@@ -90,7 +115,7 @@ export function SupportPage() {
             </TabsTrigger>
             <TabsTrigger value="suggestions" className="flex items-center gap-2">
               <Lightbulb className="h-4 w-4" />
-              Minhas Sugestões
+              Sugestões
               {suggestions.length > 0 && (
                 <span className="ml-1 bg-muted px-2 py-0.5 rounded-full text-xs">
                   {suggestions.length}
@@ -99,6 +124,10 @@ export function SupportPage() {
             </TabsTrigger>
           </TabsList>
         </div>
+
+        <TabsContent value="faq" className="space-y-4">
+          <FAQTab onOpenTicket={() => { setActiveTab('tickets'); handleNewTicket(); }} />
+        </TabsContent>
 
         <TabsContent value="tickets" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -109,7 +138,7 @@ export function SupportPage() {
             ) : (
               <div />
             )}
-            <Button onClick={() => setShowTicketForm(true)} disabled={hasActiveTicket}>
+            <Button onClick={handleNewTicket} disabled={hasActiveTicket}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Ticket
             </Button>

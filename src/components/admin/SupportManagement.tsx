@@ -21,10 +21,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, Headphones, Lightbulb, Loader2, Eye, Filter, X } from 'lucide-react';
+import { Search, Headphones, Lightbulb, Loader2, Eye, Filter, X, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AdminTicketModal } from './AdminTicketModal';
+import { FAQManagement } from './FAQManagement';
 import type { SupportTicket, TicketStatus, TicketPriority, TicketType } from '@/hooks/useSupport';
 
 interface AdminTicket extends SupportTicket {
@@ -268,7 +269,7 @@ export function SupportManagement() {
         <TabsList>
           <TabsTrigger value="support" className="flex items-center gap-2">
             <Headphones className="h-4 w-4" />
-            Tickets de Suporte
+            Tickets
             <span className="ml-1 bg-muted px-2 py-0.5 rounded-full text-xs">
               {supportTickets.length}
             </span>
@@ -280,6 +281,10 @@ export function SupportManagement() {
               {suggestions.length}
             </span>
           </TabsTrigger>
+          <TabsTrigger value="faq" className="flex items-center gap-2">
+            <HelpCircle className="h-4 w-4" />
+            FAQ
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="support">
@@ -288,6 +293,10 @@ export function SupportManagement() {
 
         <TabsContent value="suggestions">
           {renderTable(suggestions, false)}
+        </TabsContent>
+
+        <TabsContent value="faq">
+          <FAQManagement />
         </TabsContent>
       </Tabs>
 
