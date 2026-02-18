@@ -1,160 +1,65 @@
 
 
-## FAQ Inteligente dentro do Suporte
+## Correcoes: Pedidos lentos ao salvar + Financeiro nao atualiza
 
-### Conceito
+### Problemas encontrados
 
-Adicionar uma aba "FAQ" na pagina de suporte, com perguntas organizadas por categoria e busca instantanea. Alem disso, ao clicar em "Novo Ticket", o usuario vera sugestoes de FAQ relevantes antes de enviar -- incentivando a resolucao autonoma.
+#### 1. Financeiro NAO atualiza (BUG CRITICO - query key errada)
 
-### Como funciona
+Este e o bug principal. Quando o pedido e salvo, o `onSuccess` do `useOrders` invalida:
 
-```text
-Pagina de Suporte (3 abas agora):
-
-┌──────────────────────────────────────────────┐
-│  [FAQ]  [Meus Tickets]  [Minhas Sugestoes]   │
-├──────────────────────────────────────────────┤
-│  🔍 Buscar duvida...                         │
-│                                              │
-│  📦 Cadastros e Receitas                     │
-│  ├─ Como cadastro um ingrediente?            │
-│  ├─ Como funciona a conversao de unidades?   │
-│  └─ Posso usar receitas dentro de receitas?  │
-│                                              │
-│  💰 Precificacao                             │
-│  ├─ Como o custo e calculado?                │
-│  └─ O que e margem de seguranca?             │
-│                                              │
-│  📋 Pedidos e Estoque                        │
-│  ├─ Como funciona a deducao de estoque?      │
-│  └─ Posso gerar lista de compras?            │
-│                                              │
-│  💳 Assinatura e Pagamento                   │
-│  ├─ Posso cancelar quando quiser?            │
-│  └─ Como altero meu plano?                   │
-│                                              │
-│  ──────────────────────────────────────────  │
-│  Nao encontrou sua resposta?                 │
-│  [Abrir Ticket de Suporte]                   │
-└──────────────────────────────────────────────┘
+```
+queryClient.invalidateQueries({ queryKey: ['financial'] })
 ```
 
-### Interceptacao antes do ticket
+Porem, o `useFinancial` registra a query com a chave:
 
-Quando o usuario clica em "Novo Ticket", antes de ir direto para o formulario, mostramos uma tela intermediaria:
-
-```text
-┌──────────────────────────────────────────────┐
-│  Antes de abrir um ticket, veja se           │
-│  sua duvida ja foi respondida:               │
-│                                              │
-│  🔍 Descreva seu problema...                 │
-│                                              │
-│  Sugestoes:                                  │
-│  ├─ Como funciona a conversao de unidades?   │
-│  ├─ O estoque esta mostrando valor errado?   │
-│  └─ Como cadastro ingredientes?              │
-│                                              │
-│  [Minha duvida nao esta aqui → Abrir Ticket] │
-└──────────────────────────────────────────────┘
+```
+queryKey: ['financial-transactions', user?.id]
 ```
 
-Isso reduz tickets porque o usuario encontra a resposta antes de escrever.
+A chave `'financial'` NAO corresponde a `'financial-transactions'`. Por isso a invalidacao nao faz efeito e o usuario precisa fechar e reabrir o app para ver os dados atualizados.
 
-### Gerenciamento pelo Admin
+**Correcao**: Alterar todas as chamadas de `invalidateQueries` no `useOrders` para usar a chave correta `['financial-transactions']`.
 
-No painel admin, adicionar uma aba "FAQ" dentro do SupportManagement para o admin poder criar, editar, reordenar e publicar/despublicar perguntas sem depender de atualizacoes de codigo.
+#### 2. Edicao lenta (5-6 chamadas sequenciais ao banco)
 
-```text
-Admin > Suporte (4 abas agora):
+Ao editar um pedido, o `updateOrder` faz todas estas chamadas em sequencia (uma esperando a outra terminar):
 
-[Tickets]  [Sugestoes]  [FAQ]
+1. `update orders` - atualiza o pedido
+2. `delete order_items` - remove itens antigos
+3. `insert order_items` - insere itens novos
+4. `select clients` - busca nome do cliente (para a descricao da transacao)
+5. `select financial_transactions` - verifica se ja existe transacao
+6. `update/insert financial_transactions` - atualiza ou cria transacao
 
-FAQ:
-┌─────────────────────────────────────────────┐
-│  [+ Nova Pergunta]                          │
-│                                             │
-│  Categoria: Cadastros e Receitas            │
-│  ┌─────────────────────────────────────────┐│
-│  │ Como cadastro um ingrediente?     [✏️][🗑]│
-│  │ Status: Publicado                       ││
-│  └─────────────────────────────────────────┘│
-│                                             │
-│  Categoria: Precificacao                    │
-│  ┌─────────────────────────────────────────┐│
-│  │ Como o custo e calculado?         [✏️][🗑]│
-│  │ Status: Publicado                       ││
-│  └─────────────────────────────────────────┘│
-└─────────────────────────────────────────────┘
-```
+Chamadas 2+3 podem rodar em paralelo com 4+5, reduzindo o tempo total.
 
-### Alteracoes necessarias
+**Correcao**: Paralelizar operacoes independentes usando `Promise.all`.
 
-#### Banco de dados (2 tabelas novas)
-
-| Tabela | Colunas | Descricao |
-|--------|---------|-----------|
-| `faq_categories` | `id`, `name`, `icon`, `display_order`, `created_at` | Categorias do FAQ (ex: "Cadastros", "Precificacao") |
-| `faq_items` | `id`, `category_id`, `question`, `answer`, `is_published`, `display_order`, `created_at`, `updated_at` | Perguntas e respostas |
-
-RLS: leitura publica para usuarios autenticados, escrita somente para admins.
-
-#### Arquivos novos
-
-| Arquivo | Descricao |
-|---------|-----------|
-| `src/hooks/useFAQ.tsx` | Hook para buscar categorias e itens do FAQ, com filtro de busca local |
-| `src/components/support/FAQTab.tsx` | Componente da aba FAQ com busca, categorias em accordion e link para abrir ticket |
-| `src/components/support/FAQInterceptor.tsx` | Tela intermediaria antes do formulario de ticket, com busca fuzzy nas FAQs |
-| `src/components/admin/FAQManagement.tsx` | CRUD de categorias e perguntas para o admin |
-| `src/components/admin/FAQItemForm.tsx` | Formulario de criacao/edicao de pergunta FAQ |
-| `src/components/admin/FAQCategoryForm.tsx` | Formulario de criacao/edicao de categoria FAQ |
-
-#### Arquivos editados
+### Alteracoes
 
 | Arquivo | O que muda |
 |---------|-----------|
-| `src/components/support/SupportPage.tsx` | Adicionar aba "FAQ" como a primeira (default), importar `FAQTab`. Ao clicar "Novo Ticket", mostrar `FAQInterceptor` antes do `TicketForm` |
-| `src/components/admin/SupportManagement.tsx` | Adicionar aba "FAQ" com o componente `FAQManagement` |
-| `src/pages/AdminDashboard.tsx` | Sem alteracao (SupportManagement ja e renderizado la) |
+| `src/hooks/useOrders.tsx` | (1) Corrigir query key de `['financial']` para `['financial-transactions']` em todos os `onSuccess`. (2) Paralelizar chamadas independentes no `updateOrder` com `Promise.all`. |
 
 ### Detalhes tecnicos
 
-**useFAQ hook:**
-- Busca `faq_categories` ordenados por `display_order`
-- Busca `faq_items` onde `is_published = true`, ordenados por `display_order`
-- Filtro de busca local: compara o texto digitado com `question` e `answer` (case-insensitive, sem acentos)
-- Para o admin: busca todos os itens (publicados ou nao)
+**Antes (sequencial):**
+```text
+update order → delete items → insert items → fetch client → check transaction → upsert transaction
+[────────────────────────────────────────────────────────────────────────────────────────────────]
+                                    ~6 round trips sequenciais
+```
 
-**FAQTab:**
-- Campo de busca no topo
-- Categorias em Accordion (usando o componente ja existente)
-- Cada categoria mostra suas perguntas como sub-accordions
-- Se a busca tem texto, filtra e mostra apenas os matches (sem agrupamento por categoria)
-- Rodape com "Nao encontrou? Abrir ticket" que muda para a aba de tickets
+**Depois (paralelo):**
+```text
+update order ──┐
+               ├─ await all ─→ delete+insert items ──┐
+fetch client ──┘                                      ├─ check+upsert transaction
+                                                      │
+                                    ~3 round trips efetivos
+```
 
-**FAQInterceptor:**
-- Aparece quando `showTicketForm = true` (antes de ir para o TicketForm)
-- Campo de busca que filtra as FAQs em tempo real
-- Lista de perguntas relevantes com accordion para ver a resposta
-- Botao "Minha duvida nao esta aqui" que leva ao TicketForm de verdade
-- Se nao houver FAQs cadastrados, pula direto para o TicketForm
-
-**FAQManagement (admin):**
-- Lista de categorias com suas perguntas
-- Botao para criar categoria e para criar pergunta dentro de cada categoria
-- Toggle de publicado/nao publicado
-- Edicao inline ou modal
-- Reordenacao por drag (simplificado: botoes sobe/desce)
-
-### Conteudo inicial sugerido
-
-As perguntas serao criadas pelo admin apos a implementacao. No entanto, o sistema pode comecar com as categorias pre-cadastradas via migration:
-
-1. **Primeiros Passos** - Cadastro, tour, navegacao
-2. **Ingredientes e Receitas** - Como cadastrar, unidades, custos
-3. **Produtos e Precificacao** - Margem, custos indiretos
-4. **Pedidos e Estoque** - Lista de compras, deducao
-5. **Financeiro** - Transacoes, relatorios
-6. **Assinatura e Conta** - Pagamento, cancelamento, perfil
+A correcao da query key resolve o problema de nao atualizar. A paralelizacao reduz o tempo de salvamento pela metade.
 
