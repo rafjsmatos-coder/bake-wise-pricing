@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -193,13 +194,17 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
         min_stock_alert: alertInMainUnit,
       };
 
-      if (packaging) {
+      const isEditing = !!packaging;
+      if (isEditing) {
         await updatePackaging.mutateAsync({ id: packaging.id, ...submitData });
       } else {
         await createPackaging.mutateAsync(submitData);
       }
       onOpenChange(false);
       form.reset();
+      setTimeout(() => {
+        toast.success(isEditing ? 'Embalagem atualizada com sucesso!' : 'Embalagem criada com sucesso!');
+      }, 150);
     } catch (error) {
       console.error('Erro ao salvar embalagem:', error);
     }

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { toast } from 'sonner';
 import { useOrders, Order, OrderFormData } from '@/hooks/useOrders';
 import { OrderCard } from '@/components/orders/OrderCard';
 import { OrderForm } from '@/components/orders/OrderForm';
@@ -109,15 +110,20 @@ export function OrdersList() {
   };
 
   const handleSubmit = (data: OrderFormData) => {
-    if (selectedOrder) {
+    const isEditing = !!selectedOrder;
+    const onSuccess = () => {
+      setFormOpen(false);
+      setTimeout(() => {
+        toast.success(isEditing ? 'Pedido atualizado com sucesso!' : 'Pedido criado com sucesso!');
+      }, 150);
+    };
+    if (isEditing) {
       updateOrder.mutate(
         { id: selectedOrder.id, data },
-        { onSuccess: () => setFormOpen(false) }
+        { onSuccess }
       );
     } else {
-      createOrder.mutate(data, {
-        onSuccess: () => setFormOpen(false),
-      });
+      createOrder.mutate(data, { onSuccess });
     }
   };
 

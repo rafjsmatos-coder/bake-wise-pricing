@@ -192,7 +192,6 @@ export function useProducts() {
     retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Produto criado com sucesso!');
     },
     onError: (error) => {
       console.error('Erro ao criar produto:', error);
@@ -275,7 +274,6 @@ export function useProducts() {
     retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Produto atualizado com sucesso!');
     },
     onError: (error) => {
       console.error('Erro ao atualizar produto:', error);
