@@ -1,65 +1,40 @@
 
 
-## Correcoes: Pedidos lentos ao salvar + Financeiro nao atualiza
+## Correcao: Mensagem de sucesso do pedido nao desaparece
 
-### Problemas encontrados
+### Problema encontrado
 
-#### 1. Financeiro NAO atualiza (BUG CRITICO - query key errada)
+Este e um conflito conhecido entre o Radix Dialog (usado no formulario de pedidos) e o Sonner (biblioteca de notificacoes). Quando o pedido e salvo, duas coisas acontecem simultaneamente:
 
-Este e o bug principal. Quando o pedido e salvo, o `onSuccess` do `useOrders` invalida:
+1. O toast de sucesso e disparado (`toast.success(...)`)
+2. O dialog fecha (`setFormOpen(false)`)
 
-```
-queryClient.invalidateQueries({ queryKey: ['financial'] })
-```
+O fechamento do Dialog dispara eventos internos do Radix que interferem com o timer de auto-dismiss do Sonner, fazendo a mensagem ficar "presa" na tela. Isso nao acontece com ingredientes, receitas e decoracoes porque esses modulos usam formularios que nao tem essa mesma interacao de fechamento.
 
-Porem, o `useFinancial` registra a query com a chave:
+### Solucao
 
-```
-queryKey: ['financial-transactions', user?.id]
-```
-
-A chave `'financial'` NAO corresponde a `'financial-transactions'`. Por isso a invalidacao nao faz efeito e o usuario precisa fechar e reabrir o app para ver os dados atualizados.
-
-**Correcao**: Alterar todas as chamadas de `invalidateQueries` no `useOrders` para usar a chave correta `['financial-transactions']`.
-
-#### 2. Edicao lenta (5-6 chamadas sequenciais ao banco)
-
-Ao editar um pedido, o `updateOrder` faz todas estas chamadas em sequencia (uma esperando a outra terminar):
-
-1. `update orders` - atualiza o pedido
-2. `delete order_items` - remove itens antigos
-3. `insert order_items` - insere itens novos
-4. `select clients` - busca nome do cliente (para a descricao da transacao)
-5. `select financial_transactions` - verifica se ja existe transacao
-6. `update/insert financial_transactions` - atualiza ou cria transacao
-
-Chamadas 2+3 podem rodar em paralelo com 4+5, reduzindo o tempo total.
-
-**Correcao**: Paralelizar operacoes independentes usando `Promise.all`.
+Garantir que o Dialog feche ANTES do toast ser exibido, usando um pequeno delay. Tambem adicionar a propriedade `modal={false}` no Sonner para evitar conflitos de foco com outros componentes modais.
 
 ### Alteracoes
 
 | Arquivo | O que muda |
 |---------|-----------|
-| `src/hooks/useOrders.tsx` | (1) Corrigir query key de `['financial']` para `['financial-transactions']` em todos os `onSuccess`. (2) Paralelizar chamadas independentes no `updateOrder` com `Promise.all`. |
+| `src/components/orders/OrdersList.tsx` | No `handleSubmit`, fechar o dialog primeiro e deixar o toast ser disparado pelo `onSuccess` do hook naturalmente apos o dialog ja ter fechado. |
+| `src/components/ui/sonner.tsx` | Adicionar `position="top-center"` e `toastOptions.style` com `pointerEvents: 'auto'` para evitar conflitos com dialogs Radix. |
 
 ### Detalhes tecnicos
 
-**Antes (sequencial):**
+**Antes** (dialog e toast competem):
 ```text
-update order → delete items → insert items → fetch client → check transaction → upsert transaction
-[────────────────────────────────────────────────────────────────────────────────────────────────]
-                                    ~6 round trips sequenciais
+mutate.onSuccess → toast.success() + setFormOpen(false)  ← conflito de eventos
 ```
 
-**Depois (paralelo):**
+**Depois** (dialog fecha primeiro, toast aparece livre):
 ```text
-update order ──┐
-               ├─ await all ─→ delete+insert items ──┐
-fetch client ──┘                                      ├─ check+upsert transaction
-                                                      │
-                                    ~3 round trips efetivos
+handleSubmit.onSuccess → setFormOpen(false) → apos 150ms → toast.success()
 ```
 
-A correcao da query key resolve o problema de nao atualizar. A paralelizacao reduz o tempo de salvamento pela metade.
+A mudanca no `handleSubmit` do `OrdersList.tsx` vai fazer o dialog fechar primeiro via callback local, e o toast sera chamado com um pequeno atraso para garantir que o Radix Dialog ja terminou sua animacao de saida.
+
+Tambem sera verificado se outros formularios com Dialog (produtos, embalagens) tem o mesmo problema, e a correcao sera aplicada neles tambem se necessario.
 
