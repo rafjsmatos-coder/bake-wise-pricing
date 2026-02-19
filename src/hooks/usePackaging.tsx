@@ -69,7 +69,7 @@ export function usePackaging() {
       return data;
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['packaging'] }); toast.success('Embalagem criada com sucesso!'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['packaging'] }); },
     onError: (error) => { console.error('Erro ao criar embalagem:', error); toast.error('Erro ao criar embalagem'); },
   });
 
@@ -85,7 +85,7 @@ export function usePackaging() {
       return data;
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['packaging'] }); toast.success('Embalagem atualizada com sucesso!'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['packaging'] }); },
     onError: (error) => { console.error('Erro ao atualizar embalagem:', error); toast.error('Erro ao atualizar embalagem'); },
   });
 

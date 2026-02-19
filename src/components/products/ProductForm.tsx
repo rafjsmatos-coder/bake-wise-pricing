@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -148,12 +149,16 @@ export function ProductForm({ open, onOpenChange, product, recipeCosts = {} }: P
         packaging: selectedPackaging.map(p => ({ packaging_id: p.packaging_id, quantity: p.quantity })),
       };
 
-      if (product) {
+      const isEditing = !!product;
+      if (isEditing) {
         await updateProduct.mutateAsync({ id: product.id, ...productData });
       } else {
         await createProduct.mutateAsync(productData);
       }
       onOpenChange(false);
+      setTimeout(() => {
+        toast.success(isEditing ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!');
+      }, 150);
     } catch (error) {
       console.error('Erro ao salvar produto:', error);
     }

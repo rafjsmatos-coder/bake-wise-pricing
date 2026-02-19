@@ -11,6 +11,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       duration={3000}
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      position="top-center"
       toastOptions={{
         classNames: {
           toast:
@@ -19,6 +20,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
         },
+        style: { pointerEvents: 'auto' },
       }}
       {...props}
     />

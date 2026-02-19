@@ -116,7 +116,7 @@ export function useOrders() {
       return order;
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['clients'] }); queryClient.invalidateQueries({ queryKey: ['financial-transactions'] }); toast.success('Pedido criado com sucesso!'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['clients'] }); queryClient.invalidateQueries({ queryKey: ['financial-transactions'] }); },
     onError: (error) => { console.error('Erro ao criar pedido:', error); toast.error('Erro ao criar pedido'); },
   });
 
@@ -172,7 +172,7 @@ export function useOrders() {
       await Promise.all(parallelOps);
     },
     retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['clients'] }); queryClient.invalidateQueries({ queryKey: ['financial-transactions'] }); toast.success('Pedido atualizado com sucesso!'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['clients'] }); queryClient.invalidateQueries({ queryKey: ['financial-transactions'] }); },
     onError: (error) => { console.error('Erro ao atualizar pedido:', error); toast.error('Erro ao atualizar pedido'); },
   });
 
