@@ -1,40 +1,59 @@
 
 
-## Correcao: Mensagem de sucesso do pedido nao desaparece
+## Busca Global: Navegar direto para o item buscado
 
-### Problema encontrado
+### Problema
 
-Este e um conflito conhecido entre o Radix Dialog (usado no formulario de pedidos) e o Sonner (biblioteca de notificacoes). Quando o pedido e salvo, duas coisas acontecem simultaneamente:
-
-1. O toast de sucesso e disparado (`toast.success(...)`)
-2. O dialog fecha (`setFormOpen(false)`)
-
-O fechamento do Dialog dispara eventos internos do Radix que interferem com o timer de auto-dismiss do Sonner, fazendo a mensagem ficar "presa" na tela. Isso nao acontece com ingredientes, receitas e decoracoes porque esses modulos usam formularios que nao tem essa mesma interacao de fechamento.
+Quando voce busca "manga" e clica no resultado, o sistema apenas abre a pagina de ingredientes sem filtrar. Voce precisa rolar a lista toda para achar o item. Isso acontece porque o `GlobalSearch` so envia o nome da pagina (`'ingredients'`), sem informar qual item foi clicado.
 
 ### Solucao
 
-Garantir que o Dialog feche ANTES do toast ser exibido, usando um pequeno delay. Tambem adicionar a propriedade `modal={false}` no Sonner para evitar conflitos de foco com outros componentes modais.
+Passar o termo de busca da `GlobalSearch` para o `Dashboard`, que por sua vez repassa para cada componente de lista. Assim, ao clicar em "Manga" na busca, a lista de ingredientes ja abre com "manga" preenchido no campo de busca, mostrando o item no topo.
+
+### Como vai funcionar para voce
+
+1. Abrir a busca (Ctrl+K ou pelo icone)
+2. Digitar "manga"
+3. Clicar no resultado "Manga"
+4. A pagina de ingredientes abre com "manga" ja digitado no filtro de busca
+5. Apenas o item "Manga" aparece na lista, sem precisar rolar
 
 ### Alteracoes
 
 | Arquivo | O que muda |
 |---------|-----------|
-| `src/components/orders/OrdersList.tsx` | No `handleSubmit`, fechar o dialog primeiro e deixar o toast ser disparado pelo `onSuccess` do hook naturalmente apos o dialog ja ter fechado. |
-| `src/components/ui/sonner.tsx` | Adicionar `position="top-center"` e `toastOptions.style` com `pointerEvents: 'auto'` para evitar conflitos com dialogs Radix. |
+| `src/components/search/GlobalSearch.tsx` | `handleSelect` passa tambem o nome do item clicado junto com a pagina. O callback `onNavigate` muda para `onNavigate(page, searchTerm)`. |
+| `src/pages/Dashboard.tsx` | Novo estado `searchFilter` que armazena o termo vindo da busca. Cada componente de lista recebe `initialSearch={searchFilter}`. Quando o usuario muda de pagina normalmente (pelo menu), o filtro e limpo. |
+| `src/components/ingredients/IngredientsList.tsx` | Aceita prop `initialSearch?: string` e usa como valor inicial do campo de busca local. |
+| `src/components/recipes/RecipesList.tsx` | Mesma mudanca: aceita `initialSearch` como valor inicial do filtro. |
+| `src/components/products/ProductsList.tsx` | Mesma mudanca. |
+| `src/components/decorations/DecorationsList.tsx` | Mesma mudanca. |
+| `src/components/packaging/PackagingList.tsx` | Mesma mudanca. |
+| `src/components/clients/ClientsList.tsx` | Mesma mudanca. |
+| `src/components/orders/OrdersList.tsx` | Mesma mudanca. |
 
 ### Detalhes tecnicos
 
-**Antes** (dialog e toast competem):
+**Fluxo atual:**
 ```text
-mutate.onSuccess → toast.success() + setFormOpen(false)  ← conflito de eventos
+GlobalSearch.handleSelect('ingredients') → Dashboard.setCurrentPage('ingredients') → IngredientsList() com busca vazia
 ```
 
-**Depois** (dialog fecha primeiro, toast aparece livre):
+**Fluxo corrigido:**
 ```text
-handleSubmit.onSuccess → setFormOpen(false) → apos 150ms → toast.success()
+GlobalSearch.handleSelect('ingredients', 'manga') → Dashboard.setCurrentPage('ingredients') + setSearchFilter('manga') → IngredientsList(initialSearch='manga') → campo de busca ja preenchido, lista filtrada
 ```
 
-A mudanca no `handleSubmit` do `OrdersList.tsx` vai fazer o dialog fechar primeiro via callback local, e o toast sera chamado com um pequeno atraso para garantir que o Radix Dialog ja terminou sua animacao de saida.
+**Mudanca no GlobalSearch:**
+- Cada `CommandItem` ja tem o nome do item (ex: `ingredient.name`). Ao clicar, o `onSelect` envia `(page, itemName)`.
 
-Tambem sera verificado se outros formularios com Dialog (produtos, embalagens) tem o mesmo problema, e a correcao sera aplicada neles tambem se necessario.
+**Mudanca nas listas:**
+- Cada lista recebe `initialSearch?: string` como prop.
+- O `useState` de busca usa `initialSearch` como valor default.
+- Um `useEffect` monitora mudancas no `initialSearch` para atualizar o campo quando o usuario faz uma nova busca global.
+
+**Mudanca no Dashboard:**
+- `handleSearchNavigate(page, searchTerm)` seta ambos `currentPage` e `searchFilter`.
+- `handlePageChange(page)` (navegacao pelo menu) limpa o `searchFilter`.
+- Cada componente recebe `initialSearch={searchFilter}` apenas quando a pagina corresponde.
 
