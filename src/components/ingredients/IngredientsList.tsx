@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useIngredients, type Ingredient } from '@/hooks/useIngredients';
 import { useCategories } from '@/hooks/useCategories';
 import { IngredientCard } from './IngredientCard';
@@ -26,14 +26,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CategoriesList } from '@/components/categories/CategoriesList';
 import { Plus, Search, Package, Loader2, Tag } from 'lucide-react';
 
-export function IngredientsList() {
+interface IngredientsListProps {
+  initialSearch?: string;
+}
+
+export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
   const { ingredients, isLoading, deleteIngredient, duplicateIngredient } = useIngredients();
   const { categories } = useCategories();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [formOpen, setFormOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
   const [deletingIngredient, setDeletingIngredient] = useState<Ingredient | null>(null);
+
+  useEffect(() => {
+    if (initialSearch !== undefined) setSearch(initialSearch);
+  }, [initialSearch]);
 
   const filteredIngredients = useMemo(() => {
     return ingredients.filter((ing) => {

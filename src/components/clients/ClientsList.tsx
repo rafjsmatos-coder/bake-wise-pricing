@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useClients, Client, ClientFormData } from '@/hooks/useClients';
 import { ClientCard } from '@/components/clients/ClientCard';
 import { ClientForm } from '@/components/clients/ClientForm';
@@ -24,15 +24,23 @@ import {
 } from '@/components/ui/select';
 import { Plus, Search, Users, Loader2 } from 'lucide-react';
 
-export function ClientsList() {
+interface ClientsListProps {
+  initialSearch?: string;
+}
+
+export function ClientsList({ initialSearch = '' }: ClientsListProps) {
   const { clients, isLoading, createClient, updateClient, deleteClient } = useClients();
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [cityFilter, setCityFilter] = useState('all');
   const [formOpen, setFormOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
+  useEffect(() => {
+    if (initialSearch !== undefined) setSearchQuery(initialSearch);
+  }, [initialSearch]);
 
   const uniqueCities = useMemo(() => {
     const cities = clients

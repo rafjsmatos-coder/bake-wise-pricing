@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -26,14 +26,22 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-export function PackagingList() {
+interface PackagingListProps {
+  initialSearch?: string;
+}
+
+export function PackagingList({ initialSearch = '' }: PackagingListProps) {
   const { packagingItems, isLoading, deletePackaging, duplicatePackaging } = usePackaging();
   const { categories } = usePackagingCategories();
   const [formOpen, setFormOpen] = useState(false);
   const [editingPackaging, setEditingPackaging] = useState<Packaging | null>(null);
   const [deletingPackaging, setDeletingPackaging] = useState<Packaging | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
+  useEffect(() => {
+    if (initialSearch !== undefined) setSearchQuery(initialSearch);
+  }, [initialSearch]);
 
   const filteredItems = useMemo(() => {
     return packagingItems.filter((item) => {

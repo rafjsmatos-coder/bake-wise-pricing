@@ -36,6 +36,7 @@ const FREE_PAGES: PageType[] = ['dashboard', 'support'];
 export function Dashboard() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchFilter, setSearchFilter] = useState('');
   const { canAccess, isLoading, initialized, error, checkSubscription } = useSubscription();
   const { signOut } = useAuth();
   const [isRetrying, setIsRetrying] = useState(false);
@@ -94,8 +95,9 @@ export function Dashboard() {
     );
   }
 
-  const handleSearchNavigate = (page: string) => {
+  const handleSearchNavigate = (page: string, searchTerm?: string) => {
     setCurrentPage(page as PageType);
+    setSearchFilter(searchTerm || '');
   };
 
   // Determine if the current page is accessible
@@ -104,6 +106,7 @@ export function Dashboard() {
   // Force navigation to allowed page if expired user tries to access restricted page
   const handlePageChange = (page: PageType) => {
     setCurrentPage(page);
+    setSearchFilter('');
   };
 
   const renderPageContent = () => {
@@ -114,18 +117,18 @@ export function Dashboard() {
 
     switch (currentPage) {
       case 'dashboard': return <DashboardHome onNavigate={(page) => setCurrentPage(page as PageType)} />;
-      case 'products': return <ProductsList />;
+      case 'products': return <ProductsList initialSearch={searchFilter} />;
       case 'product-categories': return <ProductCategoriesList />;
-      case 'recipes': return <RecipesList />;
+      case 'recipes': return <RecipesList initialSearch={searchFilter} />;
       case 'recipe-categories': return <RecipeCategoriesList />;
-      case 'ingredients': return <IngredientsList />;
+      case 'ingredients': return <IngredientsList initialSearch={searchFilter} />;
       case 'categories': return <CategoriesList />;
-      case 'decorations': return <DecorationsList />;
+      case 'decorations': return <DecorationsList initialSearch={searchFilter} />;
       case 'decoration-categories': return <DecorationCategoriesList />;
-      case 'packaging': return <PackagingList />;
+      case 'packaging': return <PackagingList initialSearch={searchFilter} />;
       case 'packaging-categories': return <PackagingCategoriesList />;
-      case 'clients': return <ClientsList />;
-      case 'orders': return <OrdersList />;
+      case 'clients': return <ClientsList initialSearch={searchFilter} />;
+      case 'orders': return <OrdersList initialSearch={searchFilter} />;
       case 'shopping-list': return <ShoppingList />;
       case 'cash-flow': return <FinancialPage initialTab="cash-flow" />;
       case 'reports': return <FinancialPage initialTab="reports" />;
