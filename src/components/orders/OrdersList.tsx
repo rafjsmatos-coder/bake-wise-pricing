@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useOrders, Order, OrderFormData } from '@/hooks/useOrders';
 import { OrderCard } from '@/components/orders/OrderCard';
@@ -39,11 +39,15 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
 
-export function OrdersList() {
+interface OrdersListProps {
+  initialSearch?: string;
+}
+
+export function OrdersList({ initialSearch = '' }: OrdersListProps) {
   const { orders, isLoading, createOrder, updateOrder, updateOrderStatus, deleteOrder, duplicateOrder } = useOrders();
   const queryClient = useQueryClient();
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [monthFilter, setMonthFilter] = useState('');
@@ -55,6 +59,10 @@ export function OrdersList() {
   const [dayOrders, setDayOrders] = useState<{ date: Date; orders: Order[] }>({ date: new Date(), orders: [] });
   const [stockDeductionOpen, setStockDeductionOpen] = useState(false);
   const [stockDeductionOrder, setStockDeductionOrder] = useState<Order | null>(null);
+
+  useEffect(() => {
+    if (initialSearch !== undefined) setSearchQuery(initialSearch);
+  }, [initialSearch]);
 
   const filteredOrders = useMemo(() => {
     let filtered = orders;

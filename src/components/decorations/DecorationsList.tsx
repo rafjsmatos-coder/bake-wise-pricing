@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -26,11 +26,19 @@ import { DecorationForm } from './DecorationForm';
 import { DecorationCategoriesList } from '@/components/decoration-categories/DecorationCategoriesList';
 import { Plus, Search, Sparkles, Loader2, Tag } from 'lucide-react';
 
-export function DecorationsList() {
+interface DecorationsListProps {
+  initialSearch?: string;
+}
+
+export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
   const { decorations, isLoading, deleteDecoration, duplicateDecoration } = useDecorations();
   const { categories } = useDecorationCategories();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
+  useEffect(() => {
+    if (initialSearch !== undefined) setSearchQuery(initialSearch);
+  }, [initialSearch]);
   const [formOpen, setFormOpen] = useState(false);
   const [editingDecoration, setEditingDecoration] = useState<Decoration | null>(null);
   const [deletingDecoration, setDeletingDecoration] = useState<Decoration | null>(null);

@@ -33,7 +33,7 @@ import { format, parseISO } from 'date-fns';
 interface GlobalSearchProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: string, searchTerm?: string) => void;
 }
 
 export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchProps) {
@@ -139,9 +139,9 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
     filteredOrders.length > 0 ||
     filteredTransactions.length > 0;
 
-  const handleSelect = (page: string) => {
+  const handleSelect = (page: string, itemName?: string) => {
     onOpenChange(false);
-    onNavigate?.(page);
+    onNavigate?.(page, itemName);
   };
 
   let groupIndex = 0;
@@ -171,7 +171,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
                 <CommandItem
                   key={product.id}
                   value={`product-${product.name}`}
-                  onSelect={() => handleSelect('products')}
+                  onSelect={() => handleSelect('products', product.name)}
                   className="flex items-center gap-2"
                 >
                   <ShoppingBag className="h-4 w-4 text-muted-foreground" />
@@ -195,7 +195,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
                 <CommandItem
                   key={recipe.id}
                   value={`recipe-${recipe.name}`}
-                  onSelect={() => handleSelect('recipes')}
+                  onSelect={() => handleSelect('recipes', recipe.name)}
                   className="flex items-center gap-2"
                 >
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -219,7 +219,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
                 <CommandItem
                   key={order.id}
                   value={`order-${order.client?.name}-${order.id}`}
-                  onSelect={() => handleSelect('orders')}
+                  onSelect={() => handleSelect('orders', order.client?.name || '')}
                   className="flex items-center gap-2"
                 >
                   <ClipboardList className="h-4 w-4 text-muted-foreground" />
@@ -241,7 +241,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
                 <CommandItem
                   key={ingredient.id}
                   value={`ingredient-${ingredient.name}`}
-                  onSelect={() => handleSelect('ingredients')}
+                  onSelect={() => handleSelect('ingredients', ingredient.name)}
                   className="flex items-center gap-2"
                 >
                   <Package className="h-4 w-4 text-muted-foreground" />
@@ -265,7 +265,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
                 <CommandItem
                   key={decoration.id}
                   value={`decoration-${decoration.name}`}
-                  onSelect={() => handleSelect('decorations')}
+                  onSelect={() => handleSelect('decorations', decoration.name)}
                   className="flex items-center gap-2"
                 >
                   <Sparkles className="h-4 w-4 text-muted-foreground" />
@@ -289,7 +289,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
                 <CommandItem
                   key={pack.id}
                   value={`packaging-${pack.name}`}
-                  onSelect={() => handleSelect('packaging')}
+                  onSelect={() => handleSelect('packaging', pack.name)}
                   className="flex items-center gap-2"
                 >
                   <Box className="h-4 w-4 text-muted-foreground" />
@@ -313,7 +313,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
                 <CommandItem
                   key={client.id}
                   value={`client-${client.name}`}
-                  onSelect={() => handleSelect('clients')}
+                  onSelect={() => handleSelect('clients', client.name)}
                   className="flex items-center gap-2"
                 >
                   <Users className="h-4 w-4 text-muted-foreground" />
@@ -337,7 +337,7 @@ export function GlobalSearch({ open, onOpenChange, onNavigate }: GlobalSearchPro
                 <CommandItem
                   key={t.id}
                   value={`transaction-${t.description}-${t.id}`}
-                  onSelect={() => handleSelect('cashflow')}
+                  onSelect={() => handleSelect('cash-flow', t.description)}
                   className="flex items-center gap-2"
                 >
                   <Wallet className="h-4 w-4 text-muted-foreground" />

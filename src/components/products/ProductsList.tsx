@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -32,7 +32,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-export function ProductsList() {
+interface ProductsListProps {
+  initialSearch?: string;
+}
+
+export function ProductsList({ initialSearch = '' }: ProductsListProps) {
   const { products, isLoading, deleteProduct, duplicateProduct } = useProducts();
   const { recipes } = useRecipes();
   const { settings } = useUserSettings();
@@ -41,8 +45,12 @@ export function ProductsList() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
+  useEffect(() => {
+    if (initialSearch !== undefined) setSearchQuery(initialSearch);
+  }, [initialSearch]);
 
   // Calculate recipe costs
   const recipeCosts = useMemo(() => {

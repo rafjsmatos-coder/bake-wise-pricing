@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -27,7 +27,11 @@ import { RecipeDetails } from './RecipeDetails';
 import { RecipeCategoriesList } from '@/components/recipe-categories/RecipeCategoriesList';
 import { Plus, Search, Book, Loader2, Tag } from 'lucide-react';
 
-export function RecipesList() {
+interface RecipesListProps {
+  initialSearch?: string;
+}
+
+export function RecipesList({ initialSearch = '' }: RecipesListProps) {
   const { recipes, isLoading, deleteRecipe, duplicateRecipe } = useRecipes();
   const { categories } = useRecipeCategories();
   const [formOpen, setFormOpen] = useState(false);
@@ -36,8 +40,12 @@ export function RecipesList() {
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
+  useEffect(() => {
+    if (initialSearch !== undefined) setSearchTerm(initialSearch);
+  }, [initialSearch]);
 
   const filteredRecipes = useMemo(() => {
     return recipes.filter((recipe) => {
