@@ -6,6 +6,7 @@ import { useSupport } from '@/hooks/useSupport';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { ThemeToggle } from './ThemeToggle';
 import precibakeLogo from '@/assets/precibake-logo.jpeg';
 import { 
   Package, 
@@ -230,6 +231,7 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
           </h1>
         </div>
         <div className="flex items-center gap-1">
+          <ThemeToggle className="h-9 w-9" />
           {onSearchOpen && (
             <Button variant="ghost" size="icon" onClick={onSearchOpen} className="h-9 w-9">
               <Search className="h-5 w-5" />
@@ -273,6 +275,10 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
 
           <div className="space-y-0.5">
             {bottomItems.map(renderSidebarItem)}
+          </div>
+
+          <div className="px-3 pt-2">
+            <ThemeToggle className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground" />
           </div>
         </nav>
 

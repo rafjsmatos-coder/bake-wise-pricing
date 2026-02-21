@@ -177,8 +177,17 @@ export function RecipeDetails({ recipe, open, onOpenChange, onEdit, onDuplicate 
                 <BookOpen className="h-4 w-4" />
                 Modo de Preparo
               </h3>
-              <div className="bg-muted/30 rounded-lg p-4 whitespace-pre-wrap text-sm">
-                {recipe.instructions}
+              <div className="bg-muted/30 rounded-lg p-4 text-sm space-y-1">
+                {recipe.instructions.split('\n').filter(line => line.trim()).map((line, index) => {
+                  const trimmed = line.trim();
+                  // Auto-detect if line already starts with a number or bullet
+                  const hasPrefix = /^(\d+[\.\)\-]|[-•*])/.test(trimmed);
+                  return (
+                    <p key={index} className="leading-relaxed">
+                      {hasPrefix ? trimmed : `${index + 1}. ${trimmed}`}
+                    </p>
+                  );
+                })}
               </div>
             </div>
           )}

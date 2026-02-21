@@ -67,6 +67,33 @@ export function OrderDetails({ open, onOpenChange, order, onEdit, onStatusChange
     window.open(url, '_blank');
   };
 
+  const handleSendDeliveryReminder = () => {
+    if (!hasWhatsapp) return;
+    const clientName = order.client?.name || 'Cliente';
+    const deliveryText = order.delivery_date
+      ? format(new Date(order.delivery_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+      : 'a combinar';
+    const itemsText = order.order_items?.map(
+      (item) => `• ${item.quantity}x ${item.product?.name || 'Produto'}`
+    ).join('\n') || '';
+    
+    const message = `Olá ${clientName}! 😊\n\nLembrando que a entrega do seu pedido está marcada para *${deliveryText}*.\n\n${itemsText}\n\nAlguma dúvida, é só me chamar! 🎂`;
+    const url = `https://wa.me/55${clientWhatsapp}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleSendConfirmation = () => {
+    if (!hasWhatsapp) return;
+    const clientName = order.client?.name || 'Cliente';
+    const deliveryText = order.delivery_date
+      ? `\nEntrega: ${format(new Date(order.delivery_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
+      : '';
+    
+    const message = `Olá ${clientName}! ✅\n\nSeu pedido foi *confirmado*!${deliveryText}\n\nObrigado(a) pela confiança! 🎂`;
+    const url = `https://wa.me/55${clientWhatsapp}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[100dvh] overflow-y-auto overflow-x-hidden sm:max-h-[85vh]" style={{ touchAction: 'pan-y' }}>
@@ -74,9 +101,21 @@ export function OrderDetails({ open, onOpenChange, order, onEdit, onStatusChange
           <DialogTitle>Detalhes do Pedido</DialogTitle>
           <div className="flex gap-2 flex-wrap pt-1">
             {hasWhatsapp && (
-              <Button variant="outline" size="sm" onClick={handleSendQuote} className="text-green-600 border-green-600 hover:bg-green-50">
+              <Button variant="outline" size="sm" onClick={handleSendQuote} className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-950">
                 <MessageCircle className="h-4 w-4 mr-1" />
                 Orçamento
+              </Button>
+            )}
+            {hasWhatsapp && (
+              <Button variant="outline" size="sm" onClick={handleSendConfirmation} className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-950">
+                <MessageCircle className="h-4 w-4 mr-1" />
+                Confirmar
+              </Button>
+            )}
+            {hasWhatsapp && order.delivery_date && (
+              <Button variant="outline" size="sm" onClick={handleSendDeliveryReminder} className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-950">
+                <MessageCircle className="h-4 w-4 mr-1" />
+                Lembrete
               </Button>
             )}
             {onDuplicate && (
