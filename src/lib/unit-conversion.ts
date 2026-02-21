@@ -121,6 +121,15 @@ export function getCompatibleUnits(unit: MeasurementUnit): MeasurementUnit[] {
     .map(([key]) => key);
 }
 
+/**
+ * Returns the fractional (smaller) unit for a given unit.
+ * kg → g, L → ml, m → cm. Units without a base unit return themselves.
+ */
+export function getFractionalUnit(unit: MeasurementUnit): MeasurementUnit {
+  const info = UNITS[unit];
+  return info.baseUnit || unit;
+}
+
 export function getBestDisplayUnit(
   value: number | null | undefined,
   mainUnit: MeasurementUnit

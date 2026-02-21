@@ -25,8 +25,10 @@ import {
   Loader2,
   Users,
   ClipboardList,
-  CalendarClock
+  CalendarClock,
+  AlertCircle
 } from 'lucide-react';
+import { isToday } from 'date-fns';
 
 interface DashboardHomeProps {
   onNavigate: (page: string) => void;
@@ -150,11 +152,49 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
         ))}
       </div>
 
+      {/* Today's Deliveries - Highlighted */}
+      {(() => {
+        const todayOrders = (orders || [])
+          .filter(o => o.delivery_date && ['pending', 'in_production', 'ready'].includes(o.status) && isToday(new Date(o.delivery_date)))
+          .sort((a, b) => new Date(a.delivery_date!).getTime() - new Date(b.delivery_date!).getTime());
+
+        if (todayOrders.length === 0) return null;
+
+        return (
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                Entregas Hoje ({todayOrders.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {todayOrders.map((o) => (
+                <div
+                  key={o.id}
+                  className="flex items-center justify-between gap-3 p-3 bg-card rounded-lg cursor-pointer hover:bg-muted transition-colors border border-border"
+                  onClick={() => onNavigate('orders')}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{o.client?.name || 'Cliente'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(o.delivery_date!), "HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                  <OrderStatusBadge status={o.status} type="order" />
+                  <span className="text-sm font-medium shrink-0">{formatCurrency(o.total_amount)}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Upcoming Deliveries */}
       {(() => {
         const now = new Date();
         const upcomingOrders = (orders || [])
-          .filter(o => o.delivery_date && ['pending', 'in_production', 'ready'].includes(o.status) && new Date(o.delivery_date) >= now)
+          .filter(o => o.delivery_date && ['pending', 'in_production', 'ready'].includes(o.status) && new Date(o.delivery_date) >= now && !isToday(new Date(o.delivery_date)))
           .sort((a, b) => new Date(a.delivery_date!).getTime() - new Date(b.delivery_date!).getTime())
           .slice(0, 5);
 

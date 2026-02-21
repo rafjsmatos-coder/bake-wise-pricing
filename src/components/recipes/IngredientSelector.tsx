@@ -23,7 +23,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useIngredients, type Ingredient } from '@/hooks/useIngredients';
-import { UNITS, type MeasurementUnit, formatCurrency } from '@/lib/unit-conversion';
+import { UNITS, type MeasurementUnit, formatCurrency, getFractionalUnit } from '@/lib/unit-conversion';
 import { getCompatibleUnits, calculateIngredientCost } from '@/lib/recipe-cost-calculator';
 import { Plus, X, Check, ChevronsUpDown, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -77,7 +77,7 @@ export function IngredientSelector({
 
   const handleSelectIngredient = (ingredient: Ingredient) => {
     setSelectedIngredient(ingredient);
-    setUnit(getCompatibleUnits(ingredient.unit)[0]);
+    setUnit(getFractionalUnit(ingredient.unit));
     setOpen(false);
   };
 

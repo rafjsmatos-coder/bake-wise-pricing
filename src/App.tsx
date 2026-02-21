@@ -6,6 +6,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { SidebarControlProvider, useSidebarControl } from "@/hooks/useSidebarControl";
 import { TourWrapper } from "@/components/tour/TourProvider";
+import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import { AdminPortal } from "./pages/AdminPortal";
 import NotFound from "./pages/NotFound";
@@ -49,15 +50,17 @@ function AppContent() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <SubscriptionProvider>
-        <SidebarControlProvider>
-          <AppContent />
-        </SidebarControlProvider>
-      </SubscriptionProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <SubscriptionProvider>
+          <SidebarControlProvider>
+            <AppContent />
+          </SidebarControlProvider>
+        </SubscriptionProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

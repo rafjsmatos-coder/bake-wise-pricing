@@ -1,6 +1,11 @@
 import { Client } from '@/hooks/useClients';
+import { useOrders } from '@/hooks/useOrders';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
+import { formatCurrency } from '@/lib/product-cost-calculator';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +20,7 @@ import {
   Instagram,
   FileText,
   Pencil,
+  ClipboardList,
 } from 'lucide-react';
 
 interface ClientDetailsProps {
@@ -25,6 +31,8 @@ interface ClientDetailsProps {
 }
 
 export function ClientDetails({ open, onOpenChange, client, onEdit }: ClientDetailsProps) {
+  const { orders } = useOrders();
+
   if (!client) return null;
 
   const hasAddress = client.address || client.neighborhood || client.city || client.state || client.zip_code;
@@ -33,6 +41,12 @@ export function ClientDetails({ open, onOpenChange, client, onEdit }: ClientDeta
     onOpenChange(false);
     onEdit(client);
   };
+
+  const clientOrders = (orders || [])
+    .filter(o => o.client_id === client.id)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const totalSpent = clientOrders.reduce((sum, o) => sum + o.total_amount, 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -111,12 +125,50 @@ export function ClientDetails({ open, onOpenChange, client, onEdit }: ClientDeta
             </div>
           )}
 
+          {/* Histórico de Pedidos */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Histórico de Pedidos ({clientOrders.length})
+            </h4>
+            {clientOrders.length > 0 ? (
+              <div className="space-y-2">
+                {clientOrders.slice(0, 10).map((order) => (
+                  <div key={order.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <OrderStatusBadge status={order.status} type="order" />
+                      <span className="font-medium">{formatCurrency(order.total_amount)}</span>
+                    </div>
+                  </div>
+                ))}
+                {clientOrders.length > 10 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    +{clientOrders.length - 10} pedidos anteriores
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">Nenhum pedido registrado</p>
+            )}
+          </div>
+
           {/* Resumo */}
-          <div className="pt-3 border-t border-border">
+          <div className="pt-3 border-t border-border space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Total de pedidos</span>
-              <Badge variant="secondary">{client.orders_count || 0}</Badge>
+              <Badge variant="secondary">{clientOrders.length}</Badge>
             </div>
+            {totalSpent > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Total gasto</span>
+                <span className="font-bold text-primary">{formatCurrency(totalSpent)}</span>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
