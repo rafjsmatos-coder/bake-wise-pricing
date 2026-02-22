@@ -1,5 +1,8 @@
 project_id = "ektodtogznnlwvcsawgu"
 
+[functions.verify-checkout]
+verify_jwt = false
+
 [auth.email]
 # Sender name and email
 [auth.email.template.confirmation]
