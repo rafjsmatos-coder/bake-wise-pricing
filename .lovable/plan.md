@@ -1,59 +1,72 @@
 
+## Correcao: Verificacao de Pagamento Falha Apos Retorno do Stripe
 
-## Busca Global: Navegar direto para o item buscado
+### Problema raiz
 
-### Problema
+Existem 3 falhas encadeadas:
 
-Quando voce busca "manga" e clica no resultado, o sistema apenas abre a pagina de ingredientes sem filtrar. Voce precisa rolar a lista toda para achar o item. Isso acontece porque o `GlobalSearch` so envia o nome da pagina (`'ingredients'`), sem informar qual item foi clicado.
+1. **Sessao perdida apos redirect do Stripe**: Quando o usuario volta do checkout do Stripe para `/subscription-success`, a pagina faz um fresh load. O `supabase.auth.getSession()` retorna `null` porque o localStorage ainda nao reidratou a sessao. O codigo falha imediatamente com "Sessao expirada" sem sequer chamar o `verify-checkout`.
+
+2. **verify-checkout exige autenticacao desnecessariamente**: A funcao usa `validateAuth(req)` para obter o user_id, mas essa informacao ja esta nos metadados da sessao Stripe (`session.metadata.user_id`). Nao ha necessidade de autenticacao aqui.
+
+3. **check-subscription nao consulta o Stripe como fallback**: Quando o banco diz "expired" mas o Stripe tem uma assinatura ativa, o sistema nao detecta isso.
+
+### Evidencias
+
+- `verify-checkout`: **zero logs** no servidor (nunca foi chamado)
+- Stripe: assinatura `sub_1T3eWj1UfMJqJ1ycnKSpApxw` com status **active** para `cus_U1hwWPoH9oPEET`
+- Banco: subscription com status `expired`, sem `stripe_customer_id` nem `stripe_subscription_id`
 
 ### Solucao
 
-Passar o termo de busca da `GlobalSearch` para o `Dashboard`, que por sua vez repassa para cada componente de lista. Assim, ao clicar em "Manga" na busca, a lista de ingredientes ja abre com "manga" preenchido no campo de busca, mostrando o item no topo.
-
-### Como vai funcionar para voce
-
-1. Abrir a busca (Ctrl+K ou pelo icone)
-2. Digitar "manga"
-3. Clicar no resultado "Manga"
-4. A pagina de ingredientes abre com "manga" ja digitado no filtro de busca
-5. Apenas o item "Manga" aparece na lista, sem precisar rolar
-
-### Alteracoes
-
 | Arquivo | O que muda |
 |---------|-----------|
-| `src/components/search/GlobalSearch.tsx` | `handleSelect` passa tambem o nome do item clicado junto com a pagina. O callback `onNavigate` muda para `onNavigate(page, searchTerm)`. |
-| `src/pages/Dashboard.tsx` | Novo estado `searchFilter` que armazena o termo vindo da busca. Cada componente de lista recebe `initialSearch={searchFilter}`. Quando o usuario muda de pagina normalmente (pelo menu), o filtro e limpo. |
-| `src/components/ingredients/IngredientsList.tsx` | Aceita prop `initialSearch?: string` e usa como valor inicial do campo de busca local. |
-| `src/components/recipes/RecipesList.tsx` | Mesma mudanca: aceita `initialSearch` como valor inicial do filtro. |
-| `src/components/products/ProductsList.tsx` | Mesma mudanca. |
-| `src/components/decorations/DecorationsList.tsx` | Mesma mudanca. |
-| `src/components/packaging/PackagingList.tsx` | Mesma mudanca. |
-| `src/components/clients/ClientsList.tsx` | Mesma mudanca. |
-| `src/components/orders/OrdersList.tsx` | Mesma mudanca. |
+| `supabase/functions/verify-checkout/index.ts` | Remover necessidade de autenticacao. Obter user_id dos metadados da sessao Stripe em vez do token JWT. |
+| `supabase/config.toml` | Adicionar `verify_jwt = false` para `verify-checkout`. |
+| `src/components/subscription/SubscriptionSuccess.tsx` | Adicionar retentativas com delay (3 tentativas, 2s de intervalo). Tentar `refreshSession()` antes de desistir. Mostrar botao "Tentar Novamente" em caso de erro. |
+| `supabase/functions/check-subscription/index.ts` | Quando o banco diz `expired`, fazer uma consulta ao Stripe como fallback para detectar assinaturas ativas nao sincronizadas. Se encontrar, atualizar o banco automaticamente. |
+
+### Correcao imediata dos dados
+
+O usuario `rafjsmatos@gmail.com` sera desbloqueado atualizando a tabela `subscriptions` com os dados do Stripe:
+- `status`: active
+- `stripe_customer_id`: cus_U1hwWPoH9oPEET
+- `stripe_subscription_id`: sub_1T3eWj1UfMJqJ1ycnKSpApxw
+- `subscription_ends_at`: data do `current_period_end` da assinatura
 
 ### Detalhes tecnicos
 
-**Fluxo atual:**
+**verify-checkout - antes:**
 ```text
-GlobalSearch.handleSelect('ingredients') → Dashboard.setCurrentPage('ingredients') → IngredientsList() com busca vazia
+Request → validateAuth(req) → FALHA (sem token) → erro 401
 ```
 
-**Fluxo corrigido:**
+**verify-checkout - depois:**
 ```text
-GlobalSearch.handleSelect('ingredients', 'manga') → Dashboard.setCurrentPage('ingredients') + setSearchFilter('manga') → IngredientsList(initialSearch='manga') → campo de busca ja preenchido, lista filtrada
+Request → extrair session_id do body → buscar sessao no Stripe → obter user_id dos metadados → atualizar banco → sucesso
 ```
 
-**Mudanca no GlobalSearch:**
-- Cada `CommandItem` ja tem o nome do item (ex: `ingredient.name`). Ao clicar, o `onSelect` envia `(page, itemName)`.
+A funcao `verify-checkout` nao precisa de autenticacao porque:
+- O `session_id` do Stripe so e gerado apos um checkout valido
+- O `user_id` esta nos metadados da sessao (definido no `create-checkout`)
+- A funcao so faz UPDATE na subscription do usuario correspondente
 
-**Mudanca nas listas:**
-- Cada lista recebe `initialSearch?: string` como prop.
-- O `useState` de busca usa `initialSearch` como valor default.
-- Um `useEffect` monitora mudancas no `initialSearch` para atualizar o campo quando o usuario faz uma nova busca global.
+**SubscriptionSuccess - logica de retry:**
+```text
+Tentativa 1 → falha? → espera 2s
+Tentativa 2 → falha? → espera 2s
+Tentativa 3 → falha? → mostra erro + botao "Tentar Novamente"
+```
 
-**Mudanca no Dashboard:**
-- `handleSearchNavigate(page, searchTerm)` seta ambos `currentPage` e `searchFilter`.
-- `handlePageChange(page)` (navegacao pelo menu) limpa o `searchFilter`.
-- Cada componente recebe `initialSearch={searchFilter}` apenas quando a pagina corresponde.
+**check-subscription - fallback Stripe:**
+```text
+1. Buscar subscription no banco
+2. Se status = 'expired':
+   a. Buscar email do usuario
+   b. Buscar customer no Stripe pelo email
+   c. Se encontrar assinatura ativa no Stripe:
+      - Atualizar banco com dados do Stripe
+      - Retornar status 'active'
+```
 
+Isso resolve tanto o problema imediato (usuario bloqueado) quanto previne que aconteca novamente no futuro.
