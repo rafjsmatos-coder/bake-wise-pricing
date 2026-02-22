@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
-import { validateAuth, createAdminClient } from "../_shared/auth.ts";
+import { createAdminClient } from "../_shared/auth.ts";
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -23,52 +23,45 @@ serve(async (req) => {
       throw new Error("STRIPE_SECRET_KEY is not set");
     }
 
-    const { user, error: authError } = await validateAuth(req);
-    
-    if (authError || !user) {
-      logStep("Authentication failed", { error: authError });
-      return new Response(
-        JSON.stringify({ error: authError || "Authentication failed" }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 401,
-        }
-      );
-    }
-
     const { session_id } = await req.json();
     
     if (!session_id) {
       throw new Error("session_id is required");
     }
 
-    logStep("Verifying checkout session", { sessionId: session_id, userId: user.id });
+    logStep("Verifying checkout session", { sessionId: session_id });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const supabaseAdmin = createAdminClient();
 
-    // Buscar sessão de checkout
+    // Buscar sessão de checkout com metadados
     const session = await stripe.checkout.sessions.retrieve(session_id, {
       expand: ['subscription'],
     });
+
+    // Obter user_id dos metadados da sessão (definido no create-checkout)
+    const userId = session.metadata?.user_id;
+    if (!userId) {
+      throw new Error("user_id not found in session metadata");
+    }
 
     logStep("Session retrieved", { 
       status: session.status, 
       paymentStatus: session.payment_status,
       customerId: session.customer,
+      userId,
     });
 
     if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
-      // Pagamento ainda pendente (ex: boleto)
       if (session.payment_status === 'unpaid') {
-        // Atualizar status para pending
+        // Pagamento pendente (boleto)
         await supabaseAdmin
           .from("subscriptions")
           .update({
             status: 'pending',
             stripe_customer_id: session.customer as string,
           })
-          .eq("user_id", user.id);
+          .eq("user_id", userId);
 
         return new Response(
           JSON.stringify({
@@ -103,8 +96,9 @@ serve(async (req) => {
         stripe_customer_id: session.customer as string,
         stripe_subscription_id: subscription.id,
         subscription_ends_at: currentPeriodEnd.toISOString(),
+        manual_override: false,
       })
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     if (updateError) {
       logStep("Error updating subscription", { error: updateError.message });

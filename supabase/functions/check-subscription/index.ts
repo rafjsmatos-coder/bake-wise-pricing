@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { validateAuth, createAdminClient } from "../_shared/auth.ts";
 
@@ -31,6 +32,7 @@ serve(async (req) => {
     }
 
     const userId = user.id;
+    const userEmail = user.email;
     logStep("User authenticated", { userId });
 
     const supabaseAdmin = createAdminClient();
@@ -54,7 +56,7 @@ serve(async (req) => {
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + 7);
       
-      const { data: newSub, error: createError } = await supabaseAdmin
+      const { error: createError } = await supabaseAdmin
         .from("subscriptions")
         .insert({
           user_id: userId,
@@ -69,15 +71,13 @@ serve(async (req) => {
         throw new Error(`Failed to create trial: ${createError.message}`);
       }
 
-      const daysRemaining = 7;
-      
       return new Response(
         JSON.stringify({
           status: 'trial',
           canAccess: true,
           trialEndsAt: trialEndsAt.toISOString(),
           subscriptionEndsAt: null,
-          daysRemaining,
+          daysRemaining: 7,
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -99,11 +99,8 @@ serve(async (req) => {
         canAccess = true;
         daysRemaining = Math.ceil((trialEnds.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       } else {
-        // Trial expirou
         currentStatus = 'expired';
         canAccess = false;
-        
-        // Atualizar no banco
         await supabaseAdmin
           .from("subscriptions")
           .update({ status: 'expired', manual_override: false })
@@ -116,19 +113,72 @@ serve(async (req) => {
         canAccess = true;
         daysRemaining = Math.ceil((subEnds.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       } else {
-        // Assinatura expirou
         currentStatus = 'expired';
         canAccess = false;
-        
-        // Atualizar no banco
         await supabaseAdmin
           .from("subscriptions")
           .update({ status: 'expired', manual_override: false })
           .eq("user_id", userId);
       }
     } else if (subscription.status === 'pending') {
-      // Pagamento pendente (boleto)
       canAccess = false;
+    }
+
+    // FALLBACK: Se expired, consultar Stripe para detectar assinaturas ativas não sincronizadas
+    if (currentStatus === 'expired' && !subscription.manual_override && userEmail) {
+      logStep("Status expired, checking Stripe fallback", { email: userEmail });
+      
+      try {
+        const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+        if (stripeKey) {
+          const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+          const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+          
+          if (customers.data.length > 0) {
+            const customerId = customers.data[0].id;
+            const subscriptions = await stripe.subscriptions.list({
+              customer: customerId,
+              status: 'active',
+              limit: 1,
+            });
+            
+            if (subscriptions.data.length > 0) {
+              const stripeSub = subscriptions.data[0];
+              const subEnd = new Date(stripeSub.current_period_end * 1000);
+              
+              logStep("Found active Stripe subscription, syncing", {
+                stripeSubId: stripeSub.id,
+                endDate: subEnd.toISOString(),
+              });
+              
+              // Atualizar banco com dados do Stripe
+              await supabaseAdmin
+                .from("subscriptions")
+                .update({
+                  status: 'active',
+                  stripe_customer_id: customerId,
+                  stripe_subscription_id: stripeSub.id,
+                  subscription_ends_at: subEnd.toISOString(),
+                  manual_override: false,
+                })
+                .eq("user_id", userId);
+              
+              currentStatus = 'active';
+              canAccess = true;
+              daysRemaining = Math.ceil((subEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            } else {
+              logStep("No active Stripe subscription found");
+            }
+          } else {
+            logStep("No Stripe customer found for email");
+          }
+        }
+      } catch (stripeErr) {
+        // Não falhar a função inteira se o fallback Stripe falhar
+        logStep("Stripe fallback error (non-fatal)", { 
+          error: stripeErr instanceof Error ? stripeErr.message : String(stripeErr) 
+        });
+      }
     }
 
     logStep("Subscription status", { 

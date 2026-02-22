@@ -1,10 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Loader2, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, Clock, AlertCircle, RefreshCw } from 'lucide-react';
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2000;
+
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 export function SubscriptionSuccess() {
   const [searchParams] = useSearchParams();
@@ -12,57 +19,80 @@ export function SubscriptionSuccess() {
   const { checkSubscription } = useSubscription();
   const [status, setStatus] = useState<'loading' | 'success' | 'pending' | 'error'>('loading');
   const [message, setMessage] = useState('');
+  const [retrying, setRetrying] = useState(false);
 
-  useEffect(() => {
-    const verifyPayment = async () => {
-      const sessionId = searchParams.get('session_id');
-      
-      if (!sessionId) {
-        setStatus('error');
-        setMessage('ID da sessão não encontrado');
-        return;
-      }
+  const verifyPayment = useCallback(async () => {
+    const sessionId = searchParams.get('session_id');
+    
+    if (!sessionId) {
+      setStatus('error');
+      setMessage('ID da sessão não encontrado');
+      return;
+    }
 
+    setStatus('loading');
+    setMessage('');
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const token = sessionData.session?.access_token;
-        
-        if (!token) {
-          setStatus('error');
-          setMessage('Sessão expirada. Faça login novamente.');
-          return;
+        console.log(`[SubscriptionSuccess] Attempt ${attempt}/${MAX_RETRIES}`);
+
+        // Chamar verify-checkout SEM autenticação (usa metadata do Stripe)
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-checkout`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({ session_id: sessionId }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `HTTP ${response.status}`);
         }
-
-        const { data, error } = await supabase.functions.invoke('verify-checkout', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: { session_id: sessionId },
-        });
-
-        if (error) throw error;
 
         if (data.status === 'pending') {
           setStatus('pending');
           setMessage('Seu boleto foi gerado! Aguardando confirmação do pagamento.');
+          // Tentar atualizar estado de subscription se sessão existir
+          try { await checkSubscription(); } catch {}
+          return;
         } else if (data.success) {
           setStatus('success');
           setMessage('Sua assinatura foi ativada com sucesso!');
           // Refresh subscription state
-          await checkSubscription();
+          try { await checkSubscription(); } catch {}
+          return;
         } else {
-          setStatus('error');
-          setMessage('Não foi possível confirmar o pagamento.');
+          throw new Error('Resposta inesperada do servidor');
         }
       } catch (error) {
-        console.error('Verification error:', error);
-        setStatus('error');
-        setMessage('Erro ao verificar pagamento. Tente novamente em alguns minutos.');
+        console.error(`[SubscriptionSuccess] Attempt ${attempt} failed:`, error);
+        
+        if (attempt < MAX_RETRIES) {
+          await delay(RETRY_DELAY_MS);
+        } else {
+          setStatus('error');
+          setMessage('Erro ao verificar pagamento. Use o botão abaixo para tentar novamente.');
+        }
       }
-    };
-
-    verifyPayment();
+    }
   }, [searchParams, checkSubscription]);
+
+  useEffect(() => {
+    verifyPayment();
+  }, [verifyPayment]);
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    await verifyPayment();
+    setRetrying(false);
+  };
 
   const getIcon = () => {
     switch (status) {
@@ -116,6 +146,17 @@ export function SubscriptionSuccess() {
                 Isso pode levar até 1 dia útil.
               </p>
             </div>
+          )}
+
+          {status === 'error' && (
+            <Button onClick={handleRetry} variant="outline" disabled={retrying} className="w-full">
+              {retrying ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              Tentar Novamente
+            </Button>
           )}
 
           <Button onClick={() => navigate('/dashboard')} className="w-full">
