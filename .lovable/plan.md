@@ -1,72 +1,189 @@
 
-## Correcao: Verificacao de Pagamento Falha Apos Retorno do Stripe
 
-### Problema raiz
+## Otimizacao da Landing Page: SEO, Conversao e Posicionamento
 
-Existem 3 falhas encadeadas:
+Analise completa da pagina atual com todas as melhorias propostas.
 
-1. **Sessao perdida apos redirect do Stripe**: Quando o usuario volta do checkout do Stripe para `/subscription-success`, a pagina faz um fresh load. O `supabase.auth.getSession()` retorna `null` porque o localStorage ainda nao reidratou a sessao. O codigo falha imediatamente com "Sessao expirada" sem sequer chamar o `verify-checkout`.
+---
 
-2. **verify-checkout exige autenticacao desnecessariamente**: A funcao usa `validateAuth(req)` para obter o user_id, mas essa informacao ja esta nos metadados da sessao Stripe (`session.metadata.user_id`). Nao ha necessidade de autenticacao aqui.
+### 1. SEO - Termos estrategicos para busca no Google
 
-3. **check-subscription nao consulta o Stripe como fallback**: Quando o banco diz "expired" mas o Stripe tem uma assinatura ativa, o sistema nao detecta isso.
+**Problema atual:** Os textos sao institucionais ("Gestao completa para sua confeitaria"). O Google nao encontra a pagina quando alguem pesquisa "como calcular preco de bolo" ou "sistema para confeiteiras".
 
-### Evidencias
+**Mudancas:**
 
-- `verify-checkout`: **zero logs** no servidor (nunca foi chamado)
-- Stripe: assinatura `sub_1T3eWj1UfMJqJ1ycnKSpApxw` com status **active** para `cus_U1hwWPoH9oPEET`
-- Banco: subscription com status `expired`, sem `stripe_customer_id` nem `stripe_subscription_id`
+| Onde | Atual | Novo |
+|------|-------|------|
+| `<title>` (index.html) | "PreciBake - Sistema de Gestao e Precificacao para Confeitaria" | "PreciBake - Calculadora de Preco para Confeitaria \| Sistema para Confeiteiras" |
+| `<meta description>` | Texto generico | "Calcule o preco certo dos seus bolos, doces e sobremesas. Sistema completo para confeiteiras que vendem sob encomenda. Teste gratis por 7 dias." |
+| `<meta keywords>` | Poucos termos | Adicionar: "como calcular preco de bolo, calculadora confeitaria, precificacao para doces, sistema para confeiteiras, planilha confeitaria, quanto cobrar por bolo, preco de brigadeiro" |
+| H1 (HeroSection) | "Gestao completa para sua confeitaria" | "Calcule o preco certo dos seus bolos e doces - pare de vender barato" |
+| H2 (PainPoints) | Sem H2 visivel | Adicionar: "Voce ainda precifica no olho?" |
+| H2 (Features) | "Tudo que voce precisa para gerenciar" | "Sistema completo de precificacao e gestao para confeiteiras" |
 
-### Solucao
+**Adicionar FAQ com perguntas que as pessoas pesquisam no Google:**
+- "Como calcular o preco de um bolo caseiro?"
+- "Quanto cobrar por 100 brigadeiros?"
+- "Como incluir mao de obra no preco do bolo?"
 
-| Arquivo | O que muda |
-|---------|-----------|
-| `supabase/functions/verify-checkout/index.ts` | Remover necessidade de autenticacao. Obter user_id dos metadados da sessao Stripe em vez do token JWT. |
-| `supabase/config.toml` | Adicionar `verify_jwt = false` para `verify-checkout`. |
-| `src/components/subscription/SubscriptionSuccess.tsx` | Adicionar retentativas com delay (3 tentativas, 2s de intervalo). Tentar `refreshSession()` antes de desistir. Mostrar botao "Tentar Novamente" em caso de erro. |
-| `supabase/functions/check-subscription/index.ts` | Quando o banco diz `expired`, fazer uma consulta ao Stripe como fallback para detectar assinaturas ativas nao sincronizadas. Se encontrar, atualizar o banco automaticamente. |
+Essas perguntas tem volume de busca real e o Google mostra FAQs nos resultados.
 
-### Correcao imediata dos dados
+**Schema.org (JSON-LD):** Adicionar `FAQPage` schema para que as perguntas aparecam diretamente nos resultados do Google.
 
-O usuario `rafjsmatos@gmail.com` sera desbloqueado atualizando a tabela `subscriptions` com os dados do Stripe:
-- `status`: active
-- `stripe_customer_id`: cus_U1hwWPoH9oPEET
-- `stripe_subscription_id`: sub_1T3eWj1UfMJqJ1ycnKSpApxw
-- `subscription_ends_at`: data do `current_period_end` da assinatura
+---
 
-### Detalhes tecnicos
+### 2. Posicionamento: Foco em confeiteiras caseiras sob encomenda
 
-**verify-checkout - antes:**
+**Concordo com sua analise.** O publico "Cake Designer" e "Confeiteira" sao perfis diferentes. Quem mais precisa do sistema e a **confeiteira caseira que vende sob encomenda e nao sabe quanto cobrar**.
+
+**Mudancas no TargetAudienceSection:**
+
+Trocar os badges genericos por um texto direto:
+
+> "Para confeiteiras e doceiras que vendem sob encomenda e querem parar de vender barato"
+
+Abaixo, badges mais especificos:
+- "Bolos sob encomenda"
+- "Doces para festas"
+- "Sobremesas artesanais"
+- "Confeitaria caseira"
+
+**Mudanca no subtitulo do Hero:**
+
+> "Para confeiteiras que vendem sob encomenda e precisam saber exatamente quanto cobrar"
+
+---
+
+### 3. Bloco comparativo: Planilha vs PreciBake
+
+Nova secao `ComparisonSection` posicionada logo apos o BenefitsSection.
+
+Layout em duas colunas:
+
+| Planilha / Calculando na mao | PreciBake |
+|------|-----------|
+| Esquece de incluir gas e energia | Calcula tudo automaticamente |
+| Demora para montar orcamento | Orcamento pronto em 1 clique |
+| Nao controla pedidos | Calendario com status de cada pedido |
+| Sem controle financeiro | Fluxo de caixa e relatorios |
+| Perde tempo atualizando precos | Precos atualizados em tempo real |
+| Nao sabe o lucro real | Lucro estimado por produto |
+
+Coluna da esquerda com X vermelho, coluna da direita com check verde. Visual impactante.
+
+---
+
+### 4. Gatilho de urgencia no plano (Preco Promocional de Lancamento)
+
+**Mudancas no PricingSection:**
+
+- Badge superior: "PRECO DE LANCAMENTO" (em vez de "7 DIAS GRATIS")
+- Adicionar preco riscado ficticio: ~~R$ 79,90~~ **R$ 49,90/mes**
+- Texto abaixo: "Preco promocional por tempo limitado. Quem assinar agora garante esse valor para sempre."
+- Manter o "7 dias gratis para testar" como bullet point
+- Adicionar contador visual: "Vagas limitadas no preco de lancamento"
+
+---
+
+### 5. Prova social: Preparar para depoimentos reais
+
+**Agora (lancamento):** Manter os depoimentos atuais, mas adicionar uma label sutil indicando que sao exemplos de resultados esperados. Isso e mais honesto e nao prejudica a conversao.
+
+**Estrutura preparada para o futuro:** Cada depoimento tera campos para:
+- Foto do cliente (avatar)
+- Nome e cidade
+- Link do Instagram
+- Resultado com numero real
+
+**Sistema de avaliacao interno (futuro):** Voce mencionou captar avaliacoes dos proprios usuarios. Isso e 100% valido e nao e abusivo desde que seja voluntario. A ideia seria: apos 30 dias de uso ativo, mostrar um modal pedindo avaliacao com estrelas + depoimento + permissao para usar na pagina. Isso pode ser implementado depois.
+
+---
+
+### 6. Secao de prints do sistema (Screenshots)
+
+Nova secao `ScreenshotsSection` posicionada entre FeaturesSection e PricingSection.
+
+**Onde tirar os prints (sugestao de telas):**
+
+1. **Dashboard principal** - Mostra a visao geral com os cards de resumo
+2. **Tela de produto com breakdown de custos** - A tela mais importante: custo total, preco sugerido, lucro
+3. **Calendario de pedidos** - Mostra organizacao visual
+4. **Orcamento via WhatsApp** - Print do celular mostrando o orcamento formatado
+5. **Controle financeiro** - Graficos e fluxo de caixa
+
+**Layout:** Carrossel horizontal com 3-5 imagens, com legenda curta embaixo de cada uma. No mobile, desliza horizontalmente.
+
+**Dica para os prints:** Use o modo escuro (que acabamos de implementar) para prints com fundo escuro - fica mais profissional e moderno em landing pages.
+
+---
+
+### 7. Secao de video demonstrativo
+
+Nova secao `VideoSection` posicionada logo apos o HeroSection (ou apos PainPoints).
+
+**Estrutura:** Thumbnail clicavel com botao play. Ao clicar, abre o video em um modal ou embed do YouTube/Vimeo.
+
+**Roteiro sugerido para o video de 60 segundos:**
+
+| Tempo | Conteudo |
+|-------|----------|
+| 0-5s | "Voce sabe quanto realmente lucra com cada bolo?" (texto na tela + voz) |
+| 5-15s | Mostrar o problema: planilha confusa, calculo de cabeca |
+| 15-25s | Mostrar o cadastro de ingredientes e receita no PreciBake |
+| 25-35s | Mostrar o produto com breakdown: custo, preco, lucro |
+| 35-45s | Mostrar orcamento sendo enviado pelo WhatsApp |
+| 45-55s | Mostrar dashboard com pedidos e financeiro |
+| 55-60s | CTA: "Teste gratis por 7 dias. PreciBake.com.br" |
+
+**Dica:** Grave a tela do celular usando o sistema real. Pode usar gravacao de tela do iPhone/Android. Nao precisa aparecer o rosto - foco 100% no sistema.
+
+---
+
+### 8. Corrigir inconsistencia no FAQ
+
+**Problema:** O FAQ diz "14 dias para testar" mas o sistema oferece 7 dias. Precisa corrigir para 7 dias.
+
+---
+
+### 9. Ordem final das secoes (otimizada para conversao)
+
 ```text
-Request → validateAuth(req) → FALHA (sem token) → erro 401
+1. StickyHeader (CTA fixo)
+2. HeroSection (headline SEO + CTA)
+3. TargetAudienceSection (posicionamento focado)
+4. PainPointsSection (dor)
+5. BenefitsSection (promessa de resultado)
+6. VideoSection (NOVA - video demonstrativo)
+7. ExampleSection (numeros reais)
+8. ComparisonSection (NOVA - Planilha vs PreciBake)
+9. ScreenshotsSection (NOVA - prints do sistema)
+10. FeaturesSection (funcionalidades)
+11. PricingSection (preco de lancamento + urgencia)
+12. TestimonialsSection (prova social)
+13. FAQSection (SEO + objecoes)
+14. CTASection (CTA final)
+15. Footer
 ```
 
-**verify-checkout - depois:**
-```text
-Request → extrair session_id do body → buscar sessao no Stripe → obter user_id dos metadados → atualizar banco → sucesso
-```
+---
 
-A funcao `verify-checkout` nao precisa de autenticacao porque:
-- O `session_id` do Stripe so e gerado apos um checkout valido
-- O `user_id` esta nos metadados da sessao (definido no `create-checkout`)
-- A funcao so faz UPDATE na subscription do usuario correspondente
+### Resumo tecnico das mudancas
 
-**SubscriptionSuccess - logica de retry:**
-```text
-Tentativa 1 → falha? → espera 2s
-Tentativa 2 → falha? → espera 2s
-Tentativa 3 → falha? → mostra erro + botao "Tentar Novamente"
-```
+| Arquivo | Tipo | O que muda |
+|---------|------|-----------|
+| `index.html` | Editar | Title, meta description, meta keywords, adicionar FAQPage schema |
+| `HeroSection.tsx` | Editar | H1 com termos SEO, subtitulo focado |
+| `TargetAudienceSection.tsx` | Editar | Posicionamento focado em confeiteiras caseiras sob encomenda |
+| `PainPointsSection.tsx` | Editar | Adicionar H2 com pergunta de busca |
+| `FeaturesSection.tsx` | Editar | H2 com termos SEO |
+| `PricingSection.tsx` | Editar | Preco de lancamento, preco riscado, urgencia |
+| `TestimonialsSection.tsx` | Editar | Adicionar label "resultados esperados", preparar campos para foto/cidade/instagram |
+| `FAQSection.tsx` | Editar | Corrigir 14->7 dias, adicionar perguntas SEO |
+| `ComparisonSection.tsx` | **Novo** | Planilha vs PreciBake |
+| `ScreenshotsSection.tsx` | **Novo** | Carrossel de prints (placeholder ate voce enviar os prints) |
+| `VideoSection.tsx` | **Novo** | Embed de video (placeholder ate voce enviar o video) |
+| `LandingPage.tsx` | Editar | Nova ordem das secoes |
+| `public/sitemap.xml` | Editar | Manter atualizado |
 
-**check-subscription - fallback Stripe:**
-```text
-1. Buscar subscription no banco
-2. Se status = 'expired':
-   a. Buscar email do usuario
-   b. Buscar customer no Stripe pelo email
-   c. Se encontrar assinatura ativa no Stripe:
-      - Atualizar banco com dados do Stripe
-      - Retornar status 'active'
-```
+**Proximo passo de voce:** Me envie os prints das telas do sistema e o video quando estiverem prontos. Posso implementar tudo o restante agora e deixar placeholders para os prints e video.
 
-Isso resolve tanto o problema imediato (usuario bloqueado) quanto previne que aconteca novamente no futuro.
