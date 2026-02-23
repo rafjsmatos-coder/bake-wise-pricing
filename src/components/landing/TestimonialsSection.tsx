@@ -7,6 +7,7 @@ export function TestimonialsSection() {
     {
       name: 'Maria Santos',
       role: 'Boleira de casamentos',
+      city: 'São Paulo, SP',
       niche: 'Bolos decorados',
       content: 'Aumentei minha margem em 35% depois que parei de precificar no olho. Agora sei exatamente quanto cobrar.',
       result: '+35% de margem',
@@ -15,6 +16,7 @@ export function TestimonialsSection() {
     {
       name: 'Ana Paula',
       role: 'Doceira de encomendas',
+      city: 'Belo Horizonte, MG',
       niche: 'Doces finos',
       content: 'Descobri que estava vendendo brigadeiros quase no prejuízo. Hoje meu lucro é real e consistente.',
       result: '+R$ 800/mês',
@@ -22,7 +24,8 @@ export function TestimonialsSection() {
     },
     {
       name: 'Carla Oliveira',
-      role: 'Cake Designer',
+      role: 'Confeiteira caseira',
+      city: 'Curitiba, PR',
       niche: 'Naked cakes',
       content: 'O cálculo de custos operacionais fez toda diferença. Finalmente entendi onde estava meu lucro.',
       result: '+42% de lucro',
@@ -35,10 +38,10 @@ export function TestimonialsSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Quem usa, recomenda
+            Resultados que confeiteiras estão alcançando
           </h2>
           <p className="text-lg text-muted-foreground">
-            Veja os resultados de quem já transformou seu negócio
+            Exemplos de resultados esperados com precificação correta
           </p>
         </div>
 
@@ -64,6 +67,7 @@ export function TestimonialsSection() {
                 <div className="pt-4 border-t border-border">
                   <p className="font-semibold text-foreground">{testimonial.name}</p>
                   <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                  <p className="text-xs text-muted-foreground">{testimonial.city}</p>
                   <Badge variant="outline" className="mt-2 text-xs">
                     {testimonial.niche}
                   </Badge>
@@ -72,6 +76,10 @@ export function TestimonialsSection() {
             </Card>
           ))}
         </div>
+
+        <p className="text-center text-xs text-muted-foreground mt-8">
+          * Resultados esperados baseados em precificação correta. Resultados individuais podem variar.
+        </p>
       </div>
     </section>
   );

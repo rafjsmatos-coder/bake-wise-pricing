@@ -8,6 +8,18 @@ import {
 export function FAQSection() {
   const faqs = [
     {
+      question: 'Como calcular o preço de um bolo caseiro?',
+      answer: 'Para calcular o preço de um bolo caseiro, some todos os custos: ingredientes, gás/energia, embalagem e mão de obra. Depois aplique sua margem de lucro. O PreciBake faz esse cálculo automaticamente — basta cadastrar seus ingredientes e receitas.'
+    },
+    {
+      question: 'Quanto cobrar por 100 brigadeiros?',
+      answer: 'O preço de 100 brigadeiros depende do custo dos ingredientes (leite condensado, chocolate, manteiga), embalagem, mão de obra e sua margem de lucro. Com o PreciBake, você cadastra a receita uma vez e o sistema calcula o preço ideal automaticamente.'
+    },
+    {
+      question: 'Como incluir mão de obra no preço do bolo?',
+      answer: 'No PreciBake, você define seu custo por hora de trabalho nas configurações. Ao criar uma receita, informe o tempo de preparo e o sistema calcula automaticamente o custo de mão de obra e inclui no preço final.'
+    },
+    {
       question: 'Posso cancelar quando quiser?',
       answer: 'Sim! Não há fidelidade. Você pode cancelar sua assinatura a qualquer momento diretamente pelo sistema, sem burocracia.'
     },
@@ -29,11 +41,11 @@ export function FAQSection() {
     },
     {
       question: 'Como funciona o período de teste?',
-      answer: 'Você tem 14 dias para testar todas as funcionalidades sem pagar nada e sem precisar cadastrar cartão. Se gostar, assina. Se não, não paga nada.'
+      answer: 'Você tem 7 dias para testar todas as funcionalidades sem pagar nada e sem precisar cadastrar cartão. Se gostar, assina. Se não, não paga nada.'
     },
     {
       question: 'Posso usar no celular?',
-      answer: 'Sim! O sistema é totalmente responsivo e funciona perfeitamente em celulares, tablets e computadores.'
+      answer: 'Sim! O sistema é totalmente responsivo e funciona perfeitamente em celulares, tablets e computadores. Você pode até instalar como aplicativo direto do navegador.'
     },
   ];
 
@@ -45,7 +57,7 @@ export function FAQSection() {
             Perguntas Frequentes
           </h2>
           <p className="text-lg text-muted-foreground">
-            Tire suas dúvidas antes de começar
+            Tire suas dúvidas sobre precificação e o sistema
           </p>
         </div>
 

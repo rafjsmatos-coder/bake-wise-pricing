@@ -5,7 +5,8 @@ import {
   CheckCircle2,
   Sparkles,
   CreditCard,
-  Barcode
+  Barcode,
+  Flame
 } from 'lucide-react';
 
 interface PricingSectionProps {
@@ -14,13 +15,15 @@ interface PricingSectionProps {
 
 export function PricingSection({ onGetStarted }: PricingSectionProps) {
   const features = [
+    '7 dias grátis para testar tudo',
     'Ingredientes, receitas e produtos ilimitados',
     'Cálculo automático de custos',
     'Margem de segurança personalizada',
     'Custos operacionais (gás, energia, mão de obra)',
     'Gestão de embalagens e decorações',
-    'Categorização completa',
-    'Histórico de preços',
+    'Gestão de pedidos e calendário',
+    'Controle financeiro completo',
+    'Orçamento via WhatsApp',
     'Suporte prioritário'
   ];
 
@@ -29,18 +32,18 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Comece grátis, evolua quando quiser
+            Preço de lançamento por tempo limitado
           </h2>
           <p className="text-lg text-muted-foreground">
-            7 dias grátis para testar todas as funcionalidades
+            Quem assinar agora garante esse valor para sempre
           </p>
         </div>
 
         <div className="max-w-md mx-auto">
           <Card className="border-accent/30 relative overflow-hidden shadow-xl">
-            {/* Badge */}
-            <div className="absolute top-0 right-0 bg-accent text-accent-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
-              7 DIAS GRÁTIS
+            <div className="absolute top-0 right-0 bg-accent text-accent-foreground text-xs font-bold px-3 py-1.5 rounded-bl-lg flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5" />
+              PREÇO DE LANÇAMENTO
             </div>
             
             <CardHeader className="text-center pb-2 pt-8">
@@ -49,11 +52,12 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
                 <CardTitle className="text-2xl">PreciBake Premium</CardTitle>
               </div>
               <div className="mt-4">
+                <span className="text-xl text-muted-foreground line-through mr-2">R$ 79,90</span>
                 <span className="text-4xl font-bold">R$ 49,90</span>
                 <span className="text-muted-foreground">/mês</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                Após o período de teste
+              <p className="text-sm text-accent font-medium mt-2">
+                Preço promocional por tempo limitado
               </p>
             </CardHeader>
             <CardContent className="pt-6">

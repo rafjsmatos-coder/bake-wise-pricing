@@ -45,13 +45,13 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           </div>
           
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-            Gestão completa para sua confeitaria —{' '}
-            <span className="text-accent">do preço ao lucro</span>
+            Calcule o preço certo dos seus bolos e doces —{' '}
+            <span className="text-accent">pare de vender barato</span>
           </h1>
           
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Precifique com precisão, gerencie pedidos, controle estoque e finanças. 
-            Tudo em um só lugar, direto do seu celular.
+            Para confeiteiras que vendem sob encomenda e precisam saber exatamente quanto cobrar. 
+            Precificação automática, pedidos, estoque e finanças — tudo no celular.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
