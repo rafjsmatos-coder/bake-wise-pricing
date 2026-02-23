@@ -3,25 +3,24 @@ import {
   Cake,
   Cookie,
   Gift,
-  Heart,
-  Sparkles
+  UtensilsCrossed
 } from 'lucide-react';
 
 export function TargetAudienceSection() {
   const audiences = [
-    { icon: Cake, label: 'Confeiteiras' },
-    { icon: Cookie, label: 'Doceiras' },
-    { icon: Gift, label: 'Boleiras' },
-    { icon: Heart, label: 'Cake Designers' },
-    { icon: Sparkles, label: 'Vendas sob encomenda' },
+    { icon: Cake, label: 'Bolos sob encomenda' },
+    { icon: Cookie, label: 'Doces para festas' },
+    { icon: UtensilsCrossed, label: 'Sobremesas artesanais' },
+    { icon: Gift, label: 'Confeitaria caseira' },
   ];
 
   return (
     <section className="py-12 bg-muted/30 border-y border-border/50">
       <div className="container mx-auto px-4">
         <div className="text-center space-y-6">
-          <p className="text-lg font-medium text-foreground">
-            Para quem é:
+          <p className="text-lg font-medium text-foreground max-w-xl mx-auto">
+            Para confeiteiras e doceiras que vendem sob encomenda e querem{' '}
+            <span className="text-accent font-bold">parar de vender barato</span>
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {audiences.map((item, index) => (

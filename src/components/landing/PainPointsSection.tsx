@@ -15,9 +15,12 @@ export function PainPointsSection() {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 text-destructive mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Você ainda precifica no olho?
+            </h2>
+            <div className="inline-flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5" />
-              <span className="font-medium">A maioria precifica assim:</span>
+              <span className="font-medium">A maioria das confeiteiras precifica assim:</span>
             </div>
           </div>
 

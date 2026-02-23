@@ -83,10 +83,10 @@ export function FeaturesSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Tudo que você precisa para gerenciar sua confeitaria
+            Sistema completo de precificação e gestão para confeiteiras
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Da precificação ao controle financeiro — ferramentas profissionais para seu negócio crescer
+            Da calculadora de preço ao controle financeiro — tudo que sua confeitaria precisa para crescer com lucro
           </p>
         </div>
 
