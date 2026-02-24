@@ -20,6 +20,7 @@ import {
   LogOut,
   Loader2,
   Lock,
+  MessageCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PageType } from './AppLayout';
@@ -90,6 +91,7 @@ export function MoreMenu({
       label: 'Sistema',
       items: [
         { id: 'settings', label: 'Configurações', icon: Settings },
+        { id: 'whatsapp-templates', label: 'Mensagens WhatsApp', icon: MessageCircle },
         { id: 'updates', label: 'Novidades', icon: Newspaper, badge: unseenCount > 0 ? unseenCount : undefined },
         { id: 'support', label: 'Suporte', icon: Headphones, badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined },
       ],

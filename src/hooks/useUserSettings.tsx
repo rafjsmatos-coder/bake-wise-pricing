@@ -17,6 +17,9 @@ export interface UserSettings {
   include_labor_cost: boolean;
   labor_cost_per_hour: number;
   indirect_operational_cost_percent: number;
+  whatsapp_quote_template: string | null;
+  whatsapp_confirmation_template: string | null;
+  whatsapp_reminder_template: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +36,9 @@ export interface UpdateUserSettingsData {
   include_labor_cost?: boolean;
   labor_cost_per_hour?: number;
   indirect_operational_cost_percent?: number;
+  whatsapp_quote_template?: string;
+  whatsapp_confirmation_template?: string;
+  whatsapp_reminder_template?: string;
 }
 
 export function useUserSettings() {

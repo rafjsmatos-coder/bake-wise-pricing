@@ -28,6 +28,7 @@ import {
   BarChart3,
   Receipt,
   Search,
+  MessageCircle,
 } from 'lucide-react';
 import { useSystemUpdates } from '@/hooks/useSystemUpdates';
 import { cn } from '@/lib/utils';
@@ -53,6 +54,7 @@ export type PageType =
   | 'reports'
   | 'receivables'
   | 'settings'
+  | 'whatsapp-templates'
   | 'profile'
   | 'support'
   | 'updates';
@@ -87,6 +89,7 @@ const PAGE_TITLES: Record<PageType, string> = {
   reports: 'Relatórios',
   receivables: 'Contas a Receber',
   settings: 'Configurações',
+  'whatsapp-templates': 'Mensagens WhatsApp',
   profile: 'Meu Perfil',
   support: 'Suporte',
   updates: 'Novidades',
@@ -174,6 +177,7 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
   const bottomItems: SidebarItem[] = [
     { id: 'shopping-list', label: 'Lista de Compras', icon: ShoppingCart },
     { id: 'settings', label: 'Configurações', icon: Settings },
+    { id: 'whatsapp-templates', label: 'Mensagens WhatsApp', icon: MessageCircle },
     { id: 'updates', label: 'Novidades', icon: Newspaper, badge: unseenCount > 0 ? unseenCount : undefined },
     { id: 'support', label: 'Suporte', icon: Headphones, badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined },
   ];

@@ -1,4 +1,5 @@
 import { Order } from '@/hooks/useOrders';
+import { useUserSettings } from '@/hooks/useUserSettings';
 import { OrderStatusBadge, ORDER_STATUSES } from '@/components/orders/OrderStatusBadge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/product-cost-calculator';
@@ -30,6 +31,8 @@ interface OrderDetailsProps {
 }
 
 export function OrderDetails({ open, onOpenChange, order, onEdit, onStatusChange, onDuplicate }: OrderDetailsProps) {
+  const { settings } = useUserSettings();
+
   if (!order) return null;
 
   const discount = order.discount || 0;
@@ -44,52 +47,69 @@ export function OrderDetails({ open, onOpenChange, order, onEdit, onStatusChange
   const clientWhatsapp = order.client?.whatsapp ? cleanPhone(order.client.whatsapp) : '';
   const hasWhatsapp = clientWhatsapp.length >= 10;
 
-  const handleSendQuote = () => {
-    if (!hasWhatsapp) return;
+  const buildVariables = () => {
     const clientName = order.client?.name || 'Cliente';
     const itemsText = order.order_items?.map(
       (item) => `• ${item.quantity}x ${item.product?.name || 'Produto'} - ${formatCurrency(item.total_price)}`
     ).join('\n') || '';
+    const itemsSimple = order.order_items?.map(
+      (item) => `• ${item.quantity}x ${item.product?.name || 'Produto'}`
+    ).join('\n') || '';
     const deliveryText = order.delivery_date
       ? `\nEntrega: ${format(new Date(order.delivery_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
       : '';
+    const deliveryDateOnly = order.delivery_date
+      ? format(new Date(order.delivery_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+      : 'a combinar';
     const notesText = order.notes ? `\nObservações: ${order.notes}` : '';
-    
-    let discountText = '';
+
     let totalText = `\nTotal: ${formatCurrency(order.total_amount)}`;
     if (discount > 0) {
-      discountText = `\nDesconto: -${formatCurrency(discount)}`;
-      totalText = `\nSubtotal: ${formatCurrency(order.total_amount)}${discountText}\n*Total: ${formatCurrency(effectiveTotal)}*`;
+      const discountLine = `\nDesconto: -${formatCurrency(discount)}`;
+      totalText = `\nSubtotal: ${formatCurrency(order.total_amount)}${discountLine}\n*Total: ${formatCurrency(effectiveTotal)}*`;
     }
-    
-    const message = `Olá ${clientName}! Segue o orçamento do seu pedido:\n\n${itemsText}${totalText}${deliveryText}${notesText}\n\nObrigado(a) pela preferência! 🎂`;
+
+    return { clientName, itemsText, itemsSimple, deliveryText, deliveryDateOnly, notesText, totalText };
+  };
+
+  const applyTemplate = (template: string, vars: ReturnType<typeof buildVariables>) => {
+    return template
+      .split('{cliente}').join(vars.clientName)
+      .split('{itens}').join(vars.itemsText)
+      .split('{total}').join(vars.totalText)
+      .split('{entrega}').join(vars.deliveryText)
+      .split('{data_entrega}').join(vars.deliveryDateOnly)
+      .split('{observacoes}').join(vars.notesText);
+  };
+
+  const DEFAULT_QUOTE = 'Olá {cliente}! Segue o orçamento do seu pedido:\n\n{itens}\n{total}{entrega}{observacoes}\n\nObrigado(a) pela preferência! 🎂';
+  const DEFAULT_CONFIRMATION = 'Olá {cliente}! ✅\n\nSeu pedido foi *confirmado*!{entrega}\n\nObrigado(a) pela confiança! 🎂';
+  const DEFAULT_REMINDER = 'Olá {cliente}! 😊\n\nLembrando que a entrega do seu pedido está marcada para *{data_entrega}*.\n\n{itens}\n\nAlguma dúvida, é só me chamar! 🎂';
+
+  const handleSendQuote = () => {
+    if (!hasWhatsapp) return;
+    const vars = buildVariables();
+    const template = settings?.whatsapp_quote_template || DEFAULT_QUOTE;
+    const message = applyTemplate(template, vars);
     const url = `https://wa.me/55${clientWhatsapp}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
 
   const handleSendDeliveryReminder = () => {
     if (!hasWhatsapp) return;
-    const clientName = order.client?.name || 'Cliente';
-    const deliveryText = order.delivery_date
-      ? format(new Date(order.delivery_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-      : 'a combinar';
-    const itemsText = order.order_items?.map(
-      (item) => `• ${item.quantity}x ${item.product?.name || 'Produto'}`
-    ).join('\n') || '';
-    
-    const message = `Olá ${clientName}! 😊\n\nLembrando que a entrega do seu pedido está marcada para *${deliveryText}*.\n\n${itemsText}\n\nAlguma dúvida, é só me chamar! 🎂`;
+    const vars = buildVariables();
+    // For reminder, use simple items list (without prices)
+    const template = settings?.whatsapp_reminder_template || DEFAULT_REMINDER;
+    const message = applyTemplate(template, { ...vars, itemsText: vars.itemsSimple });
     const url = `https://wa.me/55${clientWhatsapp}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
 
   const handleSendConfirmation = () => {
     if (!hasWhatsapp) return;
-    const clientName = order.client?.name || 'Cliente';
-    const deliveryText = order.delivery_date
-      ? `\nEntrega: ${format(new Date(order.delivery_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
-      : '';
-    
-    const message = `Olá ${clientName}! ✅\n\nSeu pedido foi *confirmado*!${deliveryText}\n\nObrigado(a) pela confiança! 🎂`;
+    const vars = buildVariables();
+    const template = settings?.whatsapp_confirmation_template || DEFAULT_CONFIRMATION;
+    const message = applyTemplate(template, vars);
     const url = `https://wa.me/55${clientWhatsapp}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };

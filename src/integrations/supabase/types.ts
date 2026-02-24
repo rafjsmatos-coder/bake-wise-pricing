@@ -1257,6 +1257,9 @@ export type Database = {
           oven_type: string | null
           updated_at: string
           user_id: string
+          whatsapp_confirmation_template: string | null
+          whatsapp_quote_template: string | null
+          whatsapp_reminder_template: string | null
         }
         Insert: {
           created_at?: string
@@ -1274,6 +1277,9 @@ export type Database = {
           oven_type?: string | null
           updated_at?: string
           user_id: string
+          whatsapp_confirmation_template?: string | null
+          whatsapp_quote_template?: string | null
+          whatsapp_reminder_template?: string | null
         }
         Update: {
           created_at?: string
@@ -1291,6 +1297,9 @@ export type Database = {
           oven_type?: string | null
           updated_at?: string
           user_id?: string
+          whatsapp_confirmation_template?: string | null
+          whatsapp_quote_template?: string | null
+          whatsapp_reminder_template?: string | null
         }
         Relationships: []
       }
