@@ -12,6 +12,7 @@ import { PackagingCategoriesList } from '@/components/packaging-categories/Packa
 import { ProductsList } from '@/components/products/ProductsList';
 import { ProductCategoriesList } from '@/components/product-categories/ProductCategoriesList';
 import { UserSettings } from '@/components/settings/UserSettings';
+import { WhatsAppTemplatesSection } from '@/components/settings/WhatsAppTemplatesSection';
 import { ProfileSettings } from '@/components/settings/ProfileSettings';
 import { SupportPage } from '@/components/support/SupportPage';
 import { UpdatesPage } from '@/components/updates/UpdatesPage';
@@ -134,6 +135,7 @@ export function Dashboard() {
       case 'reports': return <FinancialPage initialTab="reports" />;
       case 'receivables': return <FinancialPage initialTab="receivables" />;
       case 'settings': return <UserSettings />;
+      case 'whatsapp-templates': return <WhatsAppTemplatesSection />;
       case 'profile': return <ProfileSettings />;
       case 'support': return <SupportPage />;
       case 'updates': return <UpdatesPage />;
