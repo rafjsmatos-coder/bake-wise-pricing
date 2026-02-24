@@ -45,31 +45,31 @@ export function ScreenshotsSection() {
           </p>
         </div>
 
-        <div className="max-w-5xl mx-auto">
-          <div className="flex gap-8 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex gap-6 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide px-4 justify-start md:justify-center">
             {screenshots.map((item, index) => (
-              <div key={index} className="min-w-[240px] md:min-w-[260px] snap-center flex-shrink-0 flex flex-col items-center">
+              <div key={index} className="min-w-[160px] max-w-[180px] snap-center flex-shrink-0 flex flex-col items-center">
                 {/* Phone mockup */}
-                <div className="rounded-[2rem] border-4 border-gray-800 bg-gray-900 shadow-2xl overflow-hidden w-full">
+                <div className="rounded-[1.2rem] border-[3px] border-gray-700 bg-gray-900 shadow-xl overflow-hidden w-full">
                   {/* Notch */}
-                  <div className="bg-gray-900 flex justify-center pt-2 pb-1">
-                    <div className="w-20 h-5 bg-gray-800 rounded-full" />
+                  <div className="bg-gray-900 flex justify-center pt-1.5 pb-0.5">
+                    <div className="w-12 h-3 bg-gray-800 rounded-full" />
                   </div>
                   {/* Screenshot */}
                   <img
                     src={item.image}
                     alt={item.title}
-                    className="w-full aspect-[9/17] object-cover object-top"
+                    className="w-full aspect-[9/19.5] object-cover object-top"
                     loading="lazy"
                   />
                   {/* Bottom bar */}
-                  <div className="bg-gray-900 flex justify-center py-2">
-                    <div className="w-24 h-1 bg-gray-700 rounded-full" />
+                  <div className="bg-gray-900 flex justify-center py-1.5">
+                    <div className="w-14 h-1 bg-gray-700 rounded-full" />
                   </div>
                 </div>
                 {/* Caption */}
-                <h3 className="font-semibold text-foreground mt-4 mb-1 text-center">{item.title}</h3>
-                <p className="text-sm text-muted-foreground text-center">{item.description}</p>
+                <h3 className="font-semibold text-foreground mt-3 mb-0.5 text-center text-sm">{item.title}</h3>
+                <p className="text-xs text-muted-foreground text-center leading-snug">{item.description}</p>
               </div>
             ))}
           </div>
