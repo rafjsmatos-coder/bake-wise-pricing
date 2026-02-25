@@ -9,32 +9,37 @@ export function ScreenshotsSection() {
     {
       image: dashboardImg,
       title: 'Dashboard principal',
+      alt: 'Dashboard do PreciBake - sistema de gestão para confeitaria com resumo de pedidos e faturamento',
       description: 'Visão geral do seu negócio com resumo de pedidos, faturamento e alertas.'
     },
     {
       image: productCostImg,
       title: 'Custo e preço do produto',
+      alt: 'Cálculo de custo de produto - precificação automática para bolos e doces',
       description: 'Veja o custo total, preço sugerido e lucro estimado de cada produto.'
     },
     {
       image: orderCalendarImg,
       title: 'Calendário de pedidos',
+      alt: 'Calendário de pedidos - controle de encomendas de confeitaria com status',
       description: 'Organize suas encomendas com status e datas de entrega.'
     },
     {
       image: whatsappQuoteImg,
       title: 'Orçamento via WhatsApp',
+      alt: 'Orçamento via WhatsApp - envio de preço para clientes da confeitaria',
       description: 'Envie orçamentos profissionais para seus clientes em 1 clique.'
     },
     {
       image: financialImg,
       title: 'Controle financeiro',
+      alt: 'Controle financeiro - fluxo de caixa e relatórios para confeiteiras',
       description: 'Fluxo de caixa, relatórios e contas a receber organizados.'
     },
   ];
 
   return (
-    <section className="py-16 md:py-24 bg-muted/30">
+    <section id="screenshots" aria-label="Capturas de tela do sistema PreciBake" className="py-16 md:py-24 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -58,7 +63,7 @@ export function ScreenshotsSection() {
                   {/* Screenshot */}
                   <img
                     src={item.image}
-                    alt={item.title}
+                    alt={item.alt}
                     className="w-full aspect-[9/19.5] object-cover object-top"
                     loading="lazy"
                   />

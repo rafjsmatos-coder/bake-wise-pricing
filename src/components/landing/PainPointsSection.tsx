@@ -11,7 +11,7 @@ export function PainPointsSection() {
   ];
 
   return (
-    <section className="py-16 md:py-24">
+    <section id="problemas" aria-label="Problemas comuns na precificação de doces" className="py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
