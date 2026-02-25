@@ -29,7 +29,7 @@ export function ExampleSection() {
   ];
 
   return (
-    <section className="py-16 md:py-24">
+    <section id="exemplos" aria-label="Exemplos de precificação de bolos e doces" className="py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <Badge variant="secondary" className="mb-4">Exemplo Real</Badge>

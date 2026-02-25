@@ -15,7 +15,7 @@ export function TargetAudienceSection() {
   ];
 
   return (
-    <section className="py-12 bg-muted/30 border-y border-border/50">
+    <section id="publico-alvo" aria-label="Público-alvo do app para confeiteira" className="py-12 bg-muted/30 border-y border-border/50">
       <div className="container mx-auto px-4">
         <div className="text-center space-y-6">
           <p className="text-lg font-medium text-foreground max-w-xl mx-auto">

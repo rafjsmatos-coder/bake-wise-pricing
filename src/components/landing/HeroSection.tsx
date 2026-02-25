@@ -50,8 +50,8 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           </h1>
           
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Para confeiteiras que vendem sob encomenda e precisam saber exatamente quanto cobrar. 
-            Precificação automática, pedidos, estoque e finanças — tudo no celular.
+            O app para confeiteira que vende sob encomenda e precisa saber exatamente quanto cobrar. 
+            Precificação automática, sistema de pedidos, estoque e finanças — tudo no celular.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">

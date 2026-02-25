@@ -8,7 +8,7 @@ interface CTASectionProps {
 
 export const CTASection = forwardRef<HTMLElement, CTASectionProps>(({ onGetStarted }, ref) => {
   return (
-    <section ref={ref} className="py-16 md:py-24 bg-primary text-primary-foreground relative overflow-hidden">
+    <section ref={ref} id="cta" aria-label="Comece a usar o PreciBake" className="py-16 md:py-24 bg-primary text-primary-foreground relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/90" />
       <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2" />

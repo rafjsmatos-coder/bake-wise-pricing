@@ -3,7 +3,7 @@ import { TrendingUp, CheckCircle2, Zap } from 'lucide-react';
 
 export function BenefitsSection() {
   return (
-    <section className="py-16 md:py-20 bg-accent/5">
+    <section id="beneficios" aria-label="Benefícios da precificação correta" className="py-16 md:py-20 bg-accent/5">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <Card className="border-accent/30 bg-background shadow-lg">
@@ -19,7 +19,7 @@ export function BenefitsSection() {
                 </h2>
                 
                 <p className="text-lg text-muted-foreground">
-                  Sem precisar vender mais. Apenas cobrando o preço certo.
+                  Sem precisar vender mais. Saiba como precificar doces para vender e como calcular lucro na confeitaria.
                 </p>
 
                 <div className="flex flex-wrap justify-center gap-6 pt-4">
