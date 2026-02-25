@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+import vitePrerender from "vite-plugin-prerender";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -37,6 +38,13 @@ export default defineConfig(({ mode }) => ({
           { src: "/precibake-icon.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
         ],
       },
+    }),
+    mode === "production" && vitePrerender({
+      staticDir: path.join(__dirname, "dist"),
+      routes: ["/"],
+      renderer: new vitePrerender.PuppeteerRenderer({
+        renderAfterTime: 5000,
+      }),
     }),
   ].filter(Boolean),
   resolve: {
