@@ -66,10 +66,11 @@ export function AuthForm({ onBack }: AuthFormProps) {
     const { error } = await signUp(email, password, fullName);
 
     if (error) {
-      toast.error('Erro ao criar conta', { description: error.message });
+      toast.error('Erro ao processar solicitação', { description: error.message });
     } else {
-      toast.success('Conta criada com sucesso! 🎉', {
-        description: 'Enviamos um e-mail de confirmação. Verifique sua caixa de entrada para ativar sua conta.',
+      toast.success('Solicitação recebida! 📧', {
+        description: 'Se esse e-mail estiver apto, você receberá as instruções de confirmação. Verifique sua caixa de entrada e a pasta de spam. Se já tiver conta, faça login ou recupere sua senha.',
+        duration: 8000,
       });
     }
 
