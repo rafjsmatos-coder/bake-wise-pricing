@@ -15,7 +15,7 @@ import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
 import { formatCurrency } from '@/lib/product-cost-calculator';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import precibakeIcon from '@/assets/precibake-icon.jpeg';
+import precibakeIcon from '@/assets/Iconapp-1024.png';
 import { 
   ShoppingBag, 
   BookOpen, 

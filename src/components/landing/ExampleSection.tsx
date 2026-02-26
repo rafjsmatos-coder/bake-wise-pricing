@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, TrendingUp } from 'lucide-react';
-import precibakeIcon from '@/assets/precibake-icon.jpeg';
+import precibakeIcon from '@/assets/Iconapp-1024.png';
 
 export function ExampleSection() {
   const examples = [

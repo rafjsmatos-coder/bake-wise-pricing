@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
-import precibakeLogo from '@/assets/precibake-logo.jpeg';
+import precibakeLogo from '@/assets/Logomodoclaro.png';
 import { cn } from '@/lib/utils';
 
 interface StickyHeaderProps {
