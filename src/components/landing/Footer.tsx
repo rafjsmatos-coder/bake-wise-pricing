@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Instagram } from 'lucide-react';
-import precibakeLogo from '@/assets/precibake-logo.jpeg';
+import precibakeLogo from '@/assets/Logomodoclaro.png';
 
 export const Footer = forwardRef<HTMLElement>((_, ref) => {
   return (

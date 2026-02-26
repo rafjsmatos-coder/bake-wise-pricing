@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from './ThemeToggle';
-import precibakeLogo from '@/assets/precibake-logo.jpeg';
+import precibakeLogo from '@/assets/Logomodoclaro.png';
 import { 
   Package, 
   LogOut, 

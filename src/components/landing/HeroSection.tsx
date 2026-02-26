@@ -5,7 +5,7 @@ import {
   Sparkles,
   CheckCircle2
 } from 'lucide-react';
-import precibakeLogo from '@/assets/precibake-logo.jpeg';
+import precibakeLogo from '@/assets/Logomodoclaro.png';
 
 interface HeroSectionProps {
   onGetStarted: () => void;

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
-import precibakeIcon from '@/assets/precibake-icon.jpeg';
+import precibakeIcon from '@/assets/Iconapp-1024.png';
 import { toast } from 'sonner';
 
 interface ResetPasswordFormProps {
