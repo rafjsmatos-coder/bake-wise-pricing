@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
-import precibakeLogo from '@/assets/Logomodoclaro.png';
+import { ThemeLogo } from '@/components/layout/ThemeLogo';
 import { cn } from '@/lib/utils';
 
 interface StickyHeaderProps {
@@ -37,7 +37,7 @@ export function StickyHeader({ onGetStarted }: StickyHeaderProps) {
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={precibakeLogo} alt="PreciBake" className="h-8 object-contain" />
+            <ThemeLogo className="h-8 object-contain" />
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={handleClick} size="sm" className="gap-2 shadow-md" type="button">

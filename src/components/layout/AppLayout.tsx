@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from './ThemeToggle';
-import precibakeLogo from '@/assets/Logomodoclaro.png';
+import { ThemeLogo } from './ThemeLogo';
 import { 
   Package, 
   LogOut, 
@@ -229,7 +229,7 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
       {/* Mobile Header - Contextual */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-card border-b border-border z-50 px-4 flex items-center justify-between">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <img src={precibakeLogo} alt="PreciBake" className="h-7 w-7 rounded object-contain shrink-0" />
+          <ThemeLogo className="h-7 w-7 rounded object-contain shrink-0" />
           <h1 className="text-base font-semibold text-foreground truncate">
             {PAGE_TITLES[currentPage] || 'PreciBake'}
           </h1>
@@ -259,7 +259,7 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
       <aside className="hidden lg:flex fixed top-0 left-0 h-full w-60 bg-card border-r border-border z-40 flex-col">
         {/* Logo */}
         <div className="h-14 px-5 flex items-center border-b border-border">
-          <img src={precibakeLogo} alt="PreciBake" className="h-8 object-contain" />
+          <ThemeLogo className="h-8 object-contain" />
         </div>
 
         {/* Navigation Groups */}

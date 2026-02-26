@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, ArrowLeft, Eye, EyeOff, CheckCircle2, Info } from 'lucide-react';
-import precibakeLogoFull from '@/assets/Logomodoclaro.png';
+import { ThemeLogo } from '@/components/layout/ThemeLogo';
 import { toast } from 'sonner';
 import { ForgotPasswordForm } from './ForgotPasswordForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -100,7 +100,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
             </Button>
           )}
           <div className="mx-auto">
-            <img src={precibakeLogoFull} alt="PreciBake - O ponto certo do preço" className="h-20 object-contain mx-auto" />
+            <ThemeLogo alt="PreciBake - O ponto certo do preço" className="h-20 object-contain mx-auto" />
           </div>
         </CardHeader>
         <CardContent>

@@ -5,7 +5,7 @@ import {
   Sparkles,
   CheckCircle2
 } from 'lucide-react';
-import precibakeLogo from '@/assets/Logomodoclaro.png';
+import { ThemeLogo } from '@/components/layout/ThemeLogo';
 
 interface HeroSectionProps {
   onGetStarted: () => void;
@@ -24,7 +24,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
       <div className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={precibakeLogo} alt="PreciBake" className="h-10 object-contain" />
+            <ThemeLogo className="h-10 object-contain" />
           </div>
         </nav>
       </div>
