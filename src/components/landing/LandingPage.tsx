@@ -1,6 +1,7 @@
 import { HeroSection } from './HeroSection';
 import { TargetAudienceSection } from './TargetAudienceSection';
 import { PainPointsSection } from './PainPointsSection';
+import { BeforeAfterSection } from './BeforeAfterSection';
 import { BenefitsSection } from './BenefitsSection';
 import { VideoSection } from './VideoSection';
 import { ExampleSection } from './ExampleSection';
@@ -25,6 +26,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       <HeroSection onGetStarted={onGetStarted} />
       <TargetAudienceSection />
       <PainPointsSection />
+      <BeforeAfterSection />
       <BenefitsSection />
       <VideoSection />
       <ExampleSection />
