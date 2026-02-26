@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
-import precibakeIcon from '@/assets/Iconapp-1024.png';
+import { ThemeLogo } from '@/components/layout/ThemeLogo';
 import { toast } from 'sonner';
 
 interface ResetPasswordFormProps {
@@ -27,6 +27,7 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
       toast.error('Senhas não conferem', {
         description: 'A nova senha e a confirmação precisam ser iguais.',
       });
+      return;
     }
 
     if (newPassword.length < 8) {
@@ -73,8 +74,8 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md animate-fade-in">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full overflow-hidden">
-            <img src={precibakeIcon} alt="PreciBake" className="w-full h-full object-cover" />
+          <div className="mx-auto">
+            <ThemeLogo alt="PreciBake" className="h-16 w-auto" />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold">Criar Nova Senha</CardTitle>

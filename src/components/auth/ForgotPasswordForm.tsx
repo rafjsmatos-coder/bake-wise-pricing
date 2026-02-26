@@ -17,15 +17,13 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Use custom edge function to send PT-BR recovery email via Resend
-      const { data, error } = await supabase.functions.invoke('send-auth-email', {
+      const response = await supabase.functions.invoke('send-auth-email', {
         body: {
           action: 'recovery',
           email,
@@ -33,10 +31,25 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
         },
       });
 
-      if (error) {
-        throw error;
+      // Handle rate limiting
+      if (response.error) {
+        try {
+          const errorBody = typeof response.error.message === 'string'
+            ? JSON.parse(response.error.message)
+            : null;
+          if (errorBody?.message) {
+            toast.error('Muitas tentativas', {
+              description: errorBody.message,
+            });
+            setIsLoading(false);
+            return;
+          }
+        } catch {
+          // Not JSON, continue
+        }
       }
 
+      // Always show success (anti-enumeration)
       setEmailSent(true);
     } catch (error: any) {
       toast.error('Erro ao enviar e-mail', {
@@ -56,9 +69,9 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
               <CheckCircle2 className="w-8 h-8 text-accent" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold">E-mail Enviado!</CardTitle>
+              <CardTitle className="text-2xl font-bold">Verifique seu e-mail</CardTitle>
               <CardDescription className="text-muted-foreground mt-2">
-                Enviamos um link de recuperação para <strong>{email}</strong>
+                Se o e-mail <strong>{email}</strong> estiver cadastrado, você receberá um link de recuperação.
               </CardDescription>
             </div>
           </CardHeader>
