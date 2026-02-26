@@ -110,7 +110,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
 
+      // Handle rate limiting (429)
       if (response.error) {
+        // supabase.functions.invoke wraps non-2xx as FunctionsHttpError
+        // Try to extract the JSON body for rate limit messages
+        try {
+          const errorBody = typeof response.error.message === 'string' 
+            ? JSON.parse(response.error.message) 
+            : null;
+          if (errorBody?.message) {
+            return { error: new AuthApiError(errorBody.message, 429, 'rate_limit') };
+          }
+        } catch {
+          // Not JSON, use raw message
+        }
         const errorMessage = response.error.message || 'Erro ao criar conta';
         return { error: new AuthApiError(errorMessage, 400, 'signup_error') };
       }

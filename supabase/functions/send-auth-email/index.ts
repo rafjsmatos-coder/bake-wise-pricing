@@ -12,6 +12,65 @@ function getSupabaseAdmin() {
   );
 }
 
+// ─── Rate Limiting ─────────────────────────────────────────────────
+const EMAIL_ACTION_LIMIT = 3;   // max per email+action in 15 min
+const EMAIL_ACTION_WINDOW_MIN = 15;
+const IP_LIMIT = 10;            // max per IP in 1 min
+const IP_WINDOW_MIN = 1;
+
+function getClientIp(req: Request): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
+
+interface RateLimitResult {
+  limited: boolean;
+}
+
+async function checkAndRecordRateLimit(
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
+  email: string,
+  action: string,
+  ip: string
+): Promise<RateLimitResult> {
+  // 1. Cleanup old entries
+  await supabaseAdmin.rpc("cleanup_old_rate_limits");
+
+  // 2. Check email+action limit (15 min window)
+  const { count: emailCount } = await supabaseAdmin
+    .from("auth_rate_limits")
+    .select("*", { count: "exact", head: true })
+    .eq("email", email.toLowerCase())
+    .eq("action", action)
+    .gte("created_at", new Date(Date.now() - EMAIL_ACTION_WINDOW_MIN * 60 * 1000).toISOString());
+
+  if ((emailCount ?? 0) >= EMAIL_ACTION_LIMIT) {
+    return { limited: true };
+  }
+
+  // 3. Check IP limit (1 min window)
+  const { count: ipCount } = await supabaseAdmin
+    .from("auth_rate_limits")
+    .select("*", { count: "exact", head: true })
+    .eq("ip", ip)
+    .gte("created_at", new Date(Date.now() - IP_WINDOW_MIN * 60 * 1000).toISOString());
+
+  if ((ipCount ?? 0) >= IP_LIMIT) {
+    return { limited: true };
+  }
+
+  // 4. Record this request
+  await supabaseAdmin
+    .from("auth_rate_limits")
+    .insert({ email: email.toLowerCase(), action, ip });
+
+  return { limited: false };
+}
+
 // ─── Templates PT-BR ────────────────────────────────────────────────
 function confirmationTemplate(url: string) {
   return `<!DOCTYPE html>
@@ -82,6 +141,9 @@ function emailChangeTemplate(url: string) {
 </body></html>`;
 }
 
+// ─── Generic success response (anti-enumeration) ───────────────────
+const GENERIC_SUCCESS = { success: true, message: "Se esse e-mail estiver apto, você receberá as instruções em breve." };
+
 // ─── Main Handler ───────────────────────────────────────────────────
 Deno.serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
@@ -89,6 +151,7 @@ Deno.serve(async (req) => {
 
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
+  const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
 
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
@@ -97,13 +160,31 @@ Deno.serve(async (req) => {
   try {
     const { action, email, password, fullName, redirectTo } = await req.json();
     const supabaseAdmin = getSupabaseAdmin();
+    const clientIp = getClientIp(req);
 
-    console.log(`[SEND-AUTH-EMAIL] action=${action}, email=${email}`);
+    console.log(`[SEND-AUTH-EMAIL] action=${action}, email=${email}, ip=${clientIp}`);
 
     if (!email || typeof email !== 'string' || email.length > 255) {
       return new Response(
         JSON.stringify({ error: "Email is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: jsonHeaders }
+      );
+    }
+
+    if (!action || !["signup", "recovery"].includes(action)) {
+      return new Response(
+        JSON.stringify({ error: `Unknown action: ${action}` }),
+        { status: 400, headers: jsonHeaders }
+      );
+    }
+
+    // ─── RATE LIMITING (before any processing) ───────────────
+    const { limited } = await checkAndRecordRateLimit(supabaseAdmin, email, action, clientIp);
+    if (limited) {
+      console.warn(`[SEND-AUTH-EMAIL] Rate limited: email=${email}, action=${action}, ip=${clientIp}`);
+      return new Response(
+        JSON.stringify({ success: true, message: "Muitas tentativas. Aguarde alguns minutos antes de tentar novamente." }),
+        { status: 429, headers: jsonHeaders }
       );
     }
 
@@ -112,7 +193,7 @@ Deno.serve(async (req) => {
       if (!password) {
         return new Response(
           JSON.stringify({ error: "Password is required for signup" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 400, headers: jsonHeaders }
         );
       }
 
@@ -126,16 +207,20 @@ Deno.serve(async (req) => {
 
       if (createError) {
         console.error("[SEND-AUTH-EMAIL] createUser error:", createError.message);
-        
-        // Map common errors to Portuguese
-        let ptMessage = createError.message;
+
+        // Anti-enumeration: if user already exists, return generic success
         if (createError.message.includes("already been registered") || createError.message.includes("already exists")) {
-          ptMessage = "Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.";
+          console.log("[SEND-AUTH-EMAIL] Email already registered, returning generic success (anti-enum)");
+          return new Response(
+            JSON.stringify(GENERIC_SUCCESS),
+            { status: 200, headers: jsonHeaders }
+          );
         }
-        
+
+        // Other errors (e.g. weak password) can be returned
         return new Response(
-          JSON.stringify({ error: ptMessage }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: createError.message }),
+          { status: 400, headers: jsonHeaders }
         );
       }
 
@@ -149,8 +234,8 @@ Deno.serve(async (req) => {
       if (linkError) {
         console.error("[SEND-AUTH-EMAIL] generateLink error:", linkError.message);
         return new Response(
-          JSON.stringify({ error: "Erro ao gerar link de confirmação" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify(GENERIC_SUCCESS),
+          { status: 200, headers: jsonHeaders }
         );
       }
 
@@ -158,8 +243,8 @@ Deno.serve(async (req) => {
       if (!confirmUrl) {
         console.error("[SEND-AUTH-EMAIL] No action_link in response");
         return new Response(
-          JSON.stringify({ error: "Erro ao gerar link de confirmação" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify(GENERIC_SUCCESS),
+          { status: 200, headers: jsonHeaders }
         );
       }
 
@@ -173,17 +258,14 @@ Deno.serve(async (req) => {
 
       if (emailError) {
         console.error("[SEND-AUTH-EMAIL] Resend error:", JSON.stringify(emailError));
-        // User was created but email failed - still return success so they can retry
-        return new Response(
-          JSON.stringify({ success: true, emailSent: false, userId: createData.user?.id }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      } else {
+        console.log("[SEND-AUTH-EMAIL] Signup email sent to", email);
       }
 
-      console.log("[SEND-AUTH-EMAIL] Signup email sent to", email);
+      // Always return generic success
       return new Response(
-        JSON.stringify({ success: true, emailSent: true, userId: createData.user?.id }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify(GENERIC_SUCCESS),
+        { status: 200, headers: jsonHeaders }
       );
     }
 
@@ -197,18 +279,17 @@ Deno.serve(async (req) => {
 
       if (linkError) {
         console.error("[SEND-AUTH-EMAIL] recovery generateLink error:", linkError.message);
-        // Don't reveal if email exists or not
         return new Response(
-          JSON.stringify({ success: true }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify(GENERIC_SUCCESS),
+          { status: 200, headers: jsonHeaders }
         );
       }
 
       const confirmUrl = linkData?.properties?.action_link;
       if (!confirmUrl) {
         return new Response(
-          JSON.stringify({ success: true }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify(GENERIC_SUCCESS),
+          { status: 200, headers: jsonHeaders }
         );
       }
 
@@ -225,17 +306,16 @@ Deno.serve(async (req) => {
         console.log("[SEND-AUTH-EMAIL] Recovery email sent to", email);
       }
 
-      // Always return success to not reveal if email exists
       return new Response(
-        JSON.stringify({ success: true }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify(GENERIC_SUCCESS),
+        { status: 200, headers: jsonHeaders }
       );
     }
 
-    // ─── UNKNOWN ACTION ──────────────────────────────────────
+    // Unreachable due to action validation above
     return new Response(
-      JSON.stringify({ error: `Unknown action: ${action}` }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Unknown action" }),
+      { status: 400, headers: jsonHeaders }
     );
 
   } catch (err) {
