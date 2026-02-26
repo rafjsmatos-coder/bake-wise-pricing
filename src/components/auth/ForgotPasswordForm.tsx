@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
-import precibakeIcon from '@/assets/Iconapp-1024.png';
+import { ThemeLogo } from '@/components/layout/ThemeLogo';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -113,8 +113,8 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </Button>
-          <div className="mx-auto w-16 h-16 rounded-full overflow-hidden">
-            <img src={precibakeIcon} alt="PreciBake" className="w-full h-full object-cover" />
+          <div className="mx-auto">
+            <ThemeLogo className="h-16 w-auto" />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold">Esqueceu sua senha?</CardTitle>

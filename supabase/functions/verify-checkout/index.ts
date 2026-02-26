@@ -25,8 +25,8 @@ serve(async (req) => {
 
     const { session_id } = await req.json();
     
-    if (!session_id) {
-      throw new Error("session_id is required");
+    if (!session_id || typeof session_id !== 'string' || !session_id.startsWith('cs_') || session_id.length > 255) {
+      throw new Error("session_id is required and must be a valid Stripe checkout session ID");
     }
 
     logStep("Verifying checkout session", { sessionId: session_id });

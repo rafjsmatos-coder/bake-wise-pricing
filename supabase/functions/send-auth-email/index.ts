@@ -1,13 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "npm:resend@4.1.2";
+import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
 
 function getSupabaseAdmin() {
   return createClient(
@@ -35,7 +30,7 @@ function confirmationTemplate(url: string) {
         <p style="margin:24px 0 0;color:#64748b;font-size:13px;line-height:1.5;word-break:break-all;">Ou copie e cole este link no seu navegador:<br />${url}</p>
         <p style="margin:24px 0 0;color:#94a3b8;font-size:13px;line-height:1.5;">Se você não criou uma conta no PreciBake, ignore este e-mail.</p>
       </td></tr>
-      <tr><td style="padding:20px 40px;border-top:1px solid #e2e8f0;text-align:center;"><p style="margin:0;color:#94a3b8;font-size:12px;">© 2025 PreciBake</p></td></tr>
+      <tr><td style="padding:20px 40px;border-top:1px solid #e2e8f0;text-align:center;"><p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 PreciBake</p></td></tr>
     </table>
   </td></tr></table>
 </body></html>`;
@@ -58,7 +53,7 @@ function recoveryTemplate(url: string) {
         <p style="margin:24px 0 0;color:#64748b;font-size:13px;line-height:1.5;word-break:break-all;">Ou copie e cole este link no seu navegador:<br />${url}</p>
         <p style="margin:24px 0 0;color:#94a3b8;font-size:13px;line-height:1.5;">Se você não solicitou a redefinição de senha, ignore este e-mail.</p>
       </td></tr>
-      <tr><td style="padding:20px 40px;border-top:1px solid #e2e8f0;text-align:center;"><p style="margin:0;color:#94a3b8;font-size:12px;">© 2025 PreciBake</p></td></tr>
+      <tr><td style="padding:20px 40px;border-top:1px solid #e2e8f0;text-align:center;"><p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 PreciBake</p></td></tr>
     </table>
   </td></tr></table>
 </body></html>`;
@@ -81,7 +76,7 @@ function emailChangeTemplate(url: string) {
         <p style="margin:24px 0 0;color:#64748b;font-size:13px;line-height:1.5;word-break:break-all;">Ou copie e cole este link no seu navegador:<br />${url}</p>
         <p style="margin:24px 0 0;color:#94a3b8;font-size:13px;line-height:1.5;">Se você não solicitou esta alteração, ignore este e-mail.</p>
       </td></tr>
-      <tr><td style="padding:20px 40px;border-top:1px solid #e2e8f0;text-align:center;"><p style="margin:0;color:#94a3b8;font-size:12px;">© 2025 PreciBake</p></td></tr>
+      <tr><td style="padding:20px 40px;border-top:1px solid #e2e8f0;text-align:center;"><p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 PreciBake</p></td></tr>
     </table>
   </td></tr></table>
 </body></html>`;
@@ -89,12 +84,14 @@ function emailChangeTemplate(url: string) {
 
 // ─── Main Handler ───────────────────────────────────────────────────
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCorsPreflightRequest(req);
+  if (corsResponse) return corsResponse;
+
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
   try {
@@ -103,7 +100,7 @@ Deno.serve(async (req) => {
 
     console.log(`[SEND-AUTH-EMAIL] action=${action}, email=${email}`);
 
-    if (!email) {
+    if (!email || typeof email !== 'string' || email.length > 255) {
       return new Response(
         JSON.stringify({ error: "Email is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -242,11 +239,13 @@ Deno.serve(async (req) => {
     );
 
   } catch (err) {
+    const origin = req.headers.get('origin');
+    const errorCorsHeaders = getCorsHeaders(origin);
     const errorMessage = err instanceof Error ? err.message : String(err);
     console.error("[SEND-AUTH-EMAIL] Exception:", errorMessage);
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...errorCorsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

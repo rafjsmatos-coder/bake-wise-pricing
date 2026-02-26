@@ -1,28 +1,6 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { AppLayout, PageType } from '@/components/layout/AppLayout';
 import { DashboardHome } from '@/components/dashboard/DashboardHome';
-import { IngredientsList } from '@/components/ingredients/IngredientsList';
-import { CategoriesList } from '@/components/categories/CategoriesList';
-import { RecipesList } from '@/components/recipes/RecipesList';
-import { RecipeCategoriesList } from '@/components/recipe-categories/RecipeCategoriesList';
-import { DecorationsList } from '@/components/decorations/DecorationsList';
-import { DecorationCategoriesList } from '@/components/decoration-categories/DecorationCategoriesList';
-import { PackagingList } from '@/components/packaging/PackagingList';
-import { PackagingCategoriesList } from '@/components/packaging-categories/PackagingCategoriesList';
-import { ProductsList } from '@/components/products/ProductsList';
-import { ProductCategoriesList } from '@/components/product-categories/ProductCategoriesList';
-import { UserSettings } from '@/components/settings/UserSettings';
-import { WhatsAppTemplatesSection } from '@/components/settings/WhatsAppTemplatesSection';
-import { ProfileSettings } from '@/components/settings/ProfileSettings';
-import { SupportPage } from '@/components/support/SupportPage';
-import { UpdatesPage } from '@/components/updates/UpdatesPage';
-import { ClientsList } from '@/components/clients/ClientsList';
-import { OrdersList } from '@/components/orders/OrdersList';
-import { ShoppingList } from '@/components/orders/ShoppingList';
-import { TransactionsList } from '@/components/financial/TransactionsList';
-import { RevenueReport } from '@/components/financial/RevenueReport';
-import { ReceivablesList } from '@/components/financial/ReceivablesList';
-import { FinancialPage } from '@/components/financial/FinancialPage';
 
 import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
@@ -31,8 +9,35 @@ import { useAuth } from '@/hooks/useAuth';
 import { Loader2, AlertCircle, RefreshCw, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Lazy-loaded page components
+const IngredientsList = lazy(() => import('@/components/ingredients/IngredientsList').then(m => ({ default: m.IngredientsList })));
+const CategoriesList = lazy(() => import('@/components/categories/CategoriesList').then(m => ({ default: m.CategoriesList })));
+const RecipesList = lazy(() => import('@/components/recipes/RecipesList').then(m => ({ default: m.RecipesList })));
+const RecipeCategoriesList = lazy(() => import('@/components/recipe-categories/RecipeCategoriesList').then(m => ({ default: m.RecipeCategoriesList })));
+const DecorationsList = lazy(() => import('@/components/decorations/DecorationsList').then(m => ({ default: m.DecorationsList })));
+const DecorationCategoriesList = lazy(() => import('@/components/decoration-categories/DecorationCategoriesList').then(m => ({ default: m.DecorationCategoriesList })));
+const PackagingList = lazy(() => import('@/components/packaging/PackagingList').then(m => ({ default: m.PackagingList })));
+const PackagingCategoriesList = lazy(() => import('@/components/packaging-categories/PackagingCategoriesList').then(m => ({ default: m.PackagingCategoriesList })));
+const ProductsList = lazy(() => import('@/components/products/ProductsList').then(m => ({ default: m.ProductsList })));
+const ProductCategoriesList = lazy(() => import('@/components/product-categories/ProductCategoriesList').then(m => ({ default: m.ProductCategoriesList })));
+const UserSettings = lazy(() => import('@/components/settings/UserSettings').then(m => ({ default: m.UserSettings })));
+const WhatsAppTemplatesSection = lazy(() => import('@/components/settings/WhatsAppTemplatesSection').then(m => ({ default: m.WhatsAppTemplatesSection })));
+const ProfileSettings = lazy(() => import('@/components/settings/ProfileSettings').then(m => ({ default: m.ProfileSettings })));
+const SupportPage = lazy(() => import('@/components/support/SupportPage').then(m => ({ default: m.SupportPage })));
+const UpdatesPage = lazy(() => import('@/components/updates/UpdatesPage').then(m => ({ default: m.UpdatesPage })));
+const ClientsList = lazy(() => import('@/components/clients/ClientsList').then(m => ({ default: m.ClientsList })));
+const OrdersList = lazy(() => import('@/components/orders/OrdersList').then(m => ({ default: m.OrdersList })));
+const ShoppingList = lazy(() => import('@/components/orders/ShoppingList').then(m => ({ default: m.ShoppingList })));
+const FinancialPage = lazy(() => import('@/components/financial/FinancialPage').then(m => ({ default: m.FinancialPage })));
+
 // Pages that expired users can still access
 const FREE_PAGES: PageType[] = ['dashboard', 'support'];
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center py-20">
+    <Loader2 className="w-8 h-8 animate-spin text-accent" />
+  </div>
+);
 
 export function Dashboard() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
@@ -118,27 +123,27 @@ export function Dashboard() {
 
     switch (currentPage) {
       case 'dashboard': return <DashboardHome onNavigate={(page) => setCurrentPage(page as PageType)} />;
-      case 'products': return <ProductsList initialSearch={searchFilter} />;
-      case 'product-categories': return <ProductCategoriesList />;
-      case 'recipes': return <RecipesList initialSearch={searchFilter} />;
-      case 'recipe-categories': return <RecipeCategoriesList />;
-      case 'ingredients': return <IngredientsList initialSearch={searchFilter} />;
-      case 'categories': return <CategoriesList />;
-      case 'decorations': return <DecorationsList initialSearch={searchFilter} />;
-      case 'decoration-categories': return <DecorationCategoriesList />;
-      case 'packaging': return <PackagingList initialSearch={searchFilter} />;
-      case 'packaging-categories': return <PackagingCategoriesList />;
-      case 'clients': return <ClientsList initialSearch={searchFilter} />;
-      case 'orders': return <OrdersList initialSearch={searchFilter} />;
-      case 'shopping-list': return <ShoppingList />;
-      case 'cash-flow': return <FinancialPage initialTab="cash-flow" />;
-      case 'reports': return <FinancialPage initialTab="reports" />;
-      case 'receivables': return <FinancialPage initialTab="receivables" />;
-      case 'settings': return <UserSettings />;
-      case 'whatsapp-templates': return <WhatsAppTemplatesSection />;
-      case 'profile': return <ProfileSettings />;
-      case 'support': return <SupportPage />;
-      case 'updates': return <UpdatesPage />;
+      case 'products': return <Suspense fallback={<PageLoader />}><ProductsList initialSearch={searchFilter} /></Suspense>;
+      case 'product-categories': return <Suspense fallback={<PageLoader />}><ProductCategoriesList /></Suspense>;
+      case 'recipes': return <Suspense fallback={<PageLoader />}><RecipesList initialSearch={searchFilter} /></Suspense>;
+      case 'recipe-categories': return <Suspense fallback={<PageLoader />}><RecipeCategoriesList /></Suspense>;
+      case 'ingredients': return <Suspense fallback={<PageLoader />}><IngredientsList initialSearch={searchFilter} /></Suspense>;
+      case 'categories': return <Suspense fallback={<PageLoader />}><CategoriesList /></Suspense>;
+      case 'decorations': return <Suspense fallback={<PageLoader />}><DecorationsList initialSearch={searchFilter} /></Suspense>;
+      case 'decoration-categories': return <Suspense fallback={<PageLoader />}><DecorationCategoriesList /></Suspense>;
+      case 'packaging': return <Suspense fallback={<PageLoader />}><PackagingList initialSearch={searchFilter} /></Suspense>;
+      case 'packaging-categories': return <Suspense fallback={<PageLoader />}><PackagingCategoriesList /></Suspense>;
+      case 'clients': return <Suspense fallback={<PageLoader />}><ClientsList initialSearch={searchFilter} /></Suspense>;
+      case 'orders': return <Suspense fallback={<PageLoader />}><OrdersList initialSearch={searchFilter} /></Suspense>;
+      case 'shopping-list': return <Suspense fallback={<PageLoader />}><ShoppingList /></Suspense>;
+      case 'cash-flow': return <Suspense fallback={<PageLoader />}><FinancialPage initialTab="cash-flow" /></Suspense>;
+      case 'reports': return <Suspense fallback={<PageLoader />}><FinancialPage initialTab="reports" /></Suspense>;
+      case 'receivables': return <Suspense fallback={<PageLoader />}><FinancialPage initialTab="receivables" /></Suspense>;
+      case 'settings': return <Suspense fallback={<PageLoader />}><UserSettings /></Suspense>;
+      case 'whatsapp-templates': return <Suspense fallback={<PageLoader />}><WhatsAppTemplatesSection /></Suspense>;
+      case 'profile': return <Suspense fallback={<PageLoader />}><ProfileSettings /></Suspense>;
+      case 'support': return <Suspense fallback={<PageLoader />}><SupportPage /></Suspense>;
+      case 'updates': return <Suspense fallback={<PageLoader />}><UpdatesPage /></Suspense>;
       default: return <DashboardHome onNavigate={(page) => setCurrentPage(page as PageType)} />;
     }
   };

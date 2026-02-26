@@ -35,7 +35,7 @@ export function SubscriptionSuccess() {
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        console.log(`[SubscriptionSuccess] Attempt ${attempt}/${MAX_RETRIES}`);
+        // Attempt ${attempt}/${MAX_RETRIES}
 
         // Chamar verify-checkout SEM autenticação (usa metadata do Stripe)
         const response = await fetch(
@@ -72,7 +72,7 @@ export function SubscriptionSuccess() {
           throw new Error('Resposta inesperada do servidor');
         }
       } catch (error) {
-        console.error(`[SubscriptionSuccess] Attempt ${attempt} failed:`, error);
+        // Attempt ${attempt} failed
         
         if (attempt < MAX_RETRIES) {
           await delay(RETRY_DELAY_MS);
