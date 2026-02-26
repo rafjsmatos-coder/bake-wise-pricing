@@ -1,83 +1,50 @@
 
 
-## Atualizacao Completa dos Assets Visuais do PreciBake
+## Trocar Logo Automaticamente no Dark Mode
 
-Atualizar todos os icones, favicons, banner OG e logos do projeto com os novos arquivos enviados, sem alterar layout ou estilos.
-
----
-
-### 1. Copiar arquivos para /public
-
-Copiar todos os 10 arquivos enviados para a pasta `public/`:
-
-- `bannerog.png` - Banner Open Graph (1200x630)
-- `Iconapp-1024.png` - Icone master (1024x1024)
-- `icon-512.png` - PWA icon (512x512)
-- `icon-192.png` - PWA icon (192x192)
-- `apple-touch-icon-180.png` - Apple touch icon (180x180)
-- `favicon-48.png` - Favicon 48x48
-- `favicon-32.png` - Favicon 32x32
-- `favicon-16.png` - Favicon 16x16
-- `Logomodoclaro.png` - Logo modo claro
-- `Logomodoescuro.png` - Logo modo escuro
+Todos os 7 arquivos que exibem o logo importam apenas `Logomodoclaro.png`. A solucao e criar um componente reutilizavel `ThemeLogo` que alterna entre as duas versoes com base no tema ativo.
 
 ---
 
-### 2. Atualizar `index.html` - Meta tags e favicons
+### 1. Criar componente `src/components/layout/ThemeLogo.tsx`
 
-**Favicon** (linha 15): Substituir o favicon unico por 3 tamanhos:
-```html
-<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
-```
+Componente simples que usa `useTheme()` do `next-themes` para renderizar a imagem correta:
 
-**Apple Touch Icon** (linha 16): Atualizar para:
-```html
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180.png" />
-```
-
-**Open Graph** (linhas 22-24): Atualizar imagem e dimensoes:
-```html
-<meta property="og:image" content="https://precibake.com.br/bannerog.png" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-```
-
-**Twitter Cards**: Adicionar apos as tags OG:
-```html
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:image" content="https://precibake.com.br/bannerog.png" />
-```
-
----
-
-### 3. Atualizar `vite.config.ts` - Manifest PWA
-
-Atualizar os icones no manifest do VitePWA para referenciar os novos arquivos:
+- Tema claro: `Logomodoclaro.png`
+- Tema escuro: `Logomodoescuro.png`
+- Aceita props `className` e `alt` para flexibilidade
 
 ```text
-icons: [
-  { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-  { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
-  { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
-]
+import { useTheme } from 'next-themes';
+import logoClaro from '@/assets/Logomodoclaro.png';
+import logoEscuro from '@/assets/Logomodoescuro.png';
+
+export function ThemeLogo({ className, alt = "PreciBake" }) {
+  const { resolvedTheme } = useTheme();
+  const src = resolvedTheme === 'dark' ? logoEscuro : logoClaro;
+  return <img src={src} alt={alt} className={className} />;
+}
 ```
 
 ---
 
-### 4. Atualizar referencias internas nos componentes
+### 2. Substituir `<img src={precibakeLogo}>` pelo `<ThemeLogo>` em 7 arquivos
 
-Verificar e atualizar qualquer componente que importe os logos antigos (`precibake-logo.jpeg`, `precibake-logo-full.jpeg`, `precibake-icon.jpeg`) para usar os novos arquivos. Os logos de modo claro/escuro serao copiados tambem para `src/assets/` para uso nos componentes React.
+| Arquivo | Locais |
+|---------|--------|
+| `AppLayout.tsx` | Header mobile + sidebar desktop (2 usos) |
+| `AuthForm.tsx` | Logo no card de login (1 uso) |
+| `StickyHeader.tsx` | Header fixo da landing (1 uso) |
+| `HeroSection.tsx` | Nav da hero section (1 uso) |
+| `Footer.tsx` | Rodape da landing (1 uso) |
+| `PrivacyPolicy.tsx` | Header da pagina (1 uso) |
+| `TermsOfService.tsx` | Header da pagina (1 uso) |
+
+Em cada arquivo: remover o `import precibakeLogo` e substituir as tags `<img>` por `<ThemeLogo className="..." />`.
 
 ---
 
-### Resumo de arquivos alterados
+### Resultado
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `public/` (10 arquivos) | Novos assets copiados |
-| `index.html` | Favicons, apple-touch-icon, OG image, Twitter cards |
-| `vite.config.ts` | Icones do manifest PWA |
-| Componentes com logos | Atualizar imports dos logos (se necessario) |
+O logo mudara automaticamente ao alternar o tema, sem alterar layout ou estilos.
 
