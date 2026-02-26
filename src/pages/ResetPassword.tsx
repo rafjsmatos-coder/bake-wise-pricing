@@ -9,14 +9,16 @@ export default function ResetPassword() {
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check if user has a valid session (from the reset link)
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setIsValidSession(!!session);
+      if (session) {
+        setIsValidSession(true);
+      } else {
+        setIsValidSession(false);
+      }
     };
 
-    // Listen for auth state changes (when user clicks reset link)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsValidSession(true);
       }
@@ -27,18 +29,19 @@ export default function ResetPassword() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (isValidSession === null) {
+  // Redirect in useEffect, not during render
+  useEffect(() => {
+    if (isValidSession === false) {
+      navigate('/');
+    }
+  }, [isValidSession, navigate]);
+
+  if (isValidSession === null || isValidSession === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
-  }
-
-  if (!isValidSession) {
-    // Redirect to home if no valid session
-    navigate('/');
-    return null;
   }
 
   return <ResetPasswordForm onSuccess={() => navigate('/')} />;
