@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, FileText } from 'lucide-react';
-import precibakeLogo from '@/assets/Logomodoclaro.png';
+import { ThemeLogo } from '@/components/layout/ThemeLogo';
 import { Link } from 'react-router-dom';
 
 export default function TermsOfService() {
@@ -12,7 +12,7 @@ export default function TermsOfService() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
-              <img src={precibakeLogo} alt="PreciBake" className="h-10 object-contain" />
+              <ThemeLogo className="h-10 object-contain" />
             </Link>
             <Button variant="ghost" asChild>
               <Link to="/" className="gap-2">

@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Instagram } from 'lucide-react';
-import precibakeLogo from '@/assets/Logomodoclaro.png';
+import { ThemeLogo } from '@/components/layout/ThemeLogo';
 
 export const Footer = forwardRef<HTMLElement>((_, ref) => {
   return (
@@ -9,7 +9,7 @@ export const Footer = forwardRef<HTMLElement>((_, ref) => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <img src={precibakeLogo} alt="PreciBake" className="h-8 object-contain" />
+            <ThemeLogo className="h-8 object-contain" />
           </div>
           
           <div className="flex items-center gap-4 text-sm">
