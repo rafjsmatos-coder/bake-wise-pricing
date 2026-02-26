@@ -1,50 +1,49 @@
 
 
-## Trocar Logo Automaticamente no Dark Mode
+## Seção "Antes vs Depois" na Landing Page
 
-Todos os 7 arquivos que exibem o logo importam apenas `Logomodoclaro.png`. A solucao e criar um componente reutilizavel `ThemeLogo` que alterna entre as duas versoes com base no tema ativo.
-
----
-
-### 1. Criar componente `src/components/layout/ThemeLogo.tsx`
-
-Componente simples que usa `useTheme()` do `next-themes` para renderizar a imagem correta:
-
-- Tema claro: `Logomodoclaro.png`
-- Tema escuro: `Logomodoescuro.png`
-- Aceita props `className` e `alt` para flexibilidade
-
-```text
-import { useTheme } from 'next-themes';
-import logoClaro from '@/assets/Logomodoclaro.png';
-import logoEscuro from '@/assets/Logomodoescuro.png';
-
-export function ThemeLogo({ className, alt = "PreciBake" }) {
-  const { resolvedTheme } = useTheme();
-  const src = resolvedTheme === 'dark' ? logoEscuro : logoClaro;
-  return <img src={src} alt={alt} className={className} />;
-}
-```
+Criar uma nova seção visual que mostra o contraste entre a realidade de uma confeiteira sem o PreciBake e com o PreciBake. Posicionada logo após a `PainPointsSection` e antes da `BenefitsSection`.
 
 ---
 
-### 2. Substituir `<img src={precibakeLogo}>` pelo `<ThemeLogo>` em 7 arquivos
+### 1. Criar `src/components/landing/BeforeAfterSection.tsx`
 
-| Arquivo | Locais |
-|---------|--------|
-| `AppLayout.tsx` | Header mobile + sidebar desktop (2 usos) |
-| `AuthForm.tsx` | Logo no card de login (1 uso) |
-| `StickyHeader.tsx` | Header fixo da landing (1 uso) |
-| `HeroSection.tsx` | Nav da hero section (1 uso) |
-| `Footer.tsx` | Rodape da landing (1 uso) |
-| `PrivacyPolicy.tsx` | Header da pagina (1 uso) |
-| `TermsOfService.tsx` | Header da pagina (1 uso) |
+Layout lado a lado (empilhado no mobile) com dois cards:
 
-Em cada arquivo: remover o `import precibakeLogo` e substituir as tags `<img>` por `<ThemeLogo className="..." />`.
+**Card "Antes"** (tom vermelho/destructive):
+- Titulo: "Sem PreciBake"
+- Icone de alerta
+- Itens com X vermelho:
+  - Anota precos no caderno ou planilha
+  - Esquece custos como gas, luz e embalagem
+  - Cobra "no olho" e torce pra dar lucro
+  - Perde tempo montando orcamento no WhatsApp
+  - Nao sabe se o pedido deu lucro ou prejuizo
+
+**Card "Depois"** (tom verde/accent):
+- Titulo: "Com PreciBake"
+- Icone de check
+- Itens com check verde:
+  - Custo calculado automaticamente com todos os gastos
+  - Preco de venda sugerido com margem real
+  - Orcamento profissional enviado em 1 clique
+  - Calendario de pedidos organizado com status
+  - Lucro real visivel em cada encomenda
+
+Seta central animada conectando os dois lados (no desktop).
 
 ---
 
-### Resultado
+### 2. Atualizar `LandingPage.tsx`
 
-O logo mudara automaticamente ao alternar o tema, sem alterar layout ou estilos.
+Importar e inserir `<BeforeAfterSection />` entre `<PainPointsSection />` e `<BenefitsSection />` (linha 28).
+
+---
+
+### Arquivos
+
+| Arquivo | Acao |
+|---------|------|
+| `src/components/landing/BeforeAfterSection.tsx` | Criar |
+| `src/components/landing/LandingPage.tsx` | Adicionar import e componente |
 
