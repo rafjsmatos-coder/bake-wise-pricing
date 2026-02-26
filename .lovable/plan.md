@@ -1,98 +1,83 @@
 
 
-## Otimizacao SEO Completa do PreciBake
+## Atualizacao Completa dos Assets Visuais do PreciBake
 
-Melhorar o posicionamento no Google com as melhores praticas de SEO on-page, corrigir problemas identificados e adicionar elementos que faltam.
-
----
-
-### 1. Resolver o problema do Google Search Console
-
-Adicionar a meta tag de verificacao do Google no `index.html`. Voce precisara fornecer o codigo de verificacao que o Search Console te deu (formato: `google-site-verification` content).
-
-**Arquivo:** `index.html`
+Atualizar todos os icones, favicons, banner OG e logos do projeto com os novos arquivos enviados, sem alterar layout ou estilos.
 
 ---
 
-### 2. Adicionar hreflang e melhorar meta tags
+### 1. Copiar arquivos para /public
 
-**Arquivo:** `index.html`
+Copiar todos os 10 arquivos enviados para a pasta `public/`:
 
-- Adicionar `<link rel="alternate" hreflang="pt-BR" href="https://precibake.com.br/" />`
-- Remover `<meta name="keywords">` (Google ignora desde 2009, nao ajuda em nada)
-- Adicionar `<meta name="robots" content="index, follow" />`
-- Melhorar o og:image para uma imagem propria do PreciBake (atualmente usa placeholder do Lovable)
-
----
-
-### 3. Melhorar alt texts das imagens
-
-**Arquivo:** `ScreenshotsSection.tsx`
-
-Atualizar os alt texts das 5 imagens para incluir palavras-chave relevantes:
-- "Dashboard do PreciBake - sistema de gestao para confeitaria"
-- "Calculo de custo de produto - precificacao automatica para bolos"
-- "Calendario de pedidos - controle de encomendas de confeitaria"
-- "Controle financeiro - fluxo de caixa para confeiteiras"
-- "Orcamento via WhatsApp - envio de preco para clientes"
+- `bannerog.png` - Banner Open Graph (1200x630)
+- `Iconapp-1024.png` - Icone master (1024x1024)
+- `icon-512.png` - PWA icon (512x512)
+- `icon-192.png` - PWA icon (192x192)
+- `apple-touch-icon-180.png` - Apple touch icon (180x180)
+- `favicon-48.png` - Favicon 48x48
+- `favicon-32.png` - Favicon 32x32
+- `favicon-16.png` - Favicon 16x16
+- `Logomodoclaro.png` - Logo modo claro
+- `Logomodoescuro.png` - Logo modo escuro
 
 ---
 
-### 4. Adicionar semantica HTML nas secoes
+### 2. Atualizar `index.html` - Meta tags e favicons
 
-**Arquivos:** Componentes da landing page
+**Favicon** (linha 15): Substituir o favicon unico por 3 tamanhos:
+```html
+<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+```
 
-Garantir que cada secao tenha:
-- Tags `<h2>` para titulos de secao (ja tem na maioria)
-- Tags `<h3>` para subtitulos
-- Atributos `aria-label` nas secoes principais
-- IDs nas secoes para navegacao por ancora (`id="funcionalidades"`, `id="precos"`, etc.)
+**Apple Touch Icon** (linha 16): Atualizar para:
+```html
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180.png" />
+```
 
----
+**Open Graph** (linhas 22-24): Atualizar imagem e dimensoes:
+```html
+<meta property="og:image" content="https://precibake.com.br/bannerog.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+```
 
-### 5. Expandir o sitemap
-
-**Arquivo:** `public/sitemap.xml`
-
-Adicionar URLs com ancora para secoes importantes:
-- `https://precibake.com.br/#funcionalidades`
-- `https://precibake.com.br/#precos`
-- `https://precibake.com.br/#faq`
-- Adicionar `<lastmod>` com a data atual
-
----
-
-### 6. Adicionar palavras-chave faltantes no conteudo
-
-Oportunidades de long-tail keywords para incluir naturalmente no texto das secoes:
-
-- "como precificar doces para vender"
-- "tabela de precos confeitaria"
-- "app para confeiteira"
-- "sistema de pedidos confeitaria"
-- "como calcular lucro na confeitaria"
-
-Essas seriam inseridas nos textos das secoes existentes (HeroSection, BenefitsSection, FAQSection) de forma natural, sem keyword stuffing.
+**Twitter Cards**: Adicionar apos as tags OG:
+```html
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://precibake.com.br/bannerog.png" />
+```
 
 ---
 
-### Resumo das mudancas por arquivo
+### 3. Atualizar `vite.config.ts` - Manifest PWA
+
+Atualizar os icones no manifest do VitePWA para referenciar os novos arquivos:
+
+```text
+icons: [
+  { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+  { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+  { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+]
+```
+
+---
+
+### 4. Atualizar referencias internas nos componentes
+
+Verificar e atualizar qualquer componente que importe os logos antigos (`precibake-logo.jpeg`, `precibake-logo-full.jpeg`, `precibake-icon.jpeg`) para usar os novos arquivos. Os logos de modo claro/escuro serao copiados tambem para `src/assets/` para uso nos componentes React.
+
+---
+
+### Resumo de arquivos alterados
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `index.html` | Meta tag verificacao Google, hreflang, remover keywords, robots, og:image |
-| `public/sitemap.xml` | Adicionar URLs com ancora e lastmod |
-| `ScreenshotsSection.tsx` | Alt texts otimizados com palavras-chave |
-| Secoes da landing page | IDs para ancora, aria-labels, keywords naturais no texto |
-
----
-
-### Sobre o erro 403 do Search Console
-
-Esse erro NAO e do codigo. Voce precisa:
-1. Acessar o Google Search Console pelo computador (nao pelo celular)
-2. Verificar a propriedade do dominio via registro DNS (TXT record) ou via meta tag HTML
-3. Apos a verificacao, o envio do sitemap deve funcionar
-
-Eu adicionarei o espaco para a meta tag de verificacao, mas voce precisara me informar o codigo que o Google fornece.
+| `public/` (10 arquivos) | Novos assets copiados |
+| `index.html` | Favicons, apple-touch-icon, OG image, Twitter cards |
+| `vite.config.ts` | Icones do manifest PWA |
+| Componentes com logos | Atualizar imports dos logos (se necessario) |
 
