@@ -216,6 +216,21 @@ Deno.serve(async (req) => {
         );
       }
 
+      // ─── Backend password validation (defense-in-depth) ────
+      const pwErrors: string[] = [];
+      if (typeof password !== "string" || password.length < 10) pwErrors.push("Mínimo 10 caracteres.");
+      if (!/[a-zA-Z]/.test(password)) pwErrors.push("Inclua pelo menos 1 letra.");
+      if (!/[0-9]/.test(password)) pwErrors.push("Inclua pelo menos 1 número.");
+      if (!/[!@#$%&*._\-]/.test(password)) pwErrors.push("Inclua pelo menos 1 caractere especial.");
+      const blockedPasswords = ["12345678","1234567890","password","qwerty","abcdefg","11111111","precibake","senha1234","abcd1234"];
+      if (blockedPasswords.includes(password.toLowerCase())) pwErrors.push("Senha muito comum.");
+      if (pwErrors.length > 0) {
+        return new Response(
+          JSON.stringify({ error: "Senha não atende os requisitos: " + pwErrors[0] }),
+          { status: 400, headers: jsonHeaders }
+        );
+      }
+
       const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
