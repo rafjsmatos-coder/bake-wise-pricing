@@ -5,7 +5,7 @@ import { prepareExternalNavigation } from '@/lib/open-external';
 
 // Hook para gerenciar estado de assinatura com sincronização de auth
 
-type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'canceled' | 'pending' | 'loading';
+type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'canceled' | 'pending' | 'past_due' | 'loading';
 type SubscriptionError = 'TOKEN_MISSING' | 'NETWORK_ERROR' | 'TIMEOUT' | null;
 
 interface SubscriptionState {
