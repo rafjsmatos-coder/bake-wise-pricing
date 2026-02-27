@@ -8,6 +8,9 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
+// Carência de 3 dias para past_due (boleto)
+const GRACE_PERIOD_MS = 3 * 24 * 60 * 60 * 1000;
+
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
   if (corsResponse) return corsResponse;
@@ -24,10 +27,7 @@ serve(async (req) => {
       logStep("Authentication failed", { error: authError });
       return new Response(
         JSON.stringify({ error: authError || "Authentication failed", code: "unauthenticated" }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 401,
-        }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
@@ -79,10 +79,7 @@ serve(async (req) => {
           subscriptionEndsAt: null,
           daysRemaining: 7,
         }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
@@ -120,6 +117,31 @@ serve(async (req) => {
           .update({ status: 'expired', manual_override: false })
           .eq("user_id", userId);
       }
+    } else if (subscription.status === 'past_due') {
+      // Carência de 3 dias para boleto: permitir acesso temporário
+      const subEnds = subscription.subscription_ends_at
+        ? new Date(subscription.subscription_ends_at)
+        : null;
+
+      if (subEnds) {
+        const gracePeriodEnd = new Date(subEnds.getTime() + GRACE_PERIOD_MS);
+        if (gracePeriodEnd > now) {
+          canAccess = true;
+          daysRemaining = Math.ceil((gracePeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          logStep("past_due within grace period", { daysRemaining });
+        } else {
+          canAccess = false;
+          currentStatus = 'expired';
+          await supabaseAdmin
+            .from("subscriptions")
+            .update({ status: 'expired', manual_override: false })
+            .eq("user_id", userId);
+          logStep("past_due grace period expired, setting to expired");
+        }
+      } else {
+        canAccess = false;
+        logStep("past_due without subscription_ends_at, blocking access");
+      }
     } else if (subscription.status === 'pending') {
       canAccess = false;
     }
@@ -136,56 +158,67 @@ serve(async (req) => {
           
           if (customers.data.length > 0) {
             const customerId = customers.data[0].id;
+            // Buscar qualquer subscription ativa ou past_due
             const subscriptions = await stripe.subscriptions.list({
               customer: customerId,
-              status: 'active',
               limit: 1,
             });
             
-            if (subscriptions.data.length > 0) {
-              const stripeSub = subscriptions.data[0];
-              const subEnd = new Date(stripeSub.current_period_end * 1000);
+            const activeSub = subscriptions.data.find(s => 
+              s.status === 'active' || s.status === 'past_due'
+            );
+            
+            if (activeSub) {
+              const subEnd = new Date(activeSub.current_period_end * 1000);
+              const localStatus = activeSub.status === 'active' ? 'active' : 'past_due';
               
-              logStep("Found active Stripe subscription, syncing", {
-                stripeSubId: stripeSub.id,
+              logStep("Found Stripe subscription, syncing", {
+                stripeSubId: activeSub.id,
+                status: localStatus,
                 endDate: subEnd.toISOString(),
               });
               
-              // Atualizar banco com dados do Stripe
               await supabaseAdmin
                 .from("subscriptions")
                 .update({
-                  status: 'active',
+                  status: localStatus,
                   stripe_customer_id: customerId,
-                  stripe_subscription_id: stripeSub.id,
+                  stripe_subscription_id: activeSub.id,
                   subscription_ends_at: subEnd.toISOString(),
                   manual_override: false,
                 })
                 .eq("user_id", userId);
               
-              currentStatus = 'active';
-              canAccess = true;
-              daysRemaining = Math.ceil((subEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              currentStatus = localStatus;
+              
+              if (localStatus === 'active') {
+                canAccess = true;
+                daysRemaining = Math.ceil((subEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              } else {
+                // past_due — aplicar carência
+                const gracePeriodEnd = new Date(subEnd.getTime() + GRACE_PERIOD_MS);
+                if (gracePeriodEnd > now) {
+                  canAccess = true;
+                  daysRemaining = Math.ceil((gracePeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                } else {
+                  canAccess = false;
+                }
+              }
             } else {
-              logStep("No active Stripe subscription found");
+              logStep("No active/past_due Stripe subscription found");
             }
           } else {
             logStep("No Stripe customer found for email");
           }
         }
       } catch (stripeErr) {
-        // Não falhar a função inteira se o fallback Stripe falhar
         logStep("Stripe fallback error (non-fatal)", { 
           error: stripeErr instanceof Error ? stripeErr.message : String(stripeErr) 
         });
       }
     }
 
-    logStep("Subscription status", { 
-      status: currentStatus, 
-      canAccess, 
-      daysRemaining 
-    });
+    logStep("Subscription status", { status: currentStatus, canAccess, daysRemaining });
 
     return new Response(
       JSON.stringify({
@@ -195,10 +228,7 @@ serve(async (req) => {
         subscriptionEndsAt: subscription.subscription_ends_at,
         daysRemaining,
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
 
   } catch (error) {
@@ -207,7 +237,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req.headers.get('origin')), "Content-Type": "application/json" },
         status: 500,
       }
     );

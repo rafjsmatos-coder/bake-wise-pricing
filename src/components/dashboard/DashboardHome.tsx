@@ -5,6 +5,7 @@ import { useDecorations } from '@/hooks/useDecorations';
 import { usePackaging } from '@/hooks/usePackaging';
 import { useClients } from '@/hooks/useClients';
 import { useOrders } from '@/hooks/useOrders';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StartTourButton } from '@/components/tour/StartTourButton';
@@ -26,7 +27,8 @@ import {
   Users,
   ClipboardList,
   CalendarClock,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { isToday } from 'date-fns';
 
@@ -42,6 +44,7 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
   const { packagingItems, isLoading: loadingPackaging } = usePackaging();
   const { clients, isLoading: loadingClients } = useClients();
   const { orders, isLoading: loadingOrders } = useOrders();
+  const { status: subscriptionStatus, openCustomerPortal } = useSubscription();
 
   const isLoading = loadingProducts || loadingRecipes || loadingIngredients || loadingDecorations || loadingPackaging || loadingClients || loadingOrders;
 
@@ -128,6 +131,32 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
         </div>
         <StartTourButton variant="card" />
       </div>
+      {/* Past Due Alert */}
+      {subscriptionStatus === 'past_due' && (
+        <Card className="border-yellow-500/50 bg-yellow-500/10">
+          <CardContent className="p-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-yellow-600 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+                  Pagamento pendente
+                </p>
+                <p className="text-xs text-yellow-600 dark:text-yellow-500">
+                  Regularize para evitar interrupção do acesso
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0 border-yellow-500 text-yellow-700 hover:bg-yellow-500/20 dark:text-yellow-400"
+              onClick={() => openCustomerPortal()}
+            >
+              Gerenciar Assinatura
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Cards */}
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none" data-tour="summary-cards">

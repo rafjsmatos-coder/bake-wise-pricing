@@ -1348,6 +1348,27 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_events: {
+        Row: {
+          event_type: string
+          id: string
+          processed_at: string
+          stripe_event_id: string
+        }
+        Insert: {
+          event_type: string
+          id?: string
+          processed_at?: string
+          stripe_event_id: string
+        }
+        Update: {
+          event_type?: string
+          id?: string
+          processed_at?: string
+          stripe_event_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1372,6 +1393,7 @@ export type Database = {
         | "canceled"
         | "expired"
         | "pending"
+        | "past_due"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1507,6 +1529,7 @@ export const Constants = {
         "canceled",
         "expired",
         "pending",
+        "past_due",
       ],
     },
   },
