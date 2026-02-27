@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, ArrowLeft, Eye, EyeOff, CheckCircle2, Info } from 'lucide-react';
+import { Loader2, ArrowLeft, Eye, EyeOff, Info } from 'lucide-react';
 import { ThemeLogo } from '@/components/layout/ThemeLogo';
 import { toast } from 'sonner';
 import { ForgotPasswordForm } from './ForgotPasswordForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { validatePassword, isPasswordValid } from '@/lib/password-validation';
+import { PasswordRequirements } from './PasswordRequirements';
 
 interface AuthFormProps {
   onBack?: () => void;
@@ -55,9 +57,10 @@ export function AuthForm({ onBack }: AuthFormProps) {
     const password = formData.get('password') as string;
     const fullName = formData.get('fullName') as string;
 
-    if (password.length < 8) {
-      toast.error('Senha muito curta', {
-        description: 'A senha deve ter pelo menos 8 caracteres para sua segurança.',
+    const { valid, errors } = validatePassword(password);
+    if (!valid) {
+      toast.error('Senha não atende os requisitos', {
+        description: errors[0],
       });
       setIsLoading(false);
       return;
@@ -81,9 +84,6 @@ export function AuthForm({ onBack }: AuthFormProps) {
     return <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />;
   }
 
-  const passwordRequirements = [
-    { met: signupPassword.length >= 8, text: 'Pelo menos 8 caracteres' },
-  ];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -226,8 +226,8 @@ export function AuthForm({ onBack }: AuthFormProps) {
                       type={showSignupPassword ? 'text' : 'password'}
                       placeholder="••••••••"
                       required
-                      minLength={8}
-                      disabled={isLoading}
+                      minLength={10}
+                      aria-label="Senha"
                       onChange={(e) => setSignupPassword(e.target.value)}
                       className="min-h-[44px] pr-10"
                     />
@@ -239,21 +239,9 @@ export function AuthForm({ onBack }: AuthFormProps) {
                       {showSignupPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {/* Password requirements */}
-                  <div className="space-y-1 mt-2">
-                    {passwordRequirements.map((req, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 
-                          className={`h-3.5 w-3.5 ${req.met ? 'text-green-500' : 'text-muted-foreground'}`} 
-                        />
-                        <span className={req.met ? 'text-foreground' : 'text-muted-foreground'}>
-                          {req.text}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  <PasswordRequirements password={signupPassword} />
                 </div>
-                <Button type="submit" className="w-full min-h-[44px]" disabled={isLoading}>
+                <Button type="submit" className="w-full min-h-[44px]" disabled={isLoading || !isPasswordValid(signupPassword)}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

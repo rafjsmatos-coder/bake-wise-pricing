@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Lock, Loader2, Eye, EyeOff, Info, CheckCircle2 } from 'lucide-react';
+import { Lock, Loader2, Eye, EyeOff, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { validatePassword, isPasswordValid } from '@/lib/password-validation';
+import { PasswordRequirements } from './PasswordRequirements';
 
 export function PasswordChangeForm() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -28,10 +30,9 @@ export function PasswordChangeForm() {
       return;
     }
 
-    if (newPassword.length < 8) {
-      toast.error('Senha muito curta', {
-        description: 'A nova senha deve ter pelo menos 8 caracteres.',
-      });
+    const { valid, errors } = validatePassword(newPassword);
+    if (!valid) {
+      toast.error('Senha não atende os requisitos', { description: errors[0] });
       return;
     }
 
@@ -65,10 +66,6 @@ export function PasswordChangeForm() {
     }
   };
 
-  const passwordRequirements = [
-    { met: newPassword.length >= 8, text: 'Pelo menos 8 caracteres' },
-    { met: newPassword === confirmPassword && confirmPassword.length > 0, text: 'Senhas conferem' },
-  ];
 
   return (
     <Card>
@@ -100,7 +97,8 @@ export function PasswordChangeForm() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Digite sua nova senha"
                 required
-                minLength={8}
+                minLength={10}
+                aria-label="Nova Senha"
                 disabled={isLoading}
                 className="min-h-[44px] pr-10"
               />
@@ -124,7 +122,8 @@ export function PasswordChangeForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Digite novamente a nova senha"
                 required
-                minLength={8}
+                minLength={10}
+                aria-label="Confirmar Nova Senha"
                 disabled={isLoading}
                 className="min-h-[44px] pr-10"
               />
@@ -138,23 +137,11 @@ export function PasswordChangeForm() {
             </div>
           </div>
 
-          {/* Password requirements */}
-          <div className="space-y-1.5 text-sm">
-            {passwordRequirements.map((req, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <CheckCircle2 
-                  className={`h-4 w-4 ${req.met ? 'text-green-500' : 'text-muted-foreground'}`} 
-                />
-                <span className={req.met ? 'text-foreground' : 'text-muted-foreground'}>
-                  {req.text}
-                </span>
-              </div>
-            ))}
-          </div>
+          <PasswordRequirements password={newPassword} confirmPassword={confirmPassword} />
 
           <Button
             type="submit"
-            disabled={isLoading || newPassword.length < 8 || newPassword !== confirmPassword}
+            disabled={isLoading || !isPasswordValid(newPassword) || newPassword !== confirmPassword}
             className="w-full sm:w-auto min-h-[44px]"
           >
             {isLoading ? (
