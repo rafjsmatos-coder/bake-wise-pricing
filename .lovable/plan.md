@@ -1,120 +1,201 @@
-# Politica de Senha Forte — Plano de Implementacao
+
+# P0-4: Tratamento past_due/incomplete + P1-3: Webhook Stripe
 
 ## Resumo
 
-Criar uma funcao utilitaria unica (`src/lib/password-validation.ts`) com todas as regras de senha e um componente visual reutilizavel (`src/components/auth/PasswordRequirements.tsx`), e aplicar em todos os 3 formularios + backend.
+Duas mudancas complementares: (1) o webhook do Stripe para sincronizacao em tempo real de eventos de assinatura, e (2) tratamento correto dos status `past_due` e `incomplete` em todo o fluxo.
 
 ---
 
-## 1. Novo arquivo: `src/lib/password-validation.ts`
+## 1. Migracoes no banco de dados
 
-Contera:
+### 1a. Adicionar `past_due` ao enum `subscription_status`
+
+O enum atual so tem: `trial`, `active`, `canceled`, `expired`, `pending`. Precisamos adicionar `past_due`.
 
 ```text
-- MIN_LENGTH = 10
-- Regex: pelo menos 1 letra (/[a-zA-Z]/)
-- Regex: pelo menos 1 numero (/[0-9]/)
-- Regex: pelo menos 1 caractere especial (/[!@#$%&*._\-]/)
-- Lista de senhas bloqueadas: ["12345678", "1234567890", "password", "qwerty", "abcdefg", "11111111", "precibake", "senha1234", "abcd1234"]
+ALTER TYPE subscription_status ADD VALUE IF NOT EXISTS 'past_due';
 ```
 
-Funcoes exportadas:
+**Nota:** `incomplete` do Stripe sera mapeado para `pending` no banco local (ja existe), pois o comportamento e o mesmo: aguardando pagamento.
 
-- `getPasswordRequirements(password: string)` — retorna array de `{ key, met, text }` para checklist visual
-- `validatePassword(password: string)` — retorna `{ valid: boolean, errors: string[] }` para uso em submit
-- `isPasswordValid(password: string)` — boolean simples para disabled/enabled do botao
+### 1b. Criar tabela `webhook_events` para idempotencia
 
----
-
-## 2. Novo componente: `src/components/auth/PasswordRequirements.tsx`
-
-Componente reutilizavel que recebe `password: string` e renderiza o checklist visual com icones CheckCircle2 (verde quando atendido, cinza quando nao). Inclui `role="list"` e `aria-label="Requisitos de senha"` para acessibilidade.
-
-Requisitos exibidos:
-
-- Pelo menos 10 caracteres
-- Pelo menos 1 letra (a-z)
-- Pelo menos 1 numero (0-9)
-- Pelo menos 1 caractere especial (!@#$%&*._-)
-- Senhas conferem (quando `confirmPassword` for fornecido)
-- Senha nao e uma senha comum
-
----
-
-## 3. Alteracoes nos formularios
-
-### 3a. `src/components/auth/AuthForm.tsx` (Cadastro)
-
-- Remover logica inline de `passwordRequirements` (linhas 84-86)
-- Remover validacao inline `password.length < 8` (linhas 58-64)
-- Importar `validatePassword`, `isPasswordValid` de `password-validation.ts`
-- Importar `PasswordRequirements` componente
-- No submit: chamar `validatePassword()` e mostrar toast com primeiro erro se invalido
-- No botao: `disabled={!isPasswordValid(signupPassword)}`
-- Atualizar `minLength` do input de 8 para 10
-- Adicionar `aria-label="Senha"` no input
-
-### 3b. `src/components/auth/ResetPasswordForm.tsx` (Reset)
-
-- Remover logica inline de `passwordRequirements` (linhas 68-71)
-- Remover validacao inline `newPassword.length < 8` (linhas 33-38)
-- Importar e usar `validatePassword`, `isPasswordValid`, `PasswordRequirements`
-- No submit: chamar `validatePassword()` antes de enviar
-- No botao: `disabled={!isPasswordValid(newPassword) || newPassword !== confirmPassword}`
-- Atualizar `minLength` de 8 para 10
-- Adicionar `aria-label` nos inputs
-
-### 3c. `src/components/auth/PasswordChangeForm.tsx` (Painel logado)
-
-- Mesmas mudancas: remover logica inline, importar util e componente
-- Remover validacao `newPassword.length < 8` (linhas 31-36)
-- Remover `passwordRequirements` inline (linhas 68-71)
-- No submit: `validatePassword()` antes de enviar
-- Botao: `disabled={!isPasswordValid(newPassword) || newPassword !== confirmPassword}`
-- Atualizar `minLength` de 8 para 10
-
----
-
-## 4. Validacao no backend (defense-in-depth)
-
-### `supabase/functions/send-auth-email/index.ts`
-
-Adicionar validacao de senha ANTES do `createUser` no fluxo de signup:
+Webhooks do Stripe podem ser enviados mais de uma vez. Precisamos de uma tabela para registrar eventos ja processados:
 
 ```text
-- Verificar length >= 10
-- Verificar regex letra, numero, especial
-- Verificar lista de bloqueadas
-- Se invalido: retornar 400 com mensagem clara
+CREATE TABLE webhook_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stripe_event_id TEXT NOT NULL UNIQUE,
+  event_type TEXT NOT NULL,
+  processed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- RLS habilitado mas sem policies (acesso somente via service role)
+ALTER TABLE webhook_events ENABLE ROW LEVEL SECURITY;
+
+-- Limpeza automatica de eventos antigos (> 30 dias)
+CREATE INDEX idx_webhook_events_processed ON webhook_events(processed_at);
 ```
 
-Isso garante que mesmo se alguem chamar a API diretamente (bypass do frontend), a senha fraca sera rejeitada.
+---
+
+## 2. Nova Edge Function: `stripe-webhook`
+
+**Arquivo:** `supabase/functions/stripe-webhook/index.ts`
+
+**Configuracao em config.toml:**
+```text
+[functions.stripe-webhook]
+verify_jwt = false
+```
+
+**Eventos tratados:**
+
+| Evento Stripe | Acao no banco |
+|---|---|
+| `invoice.paid` | status = `active`, atualiza `subscription_ends_at` |
+| `invoice.payment_failed` | status = `past_due` |
+| `customer.subscription.updated` | sincroniza status (active/past_due/canceled) e datas |
+| `customer.subscription.deleted` | status = `expired` |
+| `checkout.session.completed` | status = `active` ou `pending` (boleto) |
+
+**Logica principal:**
+
+1. Verificar assinatura do webhook usando `STRIPE_WEBHOOK_SECRET` (ja configurado nos secrets)
+2. Checar idempotencia na tabela `webhook_events` -- se ja processou, retornar 200
+3. Extrair `user_id` dos metadados da subscription (definido no `create-checkout` via `subscription_data.metadata`)
+4. Se nao encontrar `user_id` nos metadados, buscar pelo `stripe_customer_id` na tabela `subscriptions`
+5. Atualizar tabela `subscriptions` conforme o evento
+6. Registrar evento na tabela `webhook_events`
+7. Retornar 200
+
+**Mapeamento de status Stripe para local:**
+
+```text
+Stripe "active"    -> local "active"
+Stripe "past_due"  -> local "past_due"
+Stripe "canceled"  -> local "canceled"
+Stripe "unpaid"    -> local "expired"
+Stripe "incomplete" -> local "pending"
+Stripe "incomplete_expired" -> local "expired"
+```
 
 ---
 
-## 5. Arquivos alterados (resumo)
+## 3. Atualizar `check-subscription` (Edge Function)
 
+Adicionar tratamento do status `past_due`:
 
-| Arquivo                                        | Acao                            |
-| ---------------------------------------------- | ------------------------------- |
-| `src/lib/password-validation.ts`               | CRIAR — util centralizado       |
-| `src/components/auth/PasswordRequirements.tsx` | CRIAR — componente visual       |
-| `src/components/auth/AuthForm.tsx`             | EDITAR — usar util + componente |
-| `src/components/auth/ResetPasswordForm.tsx`    | EDITAR — usar util + componente |
-| `src/components/auth/PasswordChangeForm.tsx`   | EDITAR — usar util + componente |
-| `supabase/functions/send-auth-email/index.ts`  | EDITAR — validacao backend      |
-
-
----
-
-## 6. Checklist de testes
-
-- Cadastro: senha com 9 chars → bloqueado; sem numero → bloqueado; sem especial → bloqueado; "precibake" → bloqueado; senha valida → OK
-- Reset senha: mesmas regras aplicadas; botao desabilitado ate cumprir tudo; senhas nao conferem → bloqueado
-- Painel (alterar senha logado): mesmas regras; toast de erro claro quando invalido
-- Backend: POST direto para send-auth-email com senha fraca → 400
-- Mobile: checklist visivel e legivel em tela pequena
-- Modo escuro: cores do checklist consistentes  
+```text
+} else if (subscription.status === 'past_due') {
+  // Carencia de 3 dias para boleto: permitir acesso
+  const subEnds = subscription.subscription_ends_at
+    ? new Date(subscription.subscription_ends_at)
+    : null;
   
-Aproveite já consete o botõ do odo escuo no desktop, tem algo errado lá.  
-só tem um icone lá, e não da de identificar pra que serve.
+  if (subEnds) {
+    const gracePeriodEnd = new Date(subEnds.getTime() + 3 * 24 * 60 * 60 * 1000);
+    if (gracePeriodEnd > now) {
+      canAccess = true;
+      daysRemaining = Math.ceil((gracePeriodEnd.getTime() - now.getTime()) / (1000*60*60*24));
+    } else {
+      canAccess = false;
+      currentStatus = 'expired';
+      // Atualizar banco
+    }
+  } else {
+    canAccess = false;
+  }
+}
+```
+
+No fallback Stripe (quando status e `expired`), tambem buscar subscriptions com status `past_due`:
+
+```text
+const subscriptions = await stripe.subscriptions.list({
+  customer: customerId,
+  limit: 1,
+});
+// Verificar se tem active OU past_due
+```
+
+---
+
+## 4. Atualizar Frontend
+
+### 4a. `useSubscription.tsx`
+
+Adicionar `past_due` ao tipo `SubscriptionStatus`:
+
+```text
+type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'canceled' | 'pending' | 'past_due' | 'loading';
+```
+
+### 4b. `SubscriptionPaywall.tsx`
+
+Nenhuma mudanca necessaria -- `past_due` com acesso permitido nao mostra paywall. Se o acesso for negado apos a carencia, o status ja sera `expired`.
+
+### 4c. `DashboardHome.tsx` (card de status)
+
+Adicionar mensagem para `past_due`:
+
+```text
+"Pagamento pendente - regularize para evitar interrupcao"
+```
+
+Com um botao "Gerenciar Assinatura" que abre o Customer Portal.
+
+### 4d. `TrialBanner` ou card equivalente no Dashboard
+
+Exibir alerta amarelo quando status for `past_due` informando que o pagamento falhou e dando link para o portal.
+
+---
+
+## 5. Decisao sobre Boleto Recorrente
+
+**Politica de carencia para `past_due`:**
+- **3 dias de carencia apos `subscription_ends_at`** -- o usuario mantem acesso
+- Apos 3 dias, status muda para `expired` e acesso e bloqueado
+- Isso cobre o cenario de boleto recorrente onde o usuario pode levar 1-2 dias uteis para pagar
+
+**Justificativa:** Stripe ja trata boleto recorrente como `past_due` quando o boleto nao e pago ate o vencimento. 3 dias e suficiente para compensacao bancaria sem dar acesso excessivo a inadimplentes.
+
+---
+
+## 6. Arquivos alterados (resumo)
+
+| Arquivo | Acao |
+|---|---|
+| Migracao SQL | Adicionar `past_due` ao enum + criar tabela `webhook_events` |
+| `supabase/config.toml` | Adicionar `[functions.stripe-webhook] verify_jwt = false` |
+| `supabase/functions/stripe-webhook/index.ts` | CRIAR -- processar webhooks do Stripe |
+| `supabase/functions/check-subscription/index.ts` | EDITAR -- tratar `past_due` com carencia |
+| `src/hooks/useSubscription.tsx` | EDITAR -- adicionar tipo `past_due` |
+| `src/components/dashboard/DashboardHome.tsx` | EDITAR -- alerta de pagamento pendente |
+
+---
+
+## 7. Configuracao necessaria no Stripe Dashboard
+
+Apos o deploy, sera necessario configurar a URL do webhook no Stripe:
+
+```text
+URL: https://ektodtogznnlwvcsawgu.supabase.co/functions/v1/stripe-webhook
+Eventos: invoice.paid, invoice.payment_failed, customer.subscription.updated, customer.subscription.deleted, checkout.session.completed
+```
+
+O secret `STRIPE_WEBHOOK_SECRET` ja esta configurado nos secrets do projeto.
+
+---
+
+## 8. Checklist de testes
+
+- Webhook: enviar evento `invoice.paid` via Stripe CLI e verificar que o banco atualiza para `active`
+- Webhook: enviar `invoice.payment_failed` e verificar status `past_due` no banco
+- Webhook: enviar `customer.subscription.deleted` e verificar status `expired`
+- Idempotencia: enviar o mesmo evento duas vezes e verificar que so processa uma
+- Carencia: usuario com `past_due` dentro de 3 dias tem `canAccess: true`
+- Carencia expirada: usuario com `past_due` apos 3 dias tem `canAccess: false` e status `expired`
+- Dashboard: card de alerta amarelo aparece quando status e `past_due`
+- Fallback Stripe: `check-subscription` detecta subscription `past_due` no Stripe e sincroniza
