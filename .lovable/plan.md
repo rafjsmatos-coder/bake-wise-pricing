@@ -1,201 +1,94 @@
 
-# P0-4: Tratamento past_due/incomplete + P1-3: Webhook Stripe
+# Correcao do Fluxo de Boleto + Visibilidade de Status Pendente
 
-## Resumo
+## Diagnostico
 
-Duas mudancas complementares: (1) o webhook do Stripe para sincronizacao em tempo real de eventos de assinatura, e (2) tratamento correto dos status `past_due` e `incomplete` em todo o fluxo.
+Analisei os logs e o banco de dados. Encontrei os seguintes problemas:
 
----
+### 1. Webhook com erro "Invalid time value"
+O evento `checkout.session.completed` foi recebido mas falhou com "Invalid time value". Isso acontece porque ao pagar via boleto, a subscription do Stripe comeca com status `incomplete` e o campo `current_period_end` pode nao estar disponivel da forma esperada. O codigo tenta `new Date(stripeSub.current_period_end * 1000)` e falha.
 
-## 1. Migracoes no banco de dados
+### 2. Evento `customer.subscription.created` nao tratado
+O webhook recebeu o evento `customer.subscription.created` (esta na tabela `webhook_events`), mas o codigo nao tem esse case no switch -- cai no `default` e nao faz nada.
 
-### 1a. Adicionar `past_due` ao enum `subscription_status`
+### 3. Assinatura no banco ainda esta como `trial`
+Por causa dos dois erros acima, a assinatura do usuario `anjo.flor12@gmail.com` nunca foi atualizada para `pending` (boleto aguardando) ou `active` (apos pagamento).
 
-O enum atual so tem: `trial`, `active`, `canceled`, `expired`, `pending`. Precisamos adicionar `past_due`.
+### 4. Fallback do check-subscription limitado
+O fallback Stripe em `check-subscription` so busca subscriptions `active` ou `past_due`, mas nao busca `incomplete` (boleto pendente). Alem disso, so roda quando status local e `expired`, e o usuario esta como `trial`.
 
-```text
-ALTER TYPE subscription_status ADD VALUE IF NOT EXISTS 'past_due';
-```
-
-**Nota:** `incomplete` do Stripe sera mapeado para `pending` no banco local (ja existe), pois o comportamento e o mesmo: aguardando pagamento.
-
-### 1b. Criar tabela `webhook_events` para idempotencia
-
-Webhooks do Stripe podem ser enviados mais de uma vez. Precisamos de uma tabela para registrar eventos ja processados:
-
-```text
-CREATE TABLE webhook_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  stripe_event_id TEXT NOT NULL UNIQUE,
-  event_type TEXT NOT NULL,
-  processed_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- RLS habilitado mas sem policies (acesso somente via service role)
-ALTER TABLE webhook_events ENABLE ROW LEVEL SECURITY;
-
--- Limpeza automatica de eventos antigos (> 30 dias)
-CREATE INDEX idx_webhook_events_processed ON webhook_events(processed_at);
-```
+### 5. Falta visibilidade do boleto pendente
+O `SubscriptionCard` mostra badge "Pendente" mas nao da informacoes uteis sobre o boleto.
 
 ---
 
-## 2. Nova Edge Function: `stripe-webhook`
+## Plano de Correcao
 
-**Arquivo:** `supabase/functions/stripe-webhook/index.ts`
+### Arquivo 1: `supabase/functions/stripe-webhook/index.ts`
 
-**Configuracao em config.toml:**
-```text
-[functions.stripe-webhook]
-verify_jwt = false
-```
+**Correcoes:**
 
-**Eventos tratados:**
-
-| Evento Stripe | Acao no banco |
-|---|---|
-| `invoice.paid` | status = `active`, atualiza `subscription_ends_at` |
-| `invoice.payment_failed` | status = `past_due` |
-| `customer.subscription.updated` | sincroniza status (active/past_due/canceled) e datas |
-| `customer.subscription.deleted` | status = `expired` |
-| `checkout.session.completed` | status = `active` ou `pending` (boleto) |
-
-**Logica principal:**
-
-1. Verificar assinatura do webhook usando `STRIPE_WEBHOOK_SECRET` (ja configurado nos secrets)
-2. Checar idempotencia na tabela `webhook_events` -- se ja processou, retornar 200
-3. Extrair `user_id` dos metadados da subscription (definido no `create-checkout` via `subscription_data.metadata`)
-4. Se nao encontrar `user_id` nos metadados, buscar pelo `stripe_customer_id` na tabela `subscriptions`
-5. Atualizar tabela `subscriptions` conforme o evento
-6. Registrar evento na tabela `webhook_events`
-7. Retornar 200
-
-**Mapeamento de status Stripe para local:**
+1. Adicionar tratamento do evento `customer.subscription.created` -- sincronizar status e datas
+2. Corrigir o bug de "Invalid time value" no `checkout.session.completed` -- verificar se `current_period_end` existe antes de converter, e tratar subscriptions incompletas (boleto)
+3. Adicionar tratamento seguro de datas em todos os handlers -- usar funcao helper que valida antes de criar Date
 
 ```text
-Stripe "active"    -> local "active"
-Stripe "past_due"  -> local "past_due"
-Stripe "canceled"  -> local "canceled"
-Stripe "unpaid"    -> local "expired"
-Stripe "incomplete" -> local "pending"
-Stripe "incomplete_expired" -> local "expired"
-```
-
----
-
-## 3. Atualizar `check-subscription` (Edge Function)
-
-Adicionar tratamento do status `past_due`:
-
-```text
-} else if (subscription.status === 'past_due') {
-  // Carencia de 3 dias para boleto: permitir acesso
-  const subEnds = subscription.subscription_ends_at
-    ? new Date(subscription.subscription_ends_at)
-    : null;
-  
-  if (subEnds) {
-    const gracePeriodEnd = new Date(subEnds.getTime() + 3 * 24 * 60 * 60 * 1000);
-    if (gracePeriodEnd > now) {
-      canAccess = true;
-      daysRemaining = Math.ceil((gracePeriodEnd.getTime() - now.getTime()) / (1000*60*60*24));
-    } else {
-      canAccess = false;
-      currentStatus = 'expired';
-      // Atualizar banco
-    }
-  } else {
-    canAccess = false;
-  }
+// Helper seguro para converter timestamp Stripe
+function safeStripeDate(timestamp: number | undefined | null): string | null {
+  if (!timestamp || isNaN(timestamp)) return null;
+  const date = new Date(timestamp * 1000);
+  if (isNaN(date.getTime())) return null;
+  return date.toISOString();
 }
 ```
 
-No fallback Stripe (quando status e `expired`), tambem buscar subscriptions com status `past_due`:
+4. No `checkout.session.completed`, tratar o caso de `payment_status === 'unpaid'` (boleto) definindo status como `pending`
 
-```text
-const subscriptions = await stripe.subscriptions.list({
-  customer: customerId,
-  limit: 1,
-});
-// Verificar se tem active OU past_due
-```
+### Arquivo 2: `supabase/functions/check-subscription/index.ts`
 
----
+**Correcoes:**
 
-## 4. Atualizar Frontend
+1. Adicionar tratamento do status `pending` -- nao dar acesso mas manter o status correto
+2. Expandir o fallback Stripe para tambem buscar subscriptions `incomplete` e `trialing`, alem de `active` e `past_due`
+3. Rodar o fallback tambem quando status local e `trial` E a subscription tem `stripe_customer_id` (significa que ja fez checkout)
 
-### 4a. `useSubscription.tsx`
+### Arquivo 3: `src/components/subscription/SubscriptionCard.tsx`
 
-Adicionar `past_due` ao tipo `SubscriptionStatus`:
+**Melhorias de UI:**
 
-```text
-type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'canceled' | 'pending' | 'past_due' | 'loading';
-```
+1. Adicionar caso `pending` nas informacoes de expiracao -- mostrar mensagem "Boleto aguardando pagamento"
+2. Adicionar caso `past_due` nas informacoes -- mostrar alerta de pagamento atrasado com botao para o portal
+3. Destacar visualmente o estado pendente com cor amarela
 
-### 4b. `SubscriptionPaywall.tsx`
+### Arquivo 4: `src/hooks/useSubscription.tsx`
 
-Nenhuma mudanca necessaria -- `past_due` com acesso permitido nao mostra paywall. Se o acesso for negado apos a carencia, o status ja sera `expired`.
+**Pequeno ajuste:**
 
-### 4c. `DashboardHome.tsx` (card de status)
-
-Adicionar mensagem para `past_due`:
-
-```text
-"Pagamento pendente - regularize para evitar interrupcao"
-```
-
-Com um botao "Gerenciar Assinatura" que abre o Customer Portal.
-
-### 4d. `TrialBanner` ou card equivalente no Dashboard
-
-Exibir alerta amarelo quando status for `past_due` informando que o pagamento falhou e dando link para o portal.
+1. Garantir que `pending` esta no tipo `SubscriptionStatus` (ja esta, apenas confirmar)
 
 ---
 
-## 5. Decisao sobre Boleto Recorrente
+## Sobre sua pergunta do boleto
 
-**Politica de carencia para `past_due`:**
-- **3 dias de carencia apos `subscription_ends_at`** -- o usuario mantem acesso
-- Apos 3 dias, status muda para `expired` e acesso e bloqueado
-- Isso cobre o cenario de boleto recorrente onde o usuario pode levar 1-2 dias uteis para pagar
+Quando o usuario paga via boleto no Stripe:
 
-**Justificativa:** Stripe ja trata boleto recorrente como `past_due` quando o boleto nao e pago ate o vencimento. 3 dias e suficiente para compensacao bancaria sem dar acesso excessivo a inadimplentes.
+1. `checkout.session.completed` dispara com `payment_status: 'unpaid'` -- boleto gerado mas nao pago
+2. O Stripe envia `invoice.paid` quando o boleto e compensado (1-2 dias uteis)
+3. O webhook `invoice.paid` atualiza o status para `active`
 
----
+**O que acontecera apos as correcoes:**
+- Ao gerar o boleto: status muda para `pending`, usuario ve "Boleto aguardando pagamento" no dashboard
+- Ao pagar o boleto: webhook `invoice.paid` atualiza para `active`, usuario ve "Premium Ativo"
+- Se o boleto nao for pago: o Stripe cancela automaticamente e o webhook atualiza para `expired`
 
-## 6. Arquivos alterados (resumo)
-
-| Arquivo | Acao |
-|---|---|
-| Migracao SQL | Adicionar `past_due` ao enum + criar tabela `webhook_events` |
-| `supabase/config.toml` | Adicionar `[functions.stripe-webhook] verify_jwt = false` |
-| `supabase/functions/stripe-webhook/index.ts` | CRIAR -- processar webhooks do Stripe |
-| `supabase/functions/check-subscription/index.ts` | EDITAR -- tratar `past_due` com carencia |
-| `src/hooks/useSubscription.tsx` | EDITAR -- adicionar tipo `past_due` |
-| `src/components/dashboard/DashboardHome.tsx` | EDITAR -- alerta de pagamento pendente |
+**Para o pagamento que voce ja fez:** Apos o deploy, o `check-subscription` vai detectar via fallback Stripe que a assinatura esta ativa e sincronizar automaticamente.
 
 ---
 
-## 7. Configuracao necessaria no Stripe Dashboard
+## Checklist de testes
 
-Apos o deploy, sera necessario configurar a URL do webhook no Stripe:
-
-```text
-URL: https://ektodtogznnlwvcsawgu.supabase.co/functions/v1/stripe-webhook
-Eventos: invoice.paid, invoice.payment_failed, customer.subscription.updated, customer.subscription.deleted, checkout.session.completed
-```
-
-O secret `STRIPE_WEBHOOK_SECRET` ja esta configurado nos secrets do projeto.
-
----
-
-## 8. Checklist de testes
-
-- Webhook: enviar evento `invoice.paid` via Stripe CLI e verificar que o banco atualiza para `active`
-- Webhook: enviar `invoice.payment_failed` e verificar status `past_due` no banco
-- Webhook: enviar `customer.subscription.deleted` e verificar status `expired`
-- Idempotencia: enviar o mesmo evento duas vezes e verificar que so processa uma
-- Carencia: usuario com `past_due` dentro de 3 dias tem `canAccess: true`
-- Carencia expirada: usuario com `past_due` apos 3 dias tem `canAccess: false` e status `expired`
-- Dashboard: card de alerta amarelo aparece quando status e `past_due`
-- Fallback Stripe: `check-subscription` detecta subscription `past_due` no Stripe e sincroniza
+- Verificar que apos deploy, o usuario `anjo.flor12` aparece como `active` (se boleto ja foi pago no Stripe)
+- Testar novo checkout com boleto: status deve mudar para `pending` imediatamente
+- Verificar que SubscriptionCard mostra "Boleto aguardando pagamento" quando status e `pending`
+- Confirmar que webhook `invoice.paid` atualiza corretamente para `active`
+- Verificar que o alerta `past_due` aparece corretamente no dashboard
