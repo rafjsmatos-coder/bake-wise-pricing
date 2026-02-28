@@ -8,6 +8,14 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
+// Helper seguro para converter timestamp Stripe
+function safeStripeDate(timestamp: number | undefined | null): string | null {
+  if (!timestamp || isNaN(timestamp)) return null;
+  const date = new Date(timestamp * 1000);
+  if (isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
 // Carência de 3 dias para past_due (boleto)
 const GRACE_PERIOD_MS = 3 * 24 * 60 * 60 * 1000;
 
@@ -144,38 +152,61 @@ serve(async (req) => {
       }
     } else if (subscription.status === 'pending') {
       canAccess = false;
+      logStep("Status pending (boleto awaiting payment)");
     }
 
-    // FALLBACK: Se expired, consultar Stripe para detectar assinaturas ativas não sincronizadas
-    if (currentStatus === 'expired' && !subscription.manual_override && userEmail) {
-      logStep("Status expired, checking Stripe fallback", { email: userEmail });
+    // FALLBACK: Consultar Stripe para detectar assinaturas não sincronizadas
+    // Roda quando: (1) status expired sem override, ou (2) status trial/pending com stripe_customer_id
+    const shouldFallback = 
+      (currentStatus === 'expired' && !subscription.manual_override) ||
+      ((subscription.status === 'trial' || subscription.status === 'pending') && subscription.stripe_customer_id);
+
+    if (shouldFallback && userEmail) {
+      logStep("Running Stripe fallback", { localStatus: currentStatus, email: userEmail });
       
       try {
         const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
         if (stripeKey) {
           const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-          const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
           
-          if (customers.data.length > 0) {
-            const customerId = customers.data[0].id;
-            // Buscar qualquer subscription ativa ou past_due
+          // Buscar customer pelo stripe_customer_id salvo ou pelo email
+          let customerId = subscription.stripe_customer_id;
+          if (!customerId) {
+            const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+            if (customers.data.length > 0) {
+              customerId = customers.data[0].id;
+            }
+          }
+          
+          if (customerId) {
+            // Buscar TODAS as subscriptions (sem filtrar por status)
             const subscriptions = await stripe.subscriptions.list({
               customer: customerId,
-              limit: 1,
+              limit: 5,
             });
             
-            const activeSub = subscriptions.data.find(s => 
-              s.status === 'active' || s.status === 'past_due'
-            );
+            // Priorizar: active > past_due > incomplete > trialing
+            const priorityOrder = ['active', 'past_due', 'incomplete', 'trialing'];
+            let bestSub: Stripe.Subscription | null = null;
             
-            if (activeSub) {
-              const subEnd = new Date(activeSub.current_period_end * 1000);
-              const localStatus = activeSub.status === 'active' ? 'active' : 'past_due';
+            for (const priority of priorityOrder) {
+              bestSub = subscriptions.data.find(s => s.status === priority) || null;
+              if (bestSub) break;
+            }
+            
+            if (bestSub) {
+              const subEnd = safeStripeDate(bestSub.current_period_end);
+              const localStatus = bestSub.status === 'active' ? 'active' 
+                : bestSub.status === 'past_due' ? 'past_due'
+                : bestSub.status === 'incomplete' ? 'pending'
+                : bestSub.status === 'trialing' ? 'trial'
+                : 'expired';
               
               logStep("Found Stripe subscription, syncing", {
-                stripeSubId: activeSub.id,
-                status: localStatus,
-                endDate: subEnd.toISOString(),
+                stripeSubId: bestSub.id,
+                stripeStatus: bestSub.status,
+                localStatus,
+                endDate: subEnd,
               });
               
               await supabaseAdmin
@@ -183,8 +214,8 @@ serve(async (req) => {
                 .update({
                   status: localStatus,
                   stripe_customer_id: customerId,
-                  stripe_subscription_id: activeSub.id,
-                  subscription_ends_at: subEnd.toISOString(),
+                  stripe_subscription_id: bestSub.id,
+                  subscription_ends_at: subEnd,
                   manual_override: false,
                 })
                 .eq("user_id", userId);
@@ -193,22 +224,27 @@ serve(async (req) => {
               
               if (localStatus === 'active') {
                 canAccess = true;
-                daysRemaining = Math.ceil((subEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-              } else {
-                // past_due — aplicar carência
-                const gracePeriodEnd = new Date(subEnd.getTime() + GRACE_PERIOD_MS);
-                if (gracePeriodEnd > now) {
-                  canAccess = true;
-                  daysRemaining = Math.ceil((gracePeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                } else {
-                  canAccess = false;
+                if (subEnd) {
+                  const subEndDate = new Date(subEnd);
+                  daysRemaining = Math.ceil((subEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                 }
+              } else if (localStatus === 'past_due') {
+                if (subEnd) {
+                  const subEndDate = new Date(subEnd);
+                  const gracePeriodEnd = new Date(subEndDate.getTime() + GRACE_PERIOD_MS);
+                  if (gracePeriodEnd > now) {
+                    canAccess = true;
+                    daysRemaining = Math.ceil((gracePeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                  }
+                }
+              } else if (localStatus === 'pending') {
+                canAccess = false;
               }
             } else {
-              logStep("No active/past_due Stripe subscription found");
+              logStep("No relevant Stripe subscription found");
             }
           } else {
-            logStep("No Stripe customer found for email");
+            logStep("No Stripe customer found");
           }
         }
       } catch (stripeErr) {
