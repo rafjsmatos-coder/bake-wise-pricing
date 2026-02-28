@@ -7,6 +7,14 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Helper seguro para converter timestamp Stripe
+function safeStripeDate(timestamp: number | undefined | null): string | null {
+  if (!timestamp || isNaN(timestamp)) return null;
+  const date = new Date(timestamp * 1000);
+  if (isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
 // Mapeamento de status Stripe → local
 function mapStripeStatus(stripeStatus: string): string {
   switch (stripeStatus) {
@@ -16,8 +24,37 @@ function mapStripeStatus(stripeStatus: string): string {
     case 'unpaid': return 'expired';
     case 'incomplete': return 'pending';
     case 'incomplete_expired': return 'expired';
+    case 'trialing': return 'trial';
     default: return 'expired';
   }
+}
+
+// Helper para encontrar user_id a partir de metadata ou stripe_customer_id
+async function findUserId(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  metadata: Record<string, string> | null | undefined,
+  customerId: string | null
+): Promise<{ userId: string | null; method: string }> {
+  const metaUserId = metadata?.user_id;
+  if (metaUserId) return { userId: metaUserId, method: 'metadata' };
+
+  if (customerId) {
+    const { data } = await supabaseAdmin
+      .from("subscriptions")
+      .select("user_id")
+      .eq("stripe_customer_id", customerId)
+      .maybeSingle();
+    if (data?.user_id) return { userId: data.user_id, method: 'customer_id_lookup' };
+  }
+
+  return { userId: null, method: 'none' };
+}
+
+// Helper para extrair customer ID de objeto Stripe
+function extractCustomerId(customer: string | Stripe.Customer | Stripe.DeletedCustomer | null): string | null {
+  if (!customer) return null;
+  if (typeof customer === 'string') return customer;
+  return customer.id ?? null;
 }
 
 serve(async (req) => {
@@ -90,17 +127,14 @@ serve(async (req) => {
           : invoice.subscription?.id;
 
         if (subscriptionId) {
-          // Buscar subscription no Stripe para obter dados atualizados
           const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
-          const userId = stripeSub.metadata?.user_id;
-          const customerId = typeof stripeSub.customer === 'string'
-            ? stripeSub.customer
-            : stripeSub.customer?.id;
-          const periodEnd = new Date(stripeSub.current_period_end * 1000);
+          const customerId = extractCustomerId(stripeSub.customer);
+          const periodEnd = safeStripeDate(stripeSub.current_period_end);
+          const { userId, method } = await findUserId(supabaseAdmin, stripeSub.metadata, customerId);
 
           const updateData = {
             status: 'active' as const,
-            subscription_ends_at: periodEnd.toISOString(),
+            subscription_ends_at: periodEnd,
             stripe_subscription_id: subscriptionId,
             stripe_customer_id: customerId,
             manual_override: false,
@@ -111,13 +145,7 @@ serve(async (req) => {
               .from("subscriptions")
               .update(updateData)
               .eq("user_id", userId);
-            logStep("invoice.paid: Updated subscription via user_id", { userId });
-          } else if (customerId) {
-            await supabaseAdmin
-              .from("subscriptions")
-              .update(updateData)
-              .eq("stripe_customer_id", customerId);
-            logStep("invoice.paid: Updated subscription via customer_id", { customerId });
+            logStep("invoice.paid: Updated subscription", { userId, method });
           }
         }
         break;
@@ -131,42 +159,31 @@ serve(async (req) => {
 
         if (subscriptionId) {
           const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
-          const userId = stripeSub.metadata?.user_id;
-          const customerId = typeof stripeSub.customer === 'string'
-            ? stripeSub.customer
-            : stripeSub.customer?.id;
-
-          const updateData = { status: 'past_due' as const };
+          const customerId = extractCustomerId(stripeSub.customer);
+          const { userId, method } = await findUserId(supabaseAdmin, stripeSub.metadata, customerId);
 
           if (userId) {
             await supabaseAdmin
               .from("subscriptions")
-              .update(updateData)
+              .update({ status: 'past_due' as const })
               .eq("user_id", userId);
-            logStep("invoice.payment_failed: Set past_due via user_id", { userId });
-          } else if (customerId) {
-            await supabaseAdmin
-              .from("subscriptions")
-              .update(updateData)
-              .eq("stripe_customer_id", customerId);
-            logStep("invoice.payment_failed: Set past_due via customer_id", { customerId });
+            logStep("invoice.payment_failed: Set past_due", { userId, method });
           }
         }
         break;
       }
 
+      case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const stripeSub = event.data.object as Stripe.Subscription;
-        const userId = stripeSub.metadata?.user_id;
-        const customerId = typeof stripeSub.customer === 'string'
-          ? stripeSub.customer
-          : stripeSub.customer?.id;
-        const periodEnd = new Date(stripeSub.current_period_end * 1000);
+        const customerId = extractCustomerId(stripeSub.customer);
+        const periodEnd = safeStripeDate(stripeSub.current_period_end);
         const localStatus = mapStripeStatus(stripeSub.status);
+        const { userId, method } = await findUserId(supabaseAdmin, stripeSub.metadata, customerId);
 
         const updateData = {
           status: localStatus,
-          subscription_ends_at: periodEnd.toISOString(),
+          subscription_ends_at: periodEnd,
           stripe_subscription_id: stripeSub.id,
           stripe_customer_id: customerId,
           manual_override: false,
@@ -177,41 +194,24 @@ serve(async (req) => {
             .from("subscriptions")
             .update(updateData)
             .eq("user_id", userId);
-          logStep("subscription.updated: Synced via user_id", { userId, status: localStatus });
-        } else if (customerId) {
-          await supabaseAdmin
-            .from("subscriptions")
-            .update(updateData)
-            .eq("stripe_customer_id", customerId);
-          logStep("subscription.updated: Synced via customer_id", { customerId, status: localStatus });
+          logStep(`${event.type}: Synced`, { userId, status: localStatus, method });
+        } else {
+          logStep(`${event.type}: No user_id found`, { customerId });
         }
         break;
       }
 
       case 'customer.subscription.deleted': {
         const stripeSub = event.data.object as Stripe.Subscription;
-        const userId = stripeSub.metadata?.user_id;
-        const customerId = typeof stripeSub.customer === 'string'
-          ? stripeSub.customer
-          : stripeSub.customer?.id;
-
-        const updateData = {
-          status: 'expired' as const,
-          manual_override: false,
-        };
+        const customerId = extractCustomerId(stripeSub.customer);
+        const { userId, method } = await findUserId(supabaseAdmin, stripeSub.metadata, customerId);
 
         if (userId) {
           await supabaseAdmin
             .from("subscriptions")
-            .update(updateData)
+            .update({ status: 'expired' as const, manual_override: false })
             .eq("user_id", userId);
-          logStep("subscription.deleted: Set expired via user_id", { userId });
-        } else if (customerId) {
-          await supabaseAdmin
-            .from("subscriptions")
-            .update(updateData)
-            .eq("stripe_customer_id", customerId);
-          logStep("subscription.deleted: Set expired via customer_id", { customerId });
+          logStep("subscription.deleted: Set expired", { userId, method });
         }
         break;
       }
@@ -219,38 +219,64 @@ serve(async (req) => {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.user_id;
-        const customerId = typeof session.customer === 'string'
-          ? session.customer
-          : session.customer?.id;
+        const customerId = extractCustomerId(session.customer);
         const subscriptionId = typeof session.subscription === 'string'
           ? session.subscription
           : session.subscription?.id;
 
-        if (subscriptionId) {
-          const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
-          const periodEnd = new Date(stripeSub.current_period_end * 1000);
-          const localStatus = mapStripeStatus(stripeSub.status);
+        if (!userId) {
+          logStep("checkout.completed: No user_id in metadata, skipping");
+          break;
+        }
 
+        // Boleto: payment_status === 'unpaid' significa boleto gerado mas não pago
+        if (session.payment_status === 'unpaid') {
           const updateData = {
-            status: localStatus,
-            subscription_ends_at: periodEnd.toISOString(),
-            stripe_subscription_id: subscriptionId,
+            status: 'pending' as const,
             stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId || null,
             manual_override: false,
           };
+          await supabaseAdmin
+            .from("subscriptions")
+            .update(updateData)
+            .eq("user_id", userId);
+          logStep("checkout.completed: Boleto pending", { userId });
+          break;
+        }
 
-          if (userId) {
+        // Pagamento imediato (cartão)
+        if (subscriptionId) {
+          try {
+            const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+            const periodEnd = safeStripeDate(stripeSub.current_period_end);
+            const localStatus = mapStripeStatus(stripeSub.status);
+
             await supabaseAdmin
               .from("subscriptions")
-              .update(updateData)
+              .update({
+                status: localStatus,
+                subscription_ends_at: periodEnd,
+                stripe_subscription_id: subscriptionId,
+                stripe_customer_id: customerId,
+                manual_override: false,
+              })
               .eq("user_id", userId);
-            logStep("checkout.completed: Updated via user_id", { userId, status: localStatus });
-          } else if (customerId) {
+            logStep("checkout.completed: Updated", { userId, status: localStatus });
+          } catch (subErr) {
+            // Se não conseguir buscar a subscription, ao menos salvar os IDs
+            logStep("checkout.completed: Could not retrieve subscription, saving IDs", {
+              error: subErr instanceof Error ? subErr.message : String(subErr),
+            });
             await supabaseAdmin
               .from("subscriptions")
-              .update(updateData)
-              .eq("stripe_customer_id", customerId);
-            logStep("checkout.completed: Updated via customer_id", { customerId, status: localStatus });
+              .update({
+                status: 'active' as const,
+                stripe_subscription_id: subscriptionId,
+                stripe_customer_id: customerId,
+                manual_override: false,
+              })
+              .eq("user_id", userId);
           }
         }
         break;

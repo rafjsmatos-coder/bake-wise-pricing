@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/hooks/useSubscription';
-import { CreditCard, Calendar, Clock, ExternalLink, RefreshCw, Crown, Loader2 } from 'lucide-react';
+import { CreditCard, Calendar, Clock, ExternalLink, RefreshCw, Crown, Loader2, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -72,7 +72,9 @@ export function SubscriptionCard() {
       case 'canceled':
         return <Badge variant="secondary">Cancelado</Badge>;
       case 'pending':
-        return <Badge className="bg-muted text-muted-foreground border-border">Pendente</Badge>;
+        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Aguardando Pagamento</Badge>;
+      case 'past_due':
+        return <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20">Pagamento Atrasado</Badge>;
       default:
         return <Badge variant="outline">Carregando...</Badge>;
     }
@@ -127,6 +129,47 @@ export function SubscriptionCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Pending (Boleto aguardando) */}
+        {status === 'pending' && (
+          <div className="flex items-start gap-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <Clock className="h-5 w-5 text-yellow-600 mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <p className="font-medium text-foreground">Boleto aguardando pagamento</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Seu boleto foi gerado e está aguardando a confirmação do pagamento. 
+                A compensação pode levar até 2 dias úteis.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Past Due alert */}
+        {status === 'past_due' && (
+          <div className="flex items-start gap-3 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+            <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <p className="font-medium text-foreground">Pagamento atrasado</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Seu pagamento está pendente. Regularize para evitar a interrupção do acesso.
+              </p>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={handleManageSubscription}
+                disabled={isPortalLoading}
+                className="mt-2 gap-2"
+              >
+                {isPortalLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-3.5 w-3.5" />
+                )}
+                Gerenciar Pagamento
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Status Info */}
         {expirationInfo && (
           <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
@@ -207,7 +250,7 @@ export function SubscriptionCard() {
           </Button>
         )}
 
-        {/* Refresh button - useful for boleto payments */}
+        {/* Refresh button */}
         <Button 
           variant="ghost"
           size="sm"
@@ -220,7 +263,9 @@ export function SubscriptionCard() {
         </Button>
         
         <p className="text-xs text-muted-foreground text-center">
-          Pagou via boleto? Clique acima para atualizar seu status.
+          {status === 'pending' 
+            ? 'Pagou o boleto? Clique acima para atualizar seu status.'
+            : 'Pagou via boleto? Clique acima para atualizar seu status.'}
         </p>
       </CardContent>
     </Card>
