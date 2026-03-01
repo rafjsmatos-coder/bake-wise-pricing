@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { ensureSessionUserId } from '@/lib/ensure-session';
 
 export interface UserSettings {
   id: string;
@@ -74,18 +75,19 @@ export function useUserSettings() {
 
   const updateSettings = useMutation({
     mutationFn: async (data: UpdateUserSettingsData) => {
-      if (!user) throw new Error('User not authenticated');
+      const userId = await ensureSessionUserId();
 
       const { data: settings, error } = await supabase
         .from('user_settings')
         .update(data)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .select()
         .single();
 
       if (error) throw error;
       return settings as UserSettings;
     },
+    retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['recipes'] });

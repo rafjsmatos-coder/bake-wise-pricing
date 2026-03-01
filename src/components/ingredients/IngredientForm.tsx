@@ -206,7 +206,7 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-[100vw] sm:max-w-lg max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-none sm:rounded-lg">
+      <DialogContent className="w-full max-w-[100vw] sm:max-w-lg max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6 rounded-none sm:rounded-lg" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
         <DialogHeader>
           <DialogTitle>
             {ingredient ? 'Editar Ingrediente' : 'Novo Ingrediente'}
