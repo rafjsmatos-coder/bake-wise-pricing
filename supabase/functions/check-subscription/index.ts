@@ -8,12 +8,27 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
-// Helper seguro para converter timestamp Stripe
-function safeStripeDate(timestamp: number | undefined | null): string | null {
-  if (!timestamp || isNaN(timestamp)) return null;
-  const date = new Date(timestamp * 1000);
-  if (isNaN(date.getTime())) return null;
-  return date.toISOString();
+// Helper seguro para converter timestamp Stripe (aceita number unix ou string ISO)
+function safeStripeDate(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  
+  if (typeof value === 'number') {
+    if (isNaN(value) || value <= 0) return null;
+    const date = new Date(value * 1000);
+    if (isNaN(date.getTime())) return null;
+    logStep("safeStripeDate: converted number", { raw: value, iso: date.toISOString() });
+    return date.toISOString();
+  }
+  
+  if (typeof value === 'string') {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return null;
+    logStep("safeStripeDate: converted string", { raw: value, iso: date.toISOString() });
+    return date.toISOString();
+  }
+  
+  logStep("safeStripeDate: unhandled type", { type: typeof value, raw: String(value) });
+  return null;
 }
 
 // Carência de 3 dias para past_due (boleto)
@@ -117,6 +132,10 @@ serve(async (req) => {
       if (subEnds && subEnds > now) {
         canAccess = true;
         daysRemaining = Math.ceil((subEnds.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      } else if (!subEnds && subscription.stripe_subscription_id) {
+        // Data null MAS tem subscription no Stripe: dar acesso temporário e forçar fallback
+        canAccess = true;
+        logStep("Active with null subscription_ends_at, forcing fallback");
       } else {
         currentStatus = 'expired';
         canAccess = false;
@@ -156,10 +175,12 @@ serve(async (req) => {
     }
 
     // FALLBACK: Consultar Stripe para detectar assinaturas não sincronizadas
-    // Roda quando: (1) status expired sem override, ou (2) status trial/pending com stripe_customer_id
+    // Roda quando: (1) status expired sem override, (2) trial/pending com stripe_customer_id,
+    // ou (3) active com subscription_ends_at null (precisa buscar a data)
     const shouldFallback = 
       (currentStatus === 'expired' && !subscription.manual_override) ||
-      ((subscription.status === 'trial' || subscription.status === 'pending') && subscription.stripe_customer_id);
+      ((subscription.status === 'trial' || subscription.status === 'pending') && subscription.stripe_customer_id) ||
+      (subscription.status === 'active' && !subscription.subscription_ends_at && subscription.stripe_subscription_id);
 
     if (shouldFallback && userEmail) {
       logStep("Running Stripe fallback", { localStatus: currentStatus, email: userEmail });
