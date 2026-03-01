@@ -7,12 +7,29 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
-// Helper seguro para converter timestamp Stripe
-function safeStripeDate(timestamp: number | undefined | null): string | null {
-  if (!timestamp || isNaN(timestamp)) return null;
-  const date = new Date(timestamp * 1000);
-  if (isNaN(date.getTime())) return null;
-  return date.toISOString();
+// Helper seguro para converter timestamp Stripe (aceita number unix ou string ISO)
+function safeStripeDate(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  
+  // Se for número (unix timestamp em segundos)
+  if (typeof value === 'number') {
+    if (isNaN(value) || value <= 0) return null;
+    const date = new Date(value * 1000);
+    if (isNaN(date.getTime())) return null;
+    logStep("safeStripeDate: converted number", { raw: value, iso: date.toISOString() });
+    return date.toISOString();
+  }
+  
+  // Se for string (já ISO ou outro formato)
+  if (typeof value === 'string') {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return null;
+    logStep("safeStripeDate: converted string", { raw: value, iso: date.toISOString() });
+    return date.toISOString();
+  }
+  
+  logStep("safeStripeDate: unhandled type", { type: typeof value, raw: String(value) });
+  return null;
 }
 
 // Mapeamento de status Stripe → local
