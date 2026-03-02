@@ -60,6 +60,7 @@ export function useIngredients() {
             color
           )
         `)
+        .eq('is_active', true)
         .order('name');
 
       if (error) throw error;
@@ -184,6 +185,22 @@ export function useIngredients() {
     },
   });
 
+  const deactivateIngredient = useMutation({
+    mutationFn: async (id: string) => {
+      await ensureSessionUserId();
+      const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id);
+      if (error) throw error;
+    },
+    retry: 1,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
+      toast.success('Ingrediente desativado com sucesso!');
+    },
+    onError: (error: Error) => {
+      toast.error('Erro ao desativar ingrediente', { description: error.message });
+    },
+  });
+
   return {
     ingredients: ingredientsQuery.data || [],
     isLoading: ingredientsQuery.isLoading,
@@ -192,5 +209,6 @@ export function useIngredients() {
     updateIngredient,
     deleteIngredient,
     duplicateIngredient,
+    deactivateIngredient,
   };
 }

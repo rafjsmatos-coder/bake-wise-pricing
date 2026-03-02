@@ -90,6 +90,7 @@ export function useRecipes() {
       const { data, error } = await supabase
         .from('recipes')
         .select(RECIPE_SELECT)
+        .eq('is_active', true)
         .order('name');
 
       if (error) throw error;
@@ -232,6 +233,22 @@ export function useRecipes() {
     },
   });
 
+  const deactivateRecipe = useMutation({
+    mutationFn: async (id: string) => {
+      await ensureSessionUserId();
+      const { error } = await supabase.from('recipes').update({ is_active: false }).eq('id', id);
+      if (error) throw error;
+    },
+    retry: 1,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recipes', user?.id] });
+      toast.success('Receita desativada com sucesso!');
+    },
+    onError: (error: Error) => {
+      toast.error('Erro ao desativar receita', { description: error.message });
+    },
+  });
+
   return {
     recipes: recipesQuery.data || [],
     isLoading: recipesQuery.isLoading,
@@ -240,5 +257,6 @@ export function useRecipes() {
     updateRecipe,
     deleteRecipe,
     duplicateRecipe,
+    deactivateRecipe,
   };
 }

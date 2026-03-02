@@ -65,10 +65,13 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
       setNotes(order.notes || '');
       setItems(
         order.order_items?.map((item) => ({
-          product_id: item.product_id,
+          product_id: item.product_id || '',
+          product_name: item.product_name || item.product?.name || 'Produto',
           quantity: item.quantity,
           unit_price: item.unit_price,
           total_price: item.total_price,
+          cost_at_sale: item.cost_at_sale,
+          profit_at_sale: item.profit_at_sale,
           notes: item.notes,
         })) || []
       );
@@ -104,6 +107,7 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
 
     onSubmit({
       client_id: clientId,
+      client_name: selectedClientName || 'Cliente',
       status,
       delivery_date: deliveryDateISO,
       paid_amount: parseFloat(paidAmountStr.replace(',', '.')) || 0,
