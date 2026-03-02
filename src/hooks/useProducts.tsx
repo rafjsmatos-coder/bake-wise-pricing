@@ -113,6 +113,7 @@ export function useProducts() {
           product_packaging(id, packaging_id, quantity, packaging:packaging(id, name, cost_per_unit, unit))
         `)
         .eq('user_id', user.id)
+        .eq('is_active', true)
         .order('name');
       
       if (error) throw error;
@@ -346,6 +347,23 @@ export function useProducts() {
     },
   });
 
+  const deactivateProduct = useMutation({
+    mutationFn: async (id: string) => {
+      await ensureSessionUserId();
+      const { error } = await supabase.from('products').update({ is_active: false }).eq('id', id);
+      if (error) throw error;
+    },
+    retry: 1,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success('Produto desativado com sucesso!');
+    },
+    onError: (error) => {
+      console.error('Erro ao desativar produto:', error);
+      toast.error('Erro ao desativar produto');
+    },
+  });
+
   return {
     products,
     isLoading,
@@ -354,5 +372,6 @@ export function useProducts() {
     updateProduct,
     deleteProduct,
     duplicateProduct,
+    deactivateProduct,
   };
 }

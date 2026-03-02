@@ -46,7 +46,7 @@ export function usePackaging() {
     queryKey: ['packaging', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase.from('packaging').select(`*, category:packaging_categories(id, name, color)`).eq('user_id', user.id).order('name');
+      const { data, error } = await supabase.from('packaging').select(`*, category:packaging_categories(id, name, color)`).eq('user_id', user.id).eq('is_active', true).order('name');
       if (error) throw error;
       return data;
     },
@@ -126,5 +126,16 @@ export function usePackaging() {
     onError: () => toast.error('Erro ao duplicar embalagem'),
   });
 
-  return { packagingItems, isLoading, error, createPackaging, updatePackaging, deletePackaging, duplicatePackaging };
+  const deactivatePackaging = useMutation({
+    mutationFn: async (id: string) => {
+      await ensureSessionUserId();
+      const { error } = await supabase.from('packaging').update({ is_active: false }).eq('id', id);
+      if (error) throw error;
+    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['packaging'] }); toast.success('Embalagem desativada com sucesso!'); },
+    onError: () => toast.error('Erro ao desativar embalagem'),
+  });
+
+  return { packagingItems, isLoading, error, createPackaging, updatePackaging, deletePackaging, duplicatePackaging, deactivatePackaging };
 }

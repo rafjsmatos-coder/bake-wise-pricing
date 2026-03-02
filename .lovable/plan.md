@@ -1,38 +1,33 @@
 
 
-# Correcao: Salvamento de Configuracoes + Scroll do Formulario de Ingredientes
+# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
 
-## Problema 1: Configuracoes falham na primeira tentativa
+## ✅ Concluído
 
-O hook `useUserSettings` nao usa o helper `ensureSessionUserId` nem `retry: 1`, diferente de todos os outros hooks do sistema (ingredientes, receitas, produtos, pedidos). Isso causa a mesma condicao de corrida na autenticacao: na primeira tentativa, a sessao pode nao estar totalmente ativa, e a mutacao falha por RLS. Na segunda tentativa, a sessao ja esta pronta e funciona.
+### Migração de Banco
+- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
+- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
+- `client_name TEXT NOT NULL` em orders
+- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
+- Backfill de product_name e client_name para dados existentes
+- Índices parciais para is_active
 
-### Correcao
+### Hooks atualizados
+- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
+- Todos têm mutation `deactivate[Entity]` para soft delete
+- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
+- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
 
-No `src/hooks/useUserSettings.tsx`:
-- Importar `ensureSessionUserId` de `@/lib/ensure-session`
-- Usar `ensureSessionUserId()` no inicio do `mutationFn` do `updateSettings` em vez de checar `user` manualmente
-- Adicionar `retry: 1` na mutacao
+### Componentes criados
+- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
+- `useDependencyCheck` — verifica dependências em tabelas de vínculo
+- IngredientsList integrado com o novo dialog (com aviso de histórico de preços)
 
----
+## 🔲 Pendente (próxima iteração)
 
-## Problema 2: Scroll horizontal no formulario de ingredientes (mobile)
-
-O `DialogContent` do `IngredientForm` nao tem as propriedades CSS de estabilidade mobile que ja sao padrao em outros dialogos do sistema. Ao expandir os campos opcionais e arrastar o scroll, a pagina se desloca horizontalmente.
-
-### Correcao
-
-No `src/components/ingredients/IngredientForm.tsx`, adicionar estilos inline no `DialogContent`:
-- `overscrollBehavior: 'contain'` -- impede propagacao do scroll
-- `touchAction: 'pan-y'` -- restringe toque a scroll vertical apenas
-
-O `overflow-x: hidden` sera adicionado via classe CSS (ja existe `overflow-y-auto`, basta complementar).
-
----
-
-## Arquivos alterados
-
-| Arquivo | Acao |
-|---|---|
-| `src/hooks/useUserSettings.tsx` | Adicionar `ensureSessionUserId` + `retry: 1` |
-| `src/components/ingredients/IngredientForm.tsx` | Adicionar estilos de estabilidade mobile no DialogContent |
-
+- Integrar DeleteOrDeactivateDialog em: ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
+- Toggle "Mostrar inativos" nas listas
+- Visual diferenciado para itens inativos
+- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
+- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
+- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL

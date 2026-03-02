@@ -3,6 +3,7 @@ import { useIngredients, type Ingredient } from '@/hooks/useIngredients';
 import { useCategories } from '@/hooks/useCategories';
 import { IngredientCard } from './IngredientCard';
 import { IngredientForm } from './IngredientForm';
+import { DeleteOrDeactivateDialog } from '@/components/shared/DeleteOrDeactivateDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,16 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CategoriesList } from '@/components/categories/CategoriesList';
 import { Plus, Search, Package, Loader2, Tag } from 'lucide-react';
@@ -31,7 +22,7 @@ interface IngredientsListProps {
 }
 
 export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
-  const { ingredients, isLoading, deleteIngredient, duplicateIngredient } = useIngredients();
+  const { ingredients, isLoading, deleteIngredient, duplicateIngredient, deactivateIngredient } = useIngredients();
   const { categories } = useCategories();
   const [search, setSearch] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -95,9 +86,16 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
     setFormOpen(true);
   };
 
-  const handleDelete = async () => {
+  const handleHardDelete = async () => {
     if (deletingIngredient) {
       await deleteIngredient.mutateAsync(deletingIngredient.id);
+      setDeletingIngredient(null);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (deletingIngredient) {
+      await deactivateIngredient.mutateAsync(deletingIngredient.id);
       setDeletingIngredient(null);
     }
   };
@@ -248,26 +246,17 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
       </Tabs>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingIngredient} onOpenChange={() => setDeletingIngredient(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir ingrediente?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir "{deletingIngredient?.name}"?
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteOrDeactivateDialog
+        open={!!deletingIngredient}
+        onOpenChange={() => setDeletingIngredient(null)}
+        entityType="ingredient"
+        entityId={deletingIngredient?.id || ''}
+        entityName={deletingIngredient?.name || ''}
+        onHardDelete={handleHardDelete}
+        onDeactivate={handleDeactivate}
+        isLoading={deleteIngredient.isPending || deactivateIngredient.isPending}
+        hardDeleteWarning="O histórico de preços deste ingrediente também será apagado permanentemente."
+      />
     </div>
   );
 }

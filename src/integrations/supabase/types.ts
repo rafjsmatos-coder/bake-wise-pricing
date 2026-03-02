@@ -103,6 +103,7 @@ export type Database = {
           email: string | null
           id: string
           instagram: string | null
+          is_active: boolean
           name: string
           neighborhood: string | null
           notes: string | null
@@ -120,6 +121,7 @@ export type Database = {
           email?: string | null
           id?: string
           instagram?: string | null
+          is_active?: boolean
           name: string
           neighborhood?: string | null
           notes?: string | null
@@ -137,6 +139,7 @@ export type Database = {
           email?: string | null
           id?: string
           instagram?: string | null
+          is_active?: boolean
           name?: string
           neighborhood?: string | null
           notes?: string | null
@@ -186,6 +189,7 @@ export type Database = {
           cost_per_unit: number | null
           created_at: string
           id: string
+          is_active: boolean
           min_stock_alert: number | null
           name: string
           package_quantity: number
@@ -202,6 +206,7 @@ export type Database = {
           cost_per_unit?: number | null
           created_at?: string
           id?: string
+          is_active?: boolean
           min_stock_alert?: number | null
           name: string
           package_quantity: number
@@ -218,6 +223,7 @@ export type Database = {
           cost_per_unit?: number | null
           created_at?: string
           id?: string
+          is_active?: boolean
           min_stock_alert?: number | null
           name?: string
           package_quantity?: number
@@ -390,6 +396,7 @@ export type Database = {
           created_at: string
           expiry_date: string | null
           id: string
+          is_active: boolean
           min_stock_alert: number | null
           name: string
           package_quantity: number
@@ -407,6 +414,7 @@ export type Database = {
           created_at?: string
           expiry_date?: string | null
           id?: string
+          is_active?: boolean
           min_stock_alert?: number | null
           name: string
           package_quantity: number
@@ -424,6 +432,7 @@ export type Database = {
           created_at?: string
           expiry_date?: string | null
           id?: string
+          is_active?: boolean
           min_stock_alert?: number | null
           name?: string
           package_quantity?: number
@@ -446,31 +455,40 @@ export type Database = {
       }
       order_items: {
         Row: {
+          cost_at_sale: number | null
           created_at: string
           id: string
           notes: string | null
           order_id: string
-          product_id: string
+          product_id: string | null
+          product_name: string
+          profit_at_sale: number | null
           quantity: number
           total_price: number
           unit_price: number
         }
         Insert: {
+          cost_at_sale?: number | null
           created_at?: string
           id?: string
           notes?: string | null
           order_id: string
-          product_id: string
+          product_id?: string | null
+          product_name: string
+          profit_at_sale?: number | null
           quantity?: number
           total_price: number
           unit_price: number
         }
         Update: {
+          cost_at_sale?: number | null
           created_at?: string
           id?: string
           notes?: string | null
           order_id?: string
-          product_id?: string
+          product_id?: string | null
+          product_name?: string
+          profit_at_sale?: number | null
           quantity?: number
           total_price?: number
           unit_price?: number
@@ -494,7 +512,8 @@ export type Database = {
       }
       orders: {
         Row: {
-          client_id: string
+          client_id: string | null
+          client_name: string
           created_at: string
           delivery_date: string | null
           discount: number
@@ -508,7 +527,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          client_id: string
+          client_id?: string | null
+          client_name: string
           created_at?: string
           delivery_date?: string | null
           discount?: number
@@ -522,7 +542,8 @@ export type Database = {
           user_id: string
         }
         Update: {
-          client_id?: string
+          client_id?: string | null
+          client_name?: string
           created_at?: string
           delivery_date?: string | null
           discount?: number
@@ -553,6 +574,7 @@ export type Database = {
           created_at: string
           dimensions: string | null
           id: string
+          is_active: boolean
           min_stock_alert: number | null
           name: string
           package_quantity: number
@@ -570,6 +592,7 @@ export type Database = {
           created_at?: string
           dimensions?: string | null
           id?: string
+          is_active?: boolean
           min_stock_alert?: number | null
           name: string
           package_quantity: number
@@ -587,6 +610,7 @@ export type Database = {
           created_at?: string
           dimensions?: string | null
           id?: string
+          is_active?: boolean
           min_stock_alert?: number | null
           name?: string
           package_quantity?: number
@@ -866,6 +890,7 @@ export type Database = {
           created_at: string
           decoration_time_minutes: number | null
           id: string
+          is_active: boolean
           name: string
           notes: string | null
           profit_margin_percent: number | null
@@ -878,6 +903,7 @@ export type Database = {
           created_at?: string
           decoration_time_minutes?: number | null
           id?: string
+          is_active?: boolean
           name: string
           notes?: string | null
           profit_margin_percent?: number | null
@@ -890,6 +916,7 @@ export type Database = {
           created_at?: string
           decoration_time_minutes?: number | null
           id?: string
+          is_active?: boolean
           name?: string
           notes?: string | null
           profit_margin_percent?: number | null
@@ -1042,6 +1069,7 @@ export type Database = {
           created_at: string
           id: string
           instructions: string | null
+          is_active: boolean
           name: string
           notes: string | null
           oven_time_minutes: number | null
@@ -1059,6 +1087,7 @@ export type Database = {
           created_at?: string
           id?: string
           instructions?: string | null
+          is_active?: boolean
           name: string
           notes?: string | null
           oven_time_minutes?: number | null
@@ -1076,6 +1105,7 @@ export type Database = {
           created_at?: string
           id?: string
           instructions?: string | null
+          is_active?: boolean
           name?: string
           notes?: string | null
           oven_time_minutes?: number | null

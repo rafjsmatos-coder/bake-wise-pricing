@@ -51,6 +51,7 @@ export function useDecorations() {
       const { data, error } = await supabase
         .from('decorations')
         .select(`*, decoration_categories (id, name, color)`)
+        .eq('is_active', true)
         .order('name');
       if (error) throw error;
       return data as Decoration[];
@@ -124,5 +125,16 @@ export function useDecorations() {
     onError: (error: Error) => { toast.error('Erro ao duplicar decoração', { description: error.message }); },
   });
 
-  return { decorations: decorationsQuery.data || [], isLoading: decorationsQuery.isLoading, error: decorationsQuery.error, createDecoration, updateDecoration, deleteDecoration, duplicateDecoration };
+  const deactivateDecoration = useMutation({
+    mutationFn: async (id: string) => {
+      await ensureSessionUserId();
+      const { error } = await supabase.from('decorations').update({ is_active: false }).eq('id', id);
+      if (error) throw error;
+    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['decorations', user?.id] }); toast.success('Decoração desativada com sucesso!'); },
+    onError: (error: Error) => { toast.error('Erro ao desativar decoração', { description: error.message }); },
+  });
+
+  return { decorations: decorationsQuery.data || [], isLoading: decorationsQuery.isLoading, error: decorationsQuery.error, createDecoration, updateDecoration, deleteDecoration, duplicateDecoration, deactivateDecoration };
 }

@@ -7,19 +7,23 @@ import { ensureSessionUserId } from '@/lib/ensure-session';
 export interface OrderItem {
   id: string;
   order_id: string;
-  product_id: string;
+  product_id: string | null;
+  product_name: string;
   quantity: number;
   unit_price: number;
   total_price: number;
+  cost_at_sale: number | null;
+  profit_at_sale: number | null;
   notes: string | null;
   created_at: string;
-  product?: { id: string; name: string };
+  product?: { id: string; name: string } | null;
 }
 
 export interface Order {
   id: string;
   user_id: string;
-  client_id: string;
+  client_id: string | null;
+  client_name: string;
   status: string;
   payment_status: string;
   delivery_date: string | null;
@@ -29,20 +33,24 @@ export interface Order {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  client?: { id: string; name: string; phone: string | null; whatsapp: string | null };
+  client?: { id: string; name: string; phone: string | null; whatsapp: string | null } | null;
   order_items?: OrderItem[];
 }
 
 export interface OrderItemFormData {
   product_id: string;
+  product_name: string;
   quantity: number;
   unit_price: number;
   total_price: number;
+  cost_at_sale?: number | null;
+  profit_at_sale?: number | null;
   notes?: string | null;
 }
 
 export interface OrderFormData {
   client_id: string;
+  client_name: string;
   status: string;
   delivery_date?: string | null;
   paid_amount: number;
@@ -57,6 +65,11 @@ function calculatePaymentStatus(paidAmount: number, effectiveTotal: number): str
   return 'partial';
 }
 
+/** Returns true if this status is past the "quote" phase */
+function isConfirmedStatus(status: string): boolean {
+  return status !== 'quote';
+}
+
 export function useOrders() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -67,7 +80,7 @@ export function useOrders() {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from('orders')
-        .select(`*, client:clients(id, name, phone, whatsapp), order_items(id, order_id, product_id, quantity, unit_price, total_price, notes, created_at, product:products(id, name))`)
+        .select(`*, client:clients(id, name, phone, whatsapp), order_items(id, order_id, product_id, product_name, quantity, unit_price, total_price, cost_at_sale, profit_at_sale, notes, created_at, product:products(id, name))`)
         .eq('user_id', user.id)
         .order('delivery_date', { ascending: true, nullsFirst: false });
       if (error) throw error;
@@ -82,14 +95,15 @@ export function useOrders() {
       const totalAmount = data.items.reduce((sum, item) => sum + item.total_price, 0);
       const effectiveTotal = totalAmount - (data.discount || 0);
       const paymentStatus = calculatePaymentStatus(data.paid_amount, effectiveTotal);
+      const confirmed = isConfirmedStatus(data.status);
 
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-          user_id: userId, client_id: data.client_id, status: data.status,
-          payment_status: paymentStatus, delivery_date: data.delivery_date || null,
-          total_amount: totalAmount, paid_amount: data.paid_amount,
-          discount: data.discount || 0, notes: data.notes || null,
+          user_id: userId, client_id: data.client_id, client_name: data.client_name,
+          status: data.status, payment_status: paymentStatus,
+          delivery_date: data.delivery_date || null, total_amount: totalAmount,
+          paid_amount: data.paid_amount, discount: data.discount || 0, notes: data.notes || null,
         })
         .select(`*, client:clients(id, name)`)
         .single();
@@ -98,15 +112,19 @@ export function useOrders() {
       if (data.items.length > 0) {
         const { error: itemsError } = await supabase.from('order_items').insert(
           data.items.map((item) => ({
-            order_id: order.id, product_id: item.product_id, quantity: item.quantity,
-            unit_price: item.unit_price, total_price: item.total_price, notes: item.notes || null,
+            order_id: order.id, product_id: item.product_id,
+            product_name: item.product_name,
+            quantity: item.quantity, unit_price: item.unit_price, total_price: item.total_price,
+            cost_at_sale: confirmed ? (item.cost_at_sale ?? null) : null,
+            profit_at_sale: confirmed ? (item.profit_at_sale ?? null) : null,
+            notes: item.notes || null,
           }))
         );
         if (itemsError) throw itemsError;
       }
 
       if (data.paid_amount > 0) {
-        const clientName = order.client?.name || 'Cliente';
+        const clientName = data.client_name || 'Cliente';
         await supabase.from('financial_transactions').insert({
           user_id: userId, type: 'income', category: 'Venda de Pedido',
           description: `Pagamento pedido - ${clientName}`, amount: data.paid_amount,
@@ -121,29 +139,33 @@ export function useOrders() {
   });
 
   const updateOrder = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: OrderFormData }) => {
+    mutationFn: async ({ id, data, previousStatus }: { id: string; data: OrderFormData; previousStatus?: string }) => {
       const userId = await ensureSessionUserId();
       const totalAmount = data.items.reduce((sum, item) => sum + item.total_price, 0);
       const effectiveTotal = totalAmount - (data.discount || 0);
       const paymentStatus = calculatePaymentStatus(data.paid_amount, effectiveTotal);
 
-      // Step 1: Update order + fetch client name in parallel
-      const [orderResult, clientResult] = await Promise.all([
+      // Determine if we need to freeze snapshots:
+      // Freeze when transitioning from quote to a confirmed status
+      const wasQuote = previousStatus === 'quote';
+      const isNowConfirmed = isConfirmedStatus(data.status);
+      const shouldFreezeNow = wasQuote && isNowConfirmed;
+
+      // Step 1: Update order + check existing transaction in parallel
+      const [orderResult, txResult] = await Promise.all([
         supabase.from('orders').update({
-          client_id: data.client_id, status: data.status, payment_status: paymentStatus,
+          client_id: data.client_id, client_name: data.client_name,
+          status: data.status, payment_status: paymentStatus,
           delivery_date: data.delivery_date || null, total_amount: totalAmount,
           paid_amount: data.paid_amount, discount: data.discount || 0, notes: data.notes || null,
         }).eq('id', id),
-        supabase.from('clients').select('name').eq('id', data.client_id).single(),
+        supabase.from('financial_transactions').select('id').eq('order_id', id).eq('user_id', userId).maybeSingle(),
       ]);
       if (orderResult.error) throw orderResult.error;
-      const clientName = clientResult.data?.name || 'Cliente';
 
-      // Step 2: Replace items + check existing transaction in parallel
-      const deleteItems = supabase.from('order_items').delete().eq('order_id', id);
-      const checkTransaction = supabase.from('financial_transactions').select('id').eq('order_id', id).eq('user_id', userId).maybeSingle();
-      const [deleteResult, txResult] = await Promise.all([deleteItems, checkTransaction]);
-      if (deleteResult.error) throw deleteResult.error;
+      // Step 2: Replace items
+      const { error: deleteError } = await supabase.from('order_items').delete().eq('order_id', id);
+      if (deleteError) throw deleteError;
 
       // Step 3: Insert new items + upsert transaction in parallel
       const parallelOps: Promise<any>[] = [];
@@ -151,14 +173,23 @@ export function useOrders() {
         parallelOps.push((async () => {
           const { error } = await supabase.from('order_items').insert(
             data.items.map((item) => ({
-              order_id: id, product_id: item.product_id, quantity: item.quantity,
-              unit_price: item.unit_price, total_price: item.total_price, notes: item.notes || null,
+              order_id: id, product_id: item.product_id,
+              product_name: item.product_name,
+              quantity: item.quantity, unit_price: item.unit_price, total_price: item.total_price,
+              // If freezing now, save snapshot. If already confirmed, preserve existing snapshot.
+              // If still quote, leave null.
+              cost_at_sale: shouldFreezeNow ? (item.cost_at_sale ?? null) :
+                            (isNowConfirmed && !wasQuote) ? (item.cost_at_sale ?? null) : null,
+              profit_at_sale: shouldFreezeNow ? (item.profit_at_sale ?? null) :
+                              (isNowConfirmed && !wasQuote) ? (item.profit_at_sale ?? null) : null,
+              notes: item.notes || null,
             }))
           );
           if (error) throw error;
         })());
       }
 
+      const clientName = data.client_name || 'Cliente';
       if (data.paid_amount > 0) {
         if (txResult.data) {
           parallelOps.push((async () => { const { error } = await supabase.from('financial_transactions').update({ amount: data.paid_amount, description: `Pagamento pedido - ${clientName}`, date: new Date().toISOString().split('T')[0] }).eq('id', txResult.data.id); if (error) throw error; })());
@@ -201,15 +232,22 @@ export function useOrders() {
   const duplicateOrder = useMutation({
     mutationFn: async (order: Order) => {
       const userId = await ensureSessionUserId();
+      const clientName = order.client?.name || order.client_name || 'Cliente';
       const { data: newOrder, error: orderError } = await supabase.from('orders').insert({
-        user_id: userId, client_id: order.client_id, status: 'pending', payment_status: 'pending',
+        user_id: userId, client_id: order.client_id, client_name: clientName,
+        status: 'pending', payment_status: 'pending',
         delivery_date: null, total_amount: order.total_amount, paid_amount: 0, discount: order.discount || 0, notes: order.notes,
       }).select().single();
       if (orderError) throw orderError;
 
       if (order.order_items && order.order_items.length > 0) {
         const { error: itemsError } = await supabase.from('order_items').insert(
-          order.order_items.map((item) => ({ order_id: newOrder.id, product_id: item.product_id, quantity: item.quantity, unit_price: item.unit_price, total_price: item.total_price, notes: item.notes }))
+          order.order_items.map((item) => ({
+            order_id: newOrder.id, product_id: item.product_id,
+            product_name: item.product_name,
+            quantity: item.quantity, unit_price: item.unit_price, total_price: item.total_price,
+            notes: item.notes,
+          }))
         );
         if (itemsError) throw itemsError;
       }

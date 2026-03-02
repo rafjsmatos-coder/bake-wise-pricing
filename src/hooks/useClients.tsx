@@ -45,7 +45,7 @@ export function useClients() {
     queryKey: ['clients', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase.from('clients').select('*').eq('user_id', user.id).order('name');
+      const { data, error } = await supabase.from('clients').select('*').eq('user_id', user.id).eq('is_active', true).order('name');
       if (error) throw error;
 
       const { data: orderCounts, error: countError } = await supabase.from('orders').select('client_id').eq('user_id', user.id);
@@ -103,5 +103,16 @@ export function useClients() {
     onError: (error) => { console.error('Erro ao excluir cliente:', error); toast.error('Erro ao excluir cliente'); },
   });
 
-  return { clients, isLoading, error, createClient, updateClient, deleteClient };
+  const deactivateClient = useMutation({
+    mutationFn: async (id: string) => {
+      await ensureSessionUserId();
+      const { error } = await supabase.from('clients').update({ is_active: false }).eq('id', id);
+      if (error) throw error;
+    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['clients'] }); toast.success('Cliente desativado com sucesso!'); },
+    onError: (error) => { console.error('Erro ao desativar cliente:', error); toast.error('Erro ao desativar cliente'); },
+  });
+
+  return { clients, isLoading, error, createClient, updateClient, deleteClient, deactivateClient };
 }

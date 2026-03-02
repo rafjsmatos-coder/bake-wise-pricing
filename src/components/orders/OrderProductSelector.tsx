@@ -27,8 +27,8 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
   const [quantity, setQuantity] = useState(1);
   const [unitPriceStr, setUnitPriceStr] = useState('');
 
-  const getSuggestedPrice = (product: Product): number => {
-    if (!product || !settings) return 0;
+  const getProductBreakdown = (product: Product) => {
+    if (!product || !settings) return null;
 
     const ingredientsData = ingredients.map((i) => ({
       id: i.id,
@@ -78,14 +78,22 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
       ? Number(settings.labor_cost_per_hour) || 0
       : 0;
 
-    const breakdown = calculateProductCost({
+    return calculateProductCost({
       product,
       recipeCosts,
       laborCostPerHour,
       indirectOperationalCostPercent: Number(settings.indirect_operational_cost_percent) || 5,
     });
+  };
 
-    return breakdown.suggestedSellingPrice;
+  const getSuggestedPrice = (product: Product): number => {
+    const breakdown = getProductBreakdown(product);
+    return breakdown?.suggestedSellingPrice || 0;
+  };
+
+  const getProductCost = (product: Product): number => {
+    const breakdown = getProductBreakdown(product);
+    return breakdown?.totalProductionCost || 0;
   };
 
   const handleProductSelect = (productId: string) => {
@@ -101,11 +109,17 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
     const parsedPrice = parseFloat(unitPriceStr.replace(',', '.')) || 0;
     if (!selectedProductId || quantity <= 0) return;
 
+    const product = products.find((p) => p.id === selectedProductId);
+    const productCost = product ? getProductCost(product) : 0;
+
     const newItem: OrderItemFormData = {
       product_id: selectedProductId,
+      product_name: product?.name || 'Produto',
       quantity,
       unit_price: parsedPrice,
       total_price: Math.round(quantity * parsedPrice * 100) / 100,
+      cost_at_sale: productCost,
+      profit_at_sale: parsedPrice - productCost,
     };
 
     onChange([...items, newItem]);
