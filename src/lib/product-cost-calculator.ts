@@ -75,11 +75,15 @@ export function calculateProductCost({
   let decorationsCost = 0;
   if (product.product_decorations) {
     for (const pd of product.product_decorations) {
-      if (pd.decoration?.cost_per_unit) {
-        const quantityInBaseUnit = convertToBaseUnit(pd.quantity, pd.unit);
-        const decorationBaseUnit = convertToBaseUnit(1, pd.decoration.unit);
-        const costPerBaseUnit = pd.decoration.cost_per_unit / decorationBaseUnit;
-        decorationsCost += quantityInBaseUnit * costPerBaseUnit;
+      const decoration = pd.decoration;
+      if (decoration) {
+        const effectiveCostPerUnit = decoration.cost_per_unit ?? (decoration as any).purchase_price / (decoration as any).package_quantity;
+        if (effectiveCostPerUnit) {
+          const quantityInBaseUnit = convertToBaseUnit(pd.quantity, pd.unit);
+          const decorationBaseUnit = convertToBaseUnit(1, decoration.unit);
+          const costPerBaseUnit = effectiveCostPerUnit / decorationBaseUnit;
+          decorationsCost += quantityInBaseUnit * costPerBaseUnit;
+        }
       }
     }
   }

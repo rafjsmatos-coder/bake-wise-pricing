@@ -21,23 +21,14 @@ import { ProductForm } from './ProductForm';
 import { ProductDetails } from './ProductDetails';
 import { calculateProductCost } from '@/lib/product-cost-calculator';
 import { calculateRecipeCost } from '@/lib/recipe-cost-calculator';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { DeleteOrDeactivateDialog } from '@/components/shared/DeleteOrDeactivateDialog';
 
 interface ProductsListProps {
   initialSearch?: string;
 }
 
 export function ProductsList({ initialSearch = '' }: ProductsListProps) {
-  const { products, isLoading, deleteProduct, duplicateProduct } = useProducts();
+  const { products, isLoading, deleteProduct, duplicateProduct, deactivateProduct } = useProducts();
   const { recipes } = useRecipes();
   const { settings } = useUserSettings();
   const { categories } = useProductCategories();
@@ -57,7 +48,7 @@ export function ProductsList({ initialSearch = '' }: ProductsListProps) {
     const costs: Record<string, number> = {};
     for (const recipe of recipes) {
       const recipeIngredients = recipe.recipe_ingredients || [];
-      const ingredientsData = recipeIngredients.map((ri: any) => ri.ingredient).filter(Boolean);
+      const ingredientsData = recipeIngredients.map((ri: any) => ri.ingredients).filter(Boolean);
       const result = calculateRecipeCost(
         recipeIngredients.map((ri: any) => ({
           ingredient_id: ri.ingredient_id,
@@ -83,7 +74,7 @@ export function ProductsList({ initialSearch = '' }: ProductsListProps) {
           includeLaborCost: settings.include_labor_cost || false,
           laborCostPerHour: settings.labor_cost_per_hour || 0,
         } : undefined,
-        null // recipeOvenType - will be from recipe when needed
+        null
       );
       costs[recipe.id] = result.totalCost;
     }
@@ -124,13 +115,6 @@ export function ProductsList({ initialSearch = '' }: ProductsListProps) {
 
   const handleView = (product: Product) => {
     setViewingProduct(product);
-  };
-
-  const handleDelete = async () => {
-    if (deletingProduct) {
-      await deleteProduct.mutateAsync(deletingProduct.id);
-      setDeletingProduct(null);
-    }
   };
 
   const handleDuplicate = async (product: Product) => {
@@ -285,26 +269,24 @@ export function ProductsList({ initialSearch = '' }: ProductsListProps) {
       </TabsContent>
       </Tabs>
 
-      <AlertDialog open={!!deletingProduct} onOpenChange={() => setDeletingProduct(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir "{deletingProduct?.name}"? 
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {deletingProduct && (
+        <DeleteOrDeactivateDialog
+          open={!!deletingProduct}
+          onOpenChange={() => setDeletingProduct(null)}
+          entityType="product"
+          entityId={deletingProduct.id}
+          entityName={deletingProduct.name}
+          onHardDelete={async () => {
+            await deleteProduct.mutateAsync(deletingProduct.id);
+            setDeletingProduct(null);
+          }}
+          onDeactivate={async () => {
+            await deactivateProduct.mutateAsync(deletingProduct.id);
+            setDeletingProduct(null);
+          }}
+          isLoading={deleteProduct.isPending || deactivateProduct.isPending}
+        />
+      )}
     </div>
   );
 }

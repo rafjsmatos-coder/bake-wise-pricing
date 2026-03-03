@@ -15,23 +15,14 @@ import { usePackaging, Packaging } from '@/hooks/usePackaging';
 import { usePackagingCategories } from '@/hooks/usePackagingCategories';
 import { PackagingCard } from './PackagingCard';
 import { PackagingForm } from './PackagingForm';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { DeleteOrDeactivateDialog } from '@/components/shared/DeleteOrDeactivateDialog';
 
 interface PackagingListProps {
   initialSearch?: string;
 }
 
 export function PackagingList({ initialSearch = '' }: PackagingListProps) {
-  const { packagingItems, isLoading, deletePackaging, duplicatePackaging } = usePackaging();
+  const { packagingItems, isLoading, deletePackaging, duplicatePackaging, deactivatePackaging } = usePackaging();
   const { categories } = usePackagingCategories();
   const [formOpen, setFormOpen] = useState(false);
   const [editingPackaging, setEditingPackaging] = useState<Packaging | null>(null);
@@ -57,13 +48,6 @@ export function PackagingList({ initialSearch = '' }: PackagingListProps) {
   const handleEdit = (packaging: Packaging) => {
     setEditingPackaging(packaging);
     setFormOpen(true);
-  };
-
-  const handleDelete = async () => {
-    if (deletingPackaging) {
-      await deletePackaging.mutateAsync(deletingPackaging.id);
-      setDeletingPackaging(null);
-    }
   };
 
   const handleFormClose = (open: boolean) => {
@@ -189,26 +173,24 @@ export function PackagingList({ initialSearch = '' }: PackagingListProps) {
       </TabsContent>
       </Tabs>
 
-      <AlertDialog open={!!deletingPackaging} onOpenChange={() => setDeletingPackaging(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir embalagem?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir "{deletingPackaging?.name}"? 
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {deletingPackaging && (
+        <DeleteOrDeactivateDialog
+          open={!!deletingPackaging}
+          onOpenChange={() => setDeletingPackaging(null)}
+          entityType="packaging"
+          entityId={deletingPackaging.id}
+          entityName={deletingPackaging.name}
+          onHardDelete={async () => {
+            await deletePackaging.mutateAsync(deletingPackaging.id);
+            setDeletingPackaging(null);
+          }}
+          onDeactivate={async () => {
+            await deactivatePackaging.mutateAsync(deletingPackaging.id);
+            setDeletingPackaging(null);
+          }}
+          isLoading={deletePackaging.isPending || deactivatePackaging.isPending}
+        />
+      )}
     </div>
   );
 }

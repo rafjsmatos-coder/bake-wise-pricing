@@ -8,16 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRecipes, type Recipe } from '@/hooks/useRecipes';
 import { useRecipeCategories } from '@/hooks/useRecipeCategories';
@@ -25,6 +15,7 @@ import { RecipeForm } from './RecipeForm';
 import { RecipeCard } from './RecipeCard';
 import { RecipeDetails } from './RecipeDetails';
 import { RecipeCategoriesList } from '@/components/recipe-categories/RecipeCategoriesList';
+import { DeleteOrDeactivateDialog } from '@/components/shared/DeleteOrDeactivateDialog';
 import { Plus, Search, Book, Loader2, Tag } from 'lucide-react';
 
 interface RecipesListProps {
@@ -32,14 +23,13 @@ interface RecipesListProps {
 }
 
 export function RecipesList({ initialSearch = '' }: RecipesListProps) {
-  const { recipes, isLoading, deleteRecipe, duplicateRecipe } = useRecipes();
+  const { recipes, isLoading, deleteRecipe, duplicateRecipe, deactivateRecipe } = useRecipes();
   const { categories } = useRecipeCategories();
   const [formOpen, setFormOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
+  const [deletingRecipe, setDeletingRecipe] = useState<Recipe | null>(null);
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
@@ -67,19 +57,6 @@ export function RecipesList({ initialSearch = '' }: RecipesListProps) {
   const handleView = (recipe: Recipe) => {
     setViewingRecipe(recipe);
     setDetailsOpen(true);
-  };
-
-  const handleDelete = (recipe: Recipe) => {
-    setRecipeToDelete(recipe);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (recipeToDelete) {
-      await deleteRecipe.mutateAsync(recipeToDelete.id);
-      setDeleteDialogOpen(false);
-      setRecipeToDelete(null);
-    }
   };
 
   const handleDuplicate = async (recipe: Recipe) => {
@@ -167,7 +144,7 @@ export function RecipesList({ initialSearch = '' }: RecipesListProps) {
               key={recipe.id}
               recipe={recipe}
               onEdit={() => handleEdit(recipe)}
-              onDelete={() => handleDelete(recipe)}
+              onDelete={() => setDeletingRecipe(recipe)}
               onDuplicate={() => handleDuplicate(recipe)}
               onView={() => handleView(recipe)}
             />
@@ -225,27 +202,25 @@ export function RecipesList({ initialSearch = '' }: RecipesListProps) {
         }}
       />
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir receita?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir a receita "{recipeToDelete?.name}"?
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete / Deactivate Dialog */}
+      {deletingRecipe && (
+        <DeleteOrDeactivateDialog
+          open={!!deletingRecipe}
+          onOpenChange={() => setDeletingRecipe(null)}
+          entityType="recipe"
+          entityId={deletingRecipe.id}
+          entityName={deletingRecipe.name}
+          onHardDelete={async () => {
+            await deleteRecipe.mutateAsync(deletingRecipe.id);
+            setDeletingRecipe(null);
+          }}
+          onDeactivate={async () => {
+            await deactivateRecipe.mutateAsync(deletingRecipe.id);
+            setDeletingRecipe(null);
+          }}
+          isLoading={deleteRecipe.isPending || deactivateRecipe.isPending}
+        />
+      )}
     </div>
   );
 }

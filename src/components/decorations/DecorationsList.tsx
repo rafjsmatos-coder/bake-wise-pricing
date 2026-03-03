@@ -8,22 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDecorations, type Decoration } from '@/hooks/useDecorations';
 import { useDecorationCategories } from '@/hooks/useDecorationCategories';
 import { DecorationCard } from './DecorationCard';
 import { DecorationForm } from './DecorationForm';
 import { DecorationCategoriesList } from '@/components/decoration-categories/DecorationCategoriesList';
+import { DeleteOrDeactivateDialog } from '@/components/shared/DeleteOrDeactivateDialog';
 import { Plus, Search, Sparkles, Loader2, Tag } from 'lucide-react';
 
 interface DecorationsListProps {
@@ -31,7 +22,7 @@ interface DecorationsListProps {
 }
 
 export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
-  const { decorations, isLoading, deleteDecoration, duplicateDecoration } = useDecorations();
+  const { decorations, isLoading, deleteDecoration, duplicateDecoration, deactivateDecoration } = useDecorations();
   const { categories } = useDecorationCategories();
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -77,13 +68,6 @@ export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
   const handleEdit = (decoration: Decoration) => {
     setEditingDecoration(decoration);
     setFormOpen(true);
-  };
-
-  const handleDelete = async () => {
-    if (deletingDecoration) {
-      await deleteDecoration.mutateAsync(deletingDecoration.id);
-      setDeletingDecoration(null);
-    }
   };
 
   const handleFormClose = () => {
@@ -228,24 +212,25 @@ export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
       </TabsContent>
       </Tabs>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingDecoration} onOpenChange={() => setDeletingDecoration(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Decoração</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir "{deletingDecoration?.name}"?
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete / Deactivate Dialog */}
+      {deletingDecoration && (
+        <DeleteOrDeactivateDialog
+          open={!!deletingDecoration}
+          onOpenChange={() => setDeletingDecoration(null)}
+          entityType="decoration"
+          entityId={deletingDecoration.id}
+          entityName={deletingDecoration.name}
+          onHardDelete={async () => {
+            await deleteDecoration.mutateAsync(deletingDecoration.id);
+            setDeletingDecoration(null);
+          }}
+          onDeactivate={async () => {
+            await deactivateDecoration.mutateAsync(deletingDecoration.id);
+            setDeletingDecoration(null);
+          }}
+          isLoading={deleteDecoration.isPending || deactivateDecoration.isPending}
+        />
+      )}
     </div>
   );
 }
