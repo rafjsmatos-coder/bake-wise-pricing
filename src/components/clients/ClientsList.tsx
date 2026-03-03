@@ -6,22 +6,13 @@ import { ClientDetails } from '@/components/clients/ClientDetails';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DeleteOrDeactivateDialog } from '@/components/shared/DeleteOrDeactivateDialog';
 import { Plus, Search, Users, Loader2 } from 'lucide-react';
 
 interface ClientsListProps {
@@ -29,13 +20,13 @@ interface ClientsListProps {
 }
 
 export function ClientsList({ initialSearch = '' }: ClientsListProps) {
-  const { clients, isLoading, createClient, updateClient, deleteClient } = useClients();
+  const { clients, isLoading, createClient, updateClient, deleteClient, deactivateClient } = useClients();
 
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [cityFilter, setCityFilter] = useState('all');
   const [formOpen, setFormOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   useEffect(() => {
@@ -83,11 +74,6 @@ export function ClientsList({ initialSearch = '' }: ClientsListProps) {
     setDetailsOpen(true);
   };
 
-  const handleDeleteClick = (client: Client) => {
-    setSelectedClient(client);
-    setDeleteDialogOpen(true);
-  };
-
   const handleSubmit = (data: ClientFormData) => {
     if (selectedClient) {
       updateClient.mutate(
@@ -97,14 +83,6 @@ export function ClientsList({ initialSearch = '' }: ClientsListProps) {
     } else {
       createClient.mutate(data, {
         onSuccess: () => setFormOpen(false),
-      });
-    }
-  };
-
-  const handleDelete = () => {
-    if (selectedClient) {
-      deleteClient.mutate(selectedClient.id, {
-        onSuccess: () => setDeleteDialogOpen(false),
       });
     }
   };
@@ -170,7 +148,7 @@ export function ClientsList({ initialSearch = '' }: ClientsListProps) {
               client={client}
               onView={handleView}
               onEdit={handleEdit}
-              onDelete={handleDeleteClick}
+              onDelete={(c) => setDeletingClient(c)}
             />
           ))}
         </div>
@@ -211,28 +189,25 @@ export function ClientsList({ initialSearch = '' }: ClientsListProps) {
         onEdit={handleEdit}
       />
 
-      {/* Delete Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir <strong>{selectedClient?.name}</strong>?
-              Todos os pedidos vinculados a este cliente também serão excluídos.
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete / Deactivate Dialog */}
+      {deletingClient && (
+        <DeleteOrDeactivateDialog
+          open={!!deletingClient}
+          onOpenChange={() => setDeletingClient(null)}
+          entityType="client"
+          entityId={deletingClient.id}
+          entityName={deletingClient.name}
+          onHardDelete={async () => {
+            await deleteClient.mutateAsync(deletingClient.id);
+            setDeletingClient(null);
+          }}
+          onDeactivate={async () => {
+            await deactivateClient.mutateAsync(deletingClient.id);
+            setDeletingClient(null);
+          }}
+          isLoading={deleteClient.isPending || deactivateClient.isPending}
+        />
+      )}
     </div>
   );
 }

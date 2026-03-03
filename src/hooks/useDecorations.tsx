@@ -62,9 +62,10 @@ export function useDecorations() {
   const createDecoration = useMutation({
     mutationFn: async (data: CreateDecorationData) => {
       const userId = await ensureSessionUserId();
+      const cost_per_unit = data.purchase_price / data.package_quantity;
       const { data: decoration, error } = await supabase
         .from('decorations')
-        .insert({ user_id: userId, ...data })
+        .insert({ user_id: userId, ...data, cost_per_unit })
         .select(`*, decoration_categories (id, name, color)`)
         .single();
       if (error) throw error;
@@ -78,7 +79,11 @@ export function useDecorations() {
   const updateDecoration = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateDecorationData }) => {
       await ensureSessionUserId();
-      const { data: decoration, error } = await supabase.from('decorations').update(data).eq('id', id).select(`*, decoration_categories (id, name, color)`).single();
+      const updateData: any = { ...data };
+      if (data.purchase_price != null && data.package_quantity != null) {
+        updateData.cost_per_unit = data.purchase_price / data.package_quantity;
+      }
+      const { data: decoration, error } = await supabase.from('decorations').update(updateData).eq('id', id).select(`*, decoration_categories (id, name, color)`).single();
       if (error) throw error;
       return decoration as Decoration;
     },
@@ -114,6 +119,7 @@ export function useDecorations() {
           supplier: decoration.supplier,
           stock_quantity: decoration.stock_quantity,
           min_stock_alert: decoration.min_stock_alert,
+          cost_per_unit: decoration.purchase_price / decoration.package_quantity,
         })
         .select(`*, decoration_categories (id, name, color)`)
         .single();
