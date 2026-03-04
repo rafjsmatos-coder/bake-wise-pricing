@@ -1,7 +1,7 @@
 import { Order } from '@/hooks/useOrders';
 import { Button } from '@/components/ui/button';
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
-import { Eye, Pencil, Trash2, Calendar, User, Copy, Tag } from 'lucide-react';
+import { Eye, Pencil, Calendar, User, Copy, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/product-cost-calculator';
@@ -10,11 +10,10 @@ interface OrderCardProps {
   order: Order;
   onView: (order: Order) => void;
   onEdit: (order: Order) => void;
-  onDelete: (order: Order) => void;
   onDuplicate?: (order: Order) => void;
 }
 
-export function OrderCard({ order, onView, onEdit, onDelete, onDuplicate }: OrderCardProps) {
+export function OrderCard({ order, onView, onEdit, onDuplicate }: OrderCardProps) {
   const discount = order.discount || 0;
   const effectiveTotal = order.total_amount - discount;
 
@@ -25,7 +24,7 @@ export function OrderCard({ order, onView, onEdit, onDelete, onDuplicate }: Orde
         <div className="flex items-center gap-2 mb-1">
           <User className="h-4 w-4 text-muted-foreground shrink-0" />
           <h3 className="font-semibold text-foreground truncate">
-            {order.client?.name || 'Cliente removido'}
+            {order.client?.name || order.client_name || 'Cliente removido'}
           </h3>
         </div>
         {order.delivery_date && (
@@ -42,7 +41,7 @@ export function OrderCard({ order, onView, onEdit, onDelete, onDuplicate }: Orde
       <div className="text-sm text-muted-foreground mb-3">
         {order.order_items && order.order_items.length > 0 ? (
           <p className="truncate">
-            {order.order_items.map((item) => `${item.quantity}x ${item.product?.name || 'Produto'}`).join(', ')}
+            {order.order_items.map((item) => `${item.quantity}x ${item.product_name || item.product?.name || 'Produto'}`).join(', ')}
           </p>
         ) : (
           <p className="italic">Sem itens</p>
@@ -80,9 +79,6 @@ export function OrderCard({ order, onView, onEdit, onDelete, onDuplicate }: Orde
           )}
           <Button variant="ghost" size="icon" onClick={() => onEdit(order)} className="h-8 w-8">
             <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onDelete(order)} className="h-8 w-8">
-            <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
       </div>

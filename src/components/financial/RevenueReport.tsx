@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { useFinancial } from '@/hooks/useFinancial';
 import { useOrders } from '@/hooks/useOrders';
 import { Input } from '@/components/ui/input';
-import { Loader2, TrendingUp, TrendingDown, DollarSign, ShoppingBag, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, TrendingUp, TrendingDown, DollarSign, ShoppingBag, Users, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '@/lib/product-cost-calculator';
 import { startOfMonth, endOfMonth, parseISO, format, subMonths, eachMonthOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -16,7 +17,7 @@ export function RevenueReport() {
   const monthStart = startOfMonth(parseISO(monthFilter + '-01'));
   const monthEnd = endOfMonth(monthStart);
 
-  // Revenue from delivered+paid orders
+  // Orders in period (exclude cancelled)
   const periodOrders = useMemo(() => {
     return orders.filter((o) => {
       if (o.status === 'cancelled') return false;
@@ -25,7 +26,12 @@ export function RevenueReport() {
     });
   }, [orders, monthStart, monthEnd]);
 
-  const revenue = useMemo(() => periodOrders.reduce((s, o) => s + o.paid_amount, 0), [periodOrders]);
+  // Revenue from all non-cancelled, non-quote orders
+  const revenue = useMemo(() => {
+    return periodOrders
+      .filter(o => o.status !== 'quote')
+      .reduce((s, o) => s + o.paid_amount, 0);
+  }, [periodOrders]);
 
   const expenses = useMemo(() => {
     return transactions
@@ -37,17 +43,55 @@ export function RevenueReport() {
       .reduce((s, t) => s + t.amount, 0);
   }, [transactions, monthStart, monthEnd]);
 
+  // Gross profit from snapshots (cost_at_sale / profit_at_sale)
+  const grossProfitData = useMemo(() => {
+    let snapshotProfit = 0;
+    let snapshotCost = 0;
+    let snapshotRevenue = 0;
+    let estimatedRevenue = 0;
+    let hasEstimated = false;
+    let orderCount = 0;
+
+    periodOrders.forEach((o) => {
+      if (o.status === 'quote') return; // Exclude quotes from profit
+      orderCount++;
+      o.order_items?.forEach((item) => {
+        const itemRevenue = item.total_price;
+        if (item.cost_at_sale != null) {
+          const itemCost = item.cost_at_sale * item.quantity;
+          const itemProfit = item.profit_at_sale != null
+            ? item.profit_at_sale * item.quantity
+            : itemRevenue - itemCost;
+          snapshotCost += itemCost;
+          snapshotProfit += itemProfit;
+          snapshotRevenue += itemRevenue;
+        } else {
+          hasEstimated = true;
+          estimatedRevenue += itemRevenue;
+        }
+      });
+    });
+
+    return { snapshotProfit, snapshotCost, snapshotRevenue, estimatedRevenue, hasEstimated, orderCount };
+  }, [periodOrders]);
+
   const profit = revenue - expenses;
 
-  // Top products
+  // Top products (use snapshot names)
   const topProducts = useMemo(() => {
-    const map = new Map<string, { name: string; qty: number; total: number }>();
+    const map = new Map<string, { name: string; qty: number; total: number; cost: number; hasSnapshot: boolean }>();
     periodOrders.forEach((o) => {
+      if (o.status === 'quote') return;
       o.order_items?.forEach((item) => {
-        const name = item.product?.name || 'Produto';
-        const existing = map.get(name) || { name, qty: 0, total: 0 };
+        const name = item.product_name || item.product?.name || 'Produto';
+        const existing = map.get(name) || { name, qty: 0, total: 0, cost: 0, hasSnapshot: true };
         existing.qty += item.quantity;
         existing.total += item.total_price;
+        if (item.cost_at_sale != null) {
+          existing.cost += item.cost_at_sale * item.quantity;
+        } else {
+          existing.hasSnapshot = false;
+        }
         map.set(name, existing);
       });
     });
@@ -56,11 +100,12 @@ export function RevenueReport() {
       .slice(0, 5);
   }, [periodOrders]);
 
-  // Top clients
+  // Top clients (use snapshot names)
   const topClients = useMemo(() => {
     const map = new Map<string, { name: string; total: number; count: number }>();
     periodOrders.forEach((o) => {
-      const name = o.client?.name || 'Cliente';
+      if (o.status === 'quote') return;
+      const name = o.client?.name || o.client_name || 'Cliente';
       const existing = map.get(name) || { name, total: 0, count: 0 };
       existing.total += o.total_amount;
       existing.count += 1;
@@ -79,7 +124,7 @@ export function RevenueReport() {
       const mEnd = endOfMonth(m);
       const income = orders
         .filter((o) => {
-          if (o.status === 'cancelled') return false;
+          if (o.status === 'cancelled' || o.status === 'quote') return false;
           const d = o.delivery_date ? new Date(o.delivery_date) : new Date(o.created_at);
           return d >= mStart && d <= mEnd;
         })
@@ -121,13 +166,16 @@ export function RevenueReport() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <TrendingUp className="h-4 w-4 text-green-600" />
             Faturamento
           </div>
           <p className="text-xl font-bold text-green-600">{formatCurrency(revenue)}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {grossProfitData.orderCount} pedido{grossProfitData.orderCount !== 1 ? 's' : ''} (exclui orçamentos)
+          </p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
@@ -139,11 +187,32 @@ export function RevenueReport() {
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <DollarSign className="h-4 w-4" />
-            Lucro
+            Lucro Líquido
           </div>
           <p className={`text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
             {formatCurrency(profit)}
           </p>
+          <p className="text-xs text-muted-foreground mt-1">Faturamento − Despesas</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+            <DollarSign className="h-4 w-4" />
+            Lucro Bruto de Vendas
+          </div>
+          <p className={`text-xl font-bold ${grossProfitData.snapshotProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+            {formatCurrency(grossProfitData.snapshotProfit)}
+          </p>
+          {grossProfitData.hasEstimated && (
+            <div className="flex items-center gap-1 mt-1">
+              <AlertTriangle className="h-3 w-3 text-amber-500" />
+              <span className="text-xs text-amber-500">
+                Alguns itens sem custo registrado ({formatCurrency(grossProfitData.estimatedRevenue)} em receita)
+              </span>
+            </div>
+          )}
+          {!grossProfitData.hasEstimated && grossProfitData.snapshotRevenue > 0 && (
+            <p className="text-xs text-muted-foreground mt-1">Baseado em custos congelados</p>
+          )}
         </div>
       </div>
 
@@ -175,9 +244,23 @@ export function RevenueReport() {
           {topProducts.length > 0 ? (
             <div className="space-y-2">
               {topProducts.map((p, i) => (
-                <div key={i} className="flex items-center justify-between text-sm">
-                  <span className="truncate flex-1">{p.name} <span className="text-muted-foreground">({p.qty}x)</span></span>
-                  <span className="font-medium ml-2">{formatCurrency(p.total)}</span>
+                <div key={i} className="flex items-center justify-between text-sm gap-2">
+                  <span className="truncate flex-1">
+                    {p.name} <span className="text-muted-foreground">({p.qty}x)</span>
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-medium">{formatCurrency(p.total)}</span>
+                    {p.hasSnapshot && p.cost > 0 && (
+                      <Badge variant="outline" className="text-xs font-normal">
+                        Lucro {formatCurrency(p.total - p.cost)}
+                      </Badge>
+                    )}
+                    {!p.hasSnapshot && (
+                      <Badge variant="secondary" className="text-xs font-normal text-amber-600">
+                        Estimado
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

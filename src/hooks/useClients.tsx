@@ -18,6 +18,7 @@ export interface Client {
   instagram: string | null;
   whatsapp: string | null;
   notes: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
   orders_count?: number;
@@ -37,15 +38,18 @@ export interface ClientFormData {
   notes?: string | null;
 }
 
-export function useClients() {
+export function useClients(options?: { includeInactive?: boolean }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const includeInactive = options?.includeInactive ?? false;
 
   const { data: clients = [], isLoading, error } = useQuery({
-    queryKey: ['clients', user?.id],
+    queryKey: ['clients', user?.id, includeInactive],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase.from('clients').select('*').eq('user_id', user.id).eq('is_active', true).order('name');
+      let query = supabase.from('clients').select('*').eq('user_id', user.id);
+      if (!includeInactive) query = query.eq('is_active', true);
+      const { data, error } = await query.order('name');
       if (error) throw error;
 
       const { data: orderCounts, error: countError } = await supabase.from('orders').select('client_id').eq('user_id', user.id);
@@ -114,5 +118,16 @@ export function useClients() {
     onError: (error) => { console.error('Erro ao desativar cliente:', error); toast.error('Erro ao desativar cliente'); },
   });
 
-  return { clients, isLoading, error, createClient, updateClient, deleteClient, deactivateClient };
+  const reactivateClient = useMutation({
+    mutationFn: async (id: string) => {
+      await ensureSessionUserId();
+      const { error } = await supabase.from('clients').update({ is_active: true }).eq('id', id);
+      if (error) throw error;
+    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['clients'] }); toast.success('Cliente reativado com sucesso!'); },
+    onError: (error) => { console.error('Erro ao reativar cliente:', error); toast.error('Erro ao reativar cliente'); },
+  });
+
+  return { clients, isLoading, error, createClient, updateClient, deleteClient, deactivateClient, reactivateClient };
 }
