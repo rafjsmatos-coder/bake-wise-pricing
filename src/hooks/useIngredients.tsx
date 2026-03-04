@@ -19,6 +19,7 @@ export interface Ingredient {
   stock_quantity: number | null;
   min_stock_alert: number | null;
   cost_per_unit: number;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
   categories?: {
@@ -43,14 +44,15 @@ export interface CreateIngredientData {
 
 export interface UpdateIngredientData extends Partial<CreateIngredientData> {}
 
-export function useIngredients() {
+export function useIngredients(options?: { includeInactive?: boolean }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const includeInactive = options?.includeInactive ?? false;
 
   const ingredientsQuery = useQuery({
-    queryKey: ['ingredients', user?.id],
+    queryKey: ['ingredients', user?.id, includeInactive],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('ingredients')
         .select(`
           *,
@@ -59,9 +61,9 @@ export function useIngredients() {
             name,
             color
           )
-        `)
-        .eq('is_active', true)
-        .order('name');
+        `);
+      if (!includeInactive) query = query.eq('is_active', true);
+      const { data, error } = await query.order('name');
 
       if (error) throw error;
       return data as Ingredient[];
@@ -72,29 +74,17 @@ export function useIngredients() {
   const createIngredient = useMutation({
     mutationFn: async (data: CreateIngredientData) => {
       const userId = await ensureSessionUserId();
-
       const { data: ingredient, error } = await supabase
         .from('ingredients')
-        .insert({
-          user_id: userId,
-          ...data,
-        })
-        .select(`
-          *,
-          categories (
-            id,
-            name,
-            color
-          )
-        `)
+        .insert({ user_id: userId, ...data })
+        .select(`*, categories (id, name, color)`)
         .single();
-
       if (error) throw error;
       return ingredient as Ingredient;
     },
     retry: 1,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['ingredients'] });
       toast.success('Ingrediente criado com sucesso!');
     },
     onError: (error: Error) => {
@@ -109,22 +99,14 @@ export function useIngredients() {
         .from('ingredients')
         .update(data)
         .eq('id', id)
-        .select(`
-          *,
-          categories (
-            id,
-            name,
-            color
-          )
-        `)
+        .select(`*, categories (id, name, color)`)
         .single();
-
       if (error) throw error;
       return ingredient as Ingredient;
     },
     retry: 1,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['ingredients'] });
       queryClient.invalidateQueries({ queryKey: ['recipes'] });
       toast.success('Ingrediente atualizado com sucesso!');
     },
@@ -136,16 +118,12 @@ export function useIngredients() {
   const deleteIngredient = useMutation({
     mutationFn: async (id: string) => {
       await ensureSessionUserId();
-      const { error } = await supabase
-        .from('ingredients')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('ingredients').delete().eq('id', id);
       if (error) throw error;
     },
     retry: 1,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['ingredients'] });
       toast.success('Ingrediente excluído com sucesso!');
     },
     onError: (error: Error) => {
@@ -177,7 +155,7 @@ export function useIngredients() {
     },
     retry: 1,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['ingredients'] });
       toast.success('Ingrediente duplicado com sucesso!');
     },
     onError: (error: Error) => {
@@ -193,11 +171,27 @@ export function useIngredients() {
     },
     retry: 1,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ingredients', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['ingredients'] });
       toast.success('Ingrediente desativado com sucesso!');
     },
     onError: (error: Error) => {
       toast.error('Erro ao desativar ingrediente', { description: error.message });
+    },
+  });
+
+  const reactivateIngredient = useMutation({
+    mutationFn: async (id: string) => {
+      await ensureSessionUserId();
+      const { error } = await supabase.from('ingredients').update({ is_active: true }).eq('id', id);
+      if (error) throw error;
+    },
+    retry: 1,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ingredients'] });
+      toast.success('Ingrediente reativado com sucesso!');
+    },
+    onError: (error: Error) => {
+      toast.error('Erro ao reativar ingrediente', { description: error.message });
     },
   });
 
@@ -210,5 +204,6 @@ export function useIngredients() {
     deleteIngredient,
     duplicateIngredient,
     deactivateIngredient,
+    reactivateIngredient,
   };
 }

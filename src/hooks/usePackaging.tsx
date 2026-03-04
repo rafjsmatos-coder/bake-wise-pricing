@@ -21,6 +21,7 @@ export interface Packaging {
   stock_quantity: number | null;
   min_stock_alert: number | null;
   cost_per_unit: number | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -38,15 +39,18 @@ export interface PackagingFormData {
   min_stock_alert?: number | null;
 }
 
-export function usePackaging() {
+export function usePackaging(options?: { includeInactive?: boolean }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const includeInactive = options?.includeInactive ?? false;
 
   const { data: packagingItems = [], isLoading, error } = useQuery({
-    queryKey: ['packaging', user?.id],
+    queryKey: ['packaging', user?.id, includeInactive],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase.from('packaging').select(`*, category:packaging_categories(id, name, color)`).eq('user_id', user.id).eq('is_active', true).order('name');
+      let query = supabase.from('packaging').select(`*, category:packaging_categories(id, name, color)`).eq('user_id', user.id);
+      if (!includeInactive) query = query.eq('is_active', true);
+      const { data, error } = await query.order('name');
       if (error) throw error;
       return data;
     },
@@ -105,18 +109,11 @@ export function usePackaging() {
       const userId = await ensureSessionUserId();
       const cost_per_unit = packaging.purchase_price / packaging.package_quantity;
       const { data, error } = await supabase.from('packaging').insert({
-        user_id: userId,
-        name: `${packaging.name} (cópia)`,
-        purchase_price: packaging.purchase_price,
-        package_quantity: packaging.package_quantity,
-        unit: packaging.unit,
-        category_id: packaging.category_id,
-        brand: packaging.brand,
-        supplier: packaging.supplier,
-        dimensions: packaging.dimensions,
-        stock_quantity: packaging.stock_quantity,
-        min_stock_alert: packaging.min_stock_alert,
-        cost_per_unit,
+        user_id: userId, name: `${packaging.name} (cópia)`,
+        purchase_price: packaging.purchase_price, package_quantity: packaging.package_quantity,
+        unit: packaging.unit, category_id: packaging.category_id, brand: packaging.brand,
+        supplier: packaging.supplier, dimensions: packaging.dimensions,
+        stock_quantity: packaging.stock_quantity, min_stock_alert: packaging.min_stock_alert, cost_per_unit,
       }).select().single();
       if (error) throw error;
       return data;
@@ -137,5 +134,16 @@ export function usePackaging() {
     onError: () => toast.error('Erro ao desativar embalagem'),
   });
 
-  return { packagingItems, isLoading, error, createPackaging, updatePackaging, deletePackaging, duplicatePackaging, deactivatePackaging };
+  const reactivatePackaging = useMutation({
+    mutationFn: async (id: string) => {
+      await ensureSessionUserId();
+      const { error } = await supabase.from('packaging').update({ is_active: true }).eq('id', id);
+      if (error) throw error;
+    },
+    retry: 1,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['packaging'] }); toast.success('Embalagem reativada com sucesso!'); },
+    onError: () => toast.error('Erro ao reativar embalagem'),
+  });
+
+  return { packagingItems, isLoading, error, createPackaging, updatePackaging, deletePackaging, duplicatePackaging, deactivatePackaging, reactivatePackaging };
 }

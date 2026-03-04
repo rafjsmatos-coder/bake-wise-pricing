@@ -18,16 +18,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -44,7 +34,7 @@ interface OrdersListProps {
 }
 
 export function OrdersList({ initialSearch = '' }: OrdersListProps) {
-  const { orders, isLoading, createOrder, updateOrder, updateOrderStatus, deleteOrder, duplicateOrder } = useOrders();
+  const { orders, isLoading, createOrder, updateOrder, updateOrderStatus, duplicateOrder } = useOrders();
   const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState(initialSearch);
@@ -53,7 +43,6 @@ export function OrdersList({ initialSearch = '' }: OrdersListProps) {
   const [monthFilter, setMonthFilter] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [dayOrdersOpen, setDayOrdersOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [dayOrders, setDayOrders] = useState<{ date: Date; orders: Order[] }>({ date: new Date(), orders: [] });
@@ -87,9 +76,10 @@ export function OrdersList({ initialSearch = '' }: OrdersListProps) {
       filtered = filtered.filter(
         (o) =>
           o.client?.name?.toLowerCase().includes(query) ||
+          o.client_name?.toLowerCase().includes(query) ||
           o.notes?.toLowerCase().includes(query) ||
           o.order_items?.some((item) =>
-            item.product?.name?.toLowerCase().includes(query)
+            (item.product_name || item.product?.name)?.toLowerCase().includes(query)
           )
       );
     }
@@ -112,11 +102,6 @@ export function OrdersList({ initialSearch = '' }: OrdersListProps) {
     setDetailsOpen(true);
   };
 
-  const handleDeleteClick = (order: Order) => {
-    setSelectedOrder(order);
-    setDeleteDialogOpen(true);
-  };
-
   const handleSubmit = (data: OrderFormData) => {
     const isEditing = !!selectedOrder;
     const onSuccess = () => {
@@ -135,16 +120,7 @@ export function OrdersList({ initialSearch = '' }: OrdersListProps) {
     }
   };
 
-  const handleDelete = () => {
-    if (selectedOrder) {
-      deleteOrder.mutate(selectedOrder.id, {
-        onSuccess: () => setDeleteDialogOpen(false),
-      });
-    }
-  };
-
   const handleStatusChange = (orderId: string, status: string) => {
-    // Fechar detalhes primeiro para evitar conflito de dialogs
     setDetailsOpen(false);
 
     updateOrderStatus.mutate({ id: orderId, status }, {
@@ -152,7 +128,6 @@ export function OrdersList({ initialSearch = '' }: OrdersListProps) {
         if (status === 'delivered') {
           const order = orders.find((o) => o.id === orderId);
           if (order && order.order_items && order.order_items.length > 0) {
-            // Pequeno delay para garantir que o dialog anterior fechou
             setTimeout(() => {
               setStockDeductionOrder(order);
               setStockDeductionOpen(true);
@@ -266,7 +241,6 @@ export function OrdersList({ initialSearch = '' }: OrdersListProps) {
                   order={order}
                   onView={handleView}
                   onEdit={handleEdit}
-                  onDelete={handleDeleteClick}
                   onDuplicate={handleDuplicate}
                 />
               ))}
@@ -335,7 +309,7 @@ export function OrdersList({ initialSearch = '' }: OrdersListProps) {
                 className="w-full text-left p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-sm">{order.client?.name}</span>
+                  <span className="font-medium text-sm">{order.client?.name || order.client_name}</span>
                   <span className="text-sm font-bold">{formatCurrency(order.total_amount)}</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -352,28 +326,6 @@ export function OrdersList({ initialSearch = '' }: OrdersListProps) {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir pedido</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este pedido de{' '}
-              <strong>{selectedOrder?.client?.name}</strong>? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Stock Deduction Dialog */}
       <StockDeductionDialog
