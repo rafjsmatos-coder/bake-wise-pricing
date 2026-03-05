@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -12,7 +14,6 @@ import { Plus, Search, ShoppingBag, Loader2, Tag } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProductCategoriesList } from '@/components/product-categories/ProductCategoriesList';
 import { useProducts, Product } from '@/hooks/useProducts';
-import { toast } from 'sonner';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { useProductCategories } from '@/hooks/useProductCategories';
@@ -28,7 +29,8 @@ interface ProductsListProps {
 }
 
 export function ProductsList({ initialSearch = '' }: ProductsListProps) {
-  const { products, isLoading, deleteProduct, duplicateProduct, deactivateProduct } = useProducts();
+  const [showInactive, setShowInactive] = useState(false);
+  const { products, isLoading, deleteProduct, duplicateProduct, deactivateProduct, reactivateProduct } = useProducts({ includeInactive: showInactive });
   const { recipes } = useRecipes();
   const { settings } = useUserSettings();
   const { categories } = useProductCategories();
@@ -43,6 +45,8 @@ export function ProductsList({ initialSearch = '' }: ProductsListProps) {
     if (initialSearch !== undefined) setSearchQuery(initialSearch);
   }, [initialSearch]);
 
+  const activeCount = useMemo(() => products.filter(p => p.is_active).length, [products]);
+
   // Calculate recipe costs
   const recipeCosts = useMemo(() => {
     const costs: Record<string, number> = {};
@@ -51,10 +55,8 @@ export function ProductsList({ initialSearch = '' }: ProductsListProps) {
       const ingredientsData = recipeIngredients.map((ri: any) => ri.ingredients).filter(Boolean);
       const result = calculateRecipeCost(
         recipeIngredients.map((ri: any) => ({
-          ingredient_id: ri.ingredient_id,
-          ingredientId: ri.ingredient_id,
-          quantity: ri.quantity,
-          unit: ri.unit,
+          ingredient_id: ri.ingredient_id, ingredientId: ri.ingredient_id,
+          quantity: ri.quantity, unit: ri.unit,
         })),
         ingredientsData,
         recipe.yield_quantity,
@@ -86,15 +88,11 @@ export function ProductsList({ initialSearch = '' }: ProductsListProps) {
     const costs: Record<string, { production: number; selling: number }> = {};
     for (const product of products) {
       const breakdown = calculateProductCost({
-        product,
-        recipeCosts,
+        product, recipeCosts,
         laborCostPerHour: settings?.labor_cost_per_hour || 0,
         indirectOperationalCostPercent: settings?.indirect_operational_cost_percent || 5,
       });
-      costs[product.id] = {
-        production: breakdown.totalProductionCost,
-        selling: breakdown.suggestedSellingPrice,
-      };
+      costs[product.id] = { production: breakdown.totalProductionCost, selling: breakdown.suggestedSellingPrice };
     }
     return costs;
   }, [products, recipeCosts, settings]);
@@ -108,87 +106,46 @@ export function ProductsList({ initialSearch = '' }: ProductsListProps) {
     });
   }, [products, searchQuery, categoryFilter]);
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setFormOpen(true);
-  };
-
-  const handleView = (product: Product) => {
-    setViewingProduct(product);
-  };
-
-  const handleDuplicate = async (product: Product) => {
-    await duplicateProduct.mutateAsync(product);
-  };
-
-  const handleFormClose = (open: boolean) => {
-    setFormOpen(open);
-    if (!open) {
-      setEditingProduct(null);
-    }
-  };
+  const handleEdit = (product: Product) => { setEditingProduct(product); setFormOpen(true); };
+  const handleView = (product: Product) => { setViewingProduct(product); };
+  const handleDuplicate = async (product: Product) => { await duplicateProduct.mutateAsync(product); };
+  const handleFormClose = (open: boolean) => { setFormOpen(open); if (!open) setEditingProduct(null); };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-accent" />
-      </div>
-    );
+    return (<div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-accent" /></div>);
   }
 
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground truncate">Produtos</h1>
-          <p className="text-muted-foreground">
-            {products.length} produto{products.length !== 1 ? 's' : ''} cadastrado{products.length !== 1 ? 's' : ''}
-          </p>
+          <p className="text-muted-foreground">{activeCount} produto{activeCount !== 1 ? 's' : ''} ativo{activeCount !== 1 ? 's' : ''}</p>
         </div>
-        <Button onClick={() => setFormOpen(true)} className="w-full sm:w-auto shrink-0">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Produto
-        </Button>
+        <Button onClick={() => setFormOpen(true)} className="w-full sm:w-auto shrink-0"><Plus className="h-4 w-4 mr-2" />Novo Produto</Button>
       </div>
 
       <Tabs defaultValue="list">
         <TabsList>
           <TabsTrigger value="list">Todos</TabsTrigger>
-          <TabsTrigger value="categories" className="gap-1.5">
-            <Tag className="h-3.5 w-3.5" />
-            Categorias
-          </TabsTrigger>
+          <TabsTrigger value="categories" className="gap-1.5"><Tag className="h-3.5 w-3.5" />Categorias</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-6 mt-4">
-
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar produtos..."
-            className="pl-10 min-h-[44px]"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <Input placeholder="Buscar produtos..." className="pl-10 min-h-[44px]" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-48 min-h-[44px]">
-            <SelectValue placeholder="Categoria" />
-          </SelectTrigger>
+          <SelectTrigger className="w-full sm:w-48 min-h-[44px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as categorias</SelectItem>
             <SelectItem value="uncategorized">Sem categoria</SelectItem>
             {categories.map((cat) => (
               <SelectItem key={cat.id} value={cat.id}>
                 <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: cat.color || '#6366f1' }}
-                  />
-                  {cat.name}
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color || '#6366f1' }} />{cat.name}
                 </div>
               </SelectItem>
             ))}
@@ -196,26 +153,17 @@ export function ProductsList({ initialSearch = '' }: ProductsListProps) {
         </Select>
       </div>
 
-      {/* Products List */}
+      <div className="flex items-center gap-2">
+        <Switch id="show-inactive-products" checked={showInactive} onCheckedChange={setShowInactive} />
+        <Label htmlFor="show-inactive-products" className="text-sm text-muted-foreground cursor-pointer">Mostrar inativos</Label>
+      </div>
+
       {filteredProducts.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-            <ShoppingBag className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <h3 className="font-medium text-foreground mb-1">
-            {products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum resultado encontrado'}
-          </h3>
-          <p className="text-muted-foreground text-sm">
-            {products.length === 0
-              ? 'Comece adicionando seu primeiro produto'
-              : 'Tente ajustar os filtros de busca'}
-          </p>
-          {products.length === 0 && (
-            <Button onClick={() => setFormOpen(true)} className="mt-4 gap-2">
-              <Plus className="h-4 w-4" />
-              Criar Primeiro Produto
-            </Button>
-          )}
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4"><ShoppingBag className="h-8 w-8 text-muted-foreground" /></div>
+          <h3 className="font-medium text-foreground mb-1">{products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum resultado encontrado'}</h3>
+          <p className="text-muted-foreground text-sm">{products.length === 0 ? 'Comece adicionando seu primeiro produto' : 'Tente ajustar os filtros de busca'}</p>
+          {products.length === 0 && (<Button onClick={() => setFormOpen(true)} className="mt-4 gap-2"><Plus className="h-4 w-4" />Criar Primeiro Produto</Button>)}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -229,61 +177,31 @@ export function ProductsList({ initialSearch = '' }: ProductsListProps) {
               onDelete={() => setDeletingProduct(product)}
               onView={() => handleView(product)}
               onDuplicate={() => handleDuplicate(product)}
+              onReactivate={!product.is_active ? () => reactivateProduct.mutate(product.id) : undefined}
             />
           ))}
         </div>
       )}
 
-      <ProductForm
-        open={formOpen}
-        onOpenChange={handleFormClose}
-        product={editingProduct}
-        recipeCosts={recipeCosts}
-      />
-
+      <ProductForm open={formOpen} onOpenChange={handleFormClose} product={editingProduct} recipeCosts={recipeCosts} />
       <ProductDetails
-        open={!!viewingProduct}
-        onOpenChange={(open) => !open && setViewingProduct(null)}
-        product={viewingProduct}
-        recipeCosts={recipeCosts}
+        open={!!viewingProduct} onOpenChange={(open) => !open && setViewingProduct(null)}
+        product={viewingProduct} recipeCosts={recipeCosts}
         laborCostPerHour={settings?.labor_cost_per_hour || 0}
         indirectOperationalCostPercent={settings?.indirect_operational_cost_percent || 5}
-        onEdit={() => {
-          if (viewingProduct) {
-            setViewingProduct(null);
-            handleEdit(viewingProduct);
-          }
-        }}
-        onDuplicate={() => {
-          if (viewingProduct) {
-            setViewingProduct(null);
-            handleDuplicate(viewingProduct);
-          }
-        }}
+        onEdit={() => { if (viewingProduct) { setViewingProduct(null); handleEdit(viewingProduct); } }}
+        onDuplicate={() => { if (viewingProduct) { setViewingProduct(null); handleDuplicate(viewingProduct); } }}
       />
-
       </TabsContent>
-
-      <TabsContent value="categories" className="mt-4">
-        <ProductCategoriesList />
-      </TabsContent>
+      <TabsContent value="categories" className="mt-4"><ProductCategoriesList /></TabsContent>
       </Tabs>
 
       {deletingProduct && (
         <DeleteOrDeactivateDialog
-          open={!!deletingProduct}
-          onOpenChange={() => setDeletingProduct(null)}
-          entityType="product"
-          entityId={deletingProduct.id}
-          entityName={deletingProduct.name}
-          onHardDelete={async () => {
-            await deleteProduct.mutateAsync(deletingProduct.id);
-            setDeletingProduct(null);
-          }}
-          onDeactivate={async () => {
-            await deactivateProduct.mutateAsync(deletingProduct.id);
-            setDeletingProduct(null);
-          }}
+          open={!!deletingProduct} onOpenChange={() => setDeletingProduct(null)}
+          entityType="product" entityId={deletingProduct.id} entityName={deletingProduct.name}
+          onHardDelete={async () => { await deleteProduct.mutateAsync(deletingProduct.id); setDeletingProduct(null); }}
+          onDeactivate={async () => { await deactivateProduct.mutateAsync(deletingProduct.id); setDeletingProduct(null); }}
           isLoading={deleteProduct.isPending || deactivateProduct.isPending}
         />
       )}

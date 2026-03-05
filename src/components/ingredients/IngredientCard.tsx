@@ -2,7 +2,7 @@ import { Ingredient } from '@/hooks/useIngredients';
 import { formatCurrency, formatNumber, getCostPerUnit, getBestDisplayUnit, type MeasurementUnit } from '@/lib/unit-conversion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Copy, Pencil, Trash2, AlertTriangle, Calendar } from 'lucide-react';
+import { Eye, Copy, Pencil, Trash2, AlertTriangle, Calendar, RotateCcw } from 'lucide-react';
 import { format, isPast, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -12,9 +12,10 @@ interface IngredientCardProps {
   onDuplicate: (ingredient: Ingredient) => void;
   onEdit: (ingredient: Ingredient) => void;
   onDelete: (ingredient: Ingredient) => void;
+  onReactivate?: () => void;
 }
 
-export function IngredientCard({ ingredient, onView, onDuplicate, onEdit, onDelete }: IngredientCardProps) {
+export function IngredientCard({ ingredient, onView, onDuplicate, onEdit, onDelete, onReactivate }: IngredientCardProps) {
   const costInfo = getCostPerUnit(
     Number(ingredient.purchase_price),
     Number(ingredient.package_quantity),
@@ -30,24 +31,31 @@ export function IngredientCard({ ingredient, onView, onDuplicate, onEdit, onDele
     ingredient.stock_quantity !== null && 
     Number(ingredient.stock_quantity) <= Number(ingredient.min_stock_alert);
 
+  const isInactive = !ingredient.is_active;
+
   return (
-    <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className={`bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow ${isInactive ? 'opacity-60' : ''}`}>
       {/* Header */}
       <div className="mb-3">
-        {ingredient.categories && (
-          <Badge
-            variant="secondary"
-            className="text-xs max-w-[200px] truncate mb-1"
-            style={{
-              backgroundColor: `${ingredient.categories.color}20`,
-              color: ingredient.categories.color,
-              borderColor: ingredient.categories.color,
-            }}
-          >
-            {ingredient.categories.name}
-          </Badge>
-        )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {ingredient.categories && (
+            <Badge
+              variant="secondary"
+              className="text-xs max-w-[200px] truncate"
+              style={{
+                backgroundColor: `${ingredient.categories.color}20`,
+                color: ingredient.categories.color,
+                borderColor: ingredient.categories.color,
+              }}
+            >
+              {ingredient.categories.name}
+            </Badge>
+          )}
+          {isInactive && (
+            <Badge variant="secondary" className="text-xs">Inativo</Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mt-1">
           <h3 className="font-semibold text-foreground truncate">
             {ingredient.name}
           </h3>
@@ -67,13 +75,8 @@ export function IngredientCard({ ingredient, onView, onDuplicate, onEdit, onDele
           {formatNumber(Number(ingredient.package_quantity), 3)} {ingredient.unit}
         </p>
 
-        {ingredient.brand && (
-          <p>Marca: {ingredient.brand}</p>
-        )}
-
-        {ingredient.supplier && (
-          <p>Fornecedor: {ingredient.supplier}</p>
-        )}
+        {ingredient.brand && <p>Marca: {ingredient.brand}</p>}
+        {ingredient.supplier && <p>Fornecedor: {ingredient.supplier}</p>}
 
         {ingredient.stock_quantity !== null && (() => {
           const stockDisplay = getBestDisplayUnit(Number(ingredient.stock_quantity), ingredient.unit as MeasurementUnit);
@@ -104,18 +107,27 @@ export function IngredientCard({ ingredient, onView, onDuplicate, onEdit, onDele
           <span className="font-bold text-primary">{costInfo.formatted}</span>
         </div>
         <div className="flex gap-1 shrink-0">
-          <Button variant="ghost" size="icon" onClick={() => onView(ingredient)} className="h-8 w-8">
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onDuplicate(ingredient)} className="h-8 w-8">
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onEdit(ingredient)} className="h-8 w-8">
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onDelete(ingredient)} className="h-8 w-8">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          {isInactive && onReactivate ? (
+            <Button variant="outline" size="sm" onClick={onReactivate} className="h-8 gap-1 text-xs">
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reativar
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" size="icon" onClick={() => onView(ingredient)} className="h-8 w-8">
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => onDuplicate(ingredient)} className="h-8 w-8">
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => onEdit(ingredient)} className="h-8 w-8">
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => onDelete(ingredient)} className="h-8 w-8">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
