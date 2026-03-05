@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -22,7 +24,8 @@ interface DecorationsListProps {
 }
 
 export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
-  const { decorations, isLoading, deleteDecoration, duplicateDecoration, deactivateDecoration } = useDecorations();
+  const [showInactive, setShowInactive] = useState(false);
+  const { decorations, isLoading, deleteDecoration, duplicateDecoration, deactivateDecoration, reactivateDecoration } = useDecorations({ includeInactive: showInactive });
   const { categories } = useDecorationCategories();
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -33,6 +36,8 @@ export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingDecoration, setEditingDecoration] = useState<Decoration | null>(null);
   const [deletingDecoration, setDeletingDecoration] = useState<Decoration | null>(null);
+
+  const activeCount = useMemo(() => decorations.filter(d => d.is_active).length, [decorations]);
 
   const filteredDecorations = useMemo(() => {
     return decorations.filter((decoration) => {
@@ -46,18 +51,13 @@ export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
 
   const groupedDecorations = useMemo(() => {
     const groups: Record<string, { name: string; color: string; decorations: Decoration[] }> = {};
-    
     filteredDecorations.forEach((decoration) => {
       const categoryId = decoration.category_id || 'uncategorized';
       const categoryName = decoration.decoration_categories?.name || 'Sem categoria';
       const categoryColor = decoration.decoration_categories?.color || '#6b7280';
-      
-      if (!groups[categoryId]) {
-        groups[categoryId] = { name: categoryName, color: categoryColor, decorations: [] };
-      }
+      if (!groups[categoryId]) groups[categoryId] = { name: categoryName, color: categoryColor, decorations: [] };
       groups[categoryId].decorations.push(decoration);
     });
-
     return Object.entries(groups).sort(([, a], [, b]) => {
       if (a.name === 'Sem categoria') return 1;
       if (b.name === 'Sem categoria') return -1;
@@ -65,15 +65,8 @@ export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
     });
   }, [filteredDecorations]);
 
-  const handleEdit = (decoration: Decoration) => {
-    setEditingDecoration(decoration);
-    setFormOpen(true);
-  };
-
-  const handleFormClose = () => {
-    setFormOpen(false);
-    setEditingDecoration(null);
-  };
+  const handleEdit = (decoration: Decoration) => { setEditingDecoration(decoration); setFormOpen(true); };
+  const handleFormClose = () => { setFormOpen(false); setEditingDecoration(null); };
 
   if (isLoading) {
     return (
@@ -89,9 +82,7 @@ export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold truncate">Decorações</h1>
-          <p className="text-muted-foreground">
-            {decorations.length} decorações cadastradas
-          </p>
+          <p className="text-muted-foreground">{activeCount} decorações ativas</p>
         </div>
         <Button onClick={() => { setEditingDecoration(null); setFormOpen(true); }} className="w-full sm:w-auto shrink-0">
           <Plus className="h-4 w-4 mr-2" />
@@ -109,32 +100,21 @@ export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
         </TabsList>
 
         <TabsContent value="list" className="space-y-6 mt-4">
-
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar decorações..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 min-h-[44px]"
-          />
+          <Input placeholder="Buscar decorações..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 min-h-[44px]" />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-48 min-h-[44px]">
-            <SelectValue placeholder="Filtrar por categoria" />
-          </SelectTrigger>
+          <SelectTrigger className="w-full sm:w-48 min-h-[44px]"><SelectValue placeholder="Filtrar por categoria" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as categorias</SelectItem>
             <SelectItem value="uncategorized">Sem categoria</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: category.color || '#6366f1' }}
-                  />
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color || '#6366f1' }} />
                   {category.name}
                 </div>
               </SelectItem>
@@ -143,44 +123,34 @@ export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
         </Select>
       </div>
 
+      {/* Show inactive toggle */}
+      <div className="flex items-center gap-2">
+        <Switch id="show-inactive-decorations" checked={showInactive} onCheckedChange={setShowInactive} />
+        <Label htmlFor="show-inactive-decorations" className="text-sm text-muted-foreground cursor-pointer">Mostrar inativos</Label>
+      </div>
+
       {/* Content */}
       {decorations.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="h-8 w-8 text-muted-foreground" />
-          </div>
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4"><Sparkles className="h-8 w-8 text-muted-foreground" /></div>
           <h3 className="font-medium text-foreground mb-1">Nenhuma decoração cadastrada</h3>
-          <p className="text-muted-foreground text-sm">
-            Comece adicionando suas decorações para usar em produtos
-          </p>
-          <Button onClick={() => setFormOpen(true)} className="mt-4 gap-2">
-            <Plus className="h-4 w-4" />
-            Adicionar Decoração
-          </Button>
+          <p className="text-muted-foreground text-sm">Comece adicionando suas decorações para usar em produtos</p>
+          <Button onClick={() => setFormOpen(true)} className="mt-4 gap-2"><Plus className="h-4 w-4" />Adicionar Decoração</Button>
         </div>
       ) : filteredDecorations.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search className="h-8 w-8 text-muted-foreground" />
-          </div>
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4"><Search className="h-8 w-8 text-muted-foreground" /></div>
           <h3 className="font-medium text-foreground mb-1">Nenhuma decoração encontrada</h3>
-          <p className="text-muted-foreground text-sm">
-            Tente ajustar os filtros de busca
-          </p>
+          <p className="text-muted-foreground text-sm">Tente ajustar os filtros de busca</p>
         </div>
       ) : (
         <div className="space-y-8">
           {groupedDecorations.map(([categoryId, group]) => (
             <div key={categoryId}>
               <div className="flex items-center gap-2 mb-4">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: group.color }}
-                />
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: group.color }} />
                 <h2 className="text-lg font-semibold">{group.name}</h2>
-                <span className="text-sm text-muted-foreground">
-                  ({group.decorations.length})
-                </span>
+                <span className="text-sm text-muted-foreground">({group.decorations.length})</span>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {group.decorations.map((decoration) => (
@@ -190,6 +160,7 @@ export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
                     onDuplicate={(dec) => duplicateDecoration.mutate(dec)}
                     onEdit={handleEdit}
                     onDelete={setDeletingDecoration}
+                    onReactivate={!decoration.is_active ? () => reactivateDecoration.mutate(decoration.id) : undefined}
                   />
                 ))}
               </div>
@@ -198,21 +169,12 @@ export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
         </div>
       )}
 
-      {/* Form Dialog */}
-      <DecorationForm
-        open={formOpen}
-        onOpenChange={handleFormClose}
-        decoration={editingDecoration}
-      />
-
+      <DecorationForm open={formOpen} onOpenChange={handleFormClose} decoration={editingDecoration} />
       </TabsContent>
 
-      <TabsContent value="categories" className="mt-4">
-        <DecorationCategoriesList />
-      </TabsContent>
+      <TabsContent value="categories" className="mt-4"><DecorationCategoriesList /></TabsContent>
       </Tabs>
 
-      {/* Delete / Deactivate Dialog */}
       {deletingDecoration && (
         <DeleteOrDeactivateDialog
           open={!!deletingDecoration}
@@ -220,14 +182,8 @@ export function DecorationsList({ initialSearch = '' }: DecorationsListProps) {
           entityType="decoration"
           entityId={deletingDecoration.id}
           entityName={deletingDecoration.name}
-          onHardDelete={async () => {
-            await deleteDecoration.mutateAsync(deletingDecoration.id);
-            setDeletingDecoration(null);
-          }}
-          onDeactivate={async () => {
-            await deactivateDecoration.mutateAsync(deletingDecoration.id);
-            setDeletingDecoration(null);
-          }}
+          onHardDelete={async () => { await deleteDecoration.mutateAsync(deletingDecoration.id); setDeletingDecoration(null); }}
+          onDeactivate={async () => { await deactivateDecoration.mutateAsync(deletingDecoration.id); setDeletingDecoration(null); }}
           isLoading={deleteDecoration.isPending || deactivateDecoration.isPending}
         />
       )}

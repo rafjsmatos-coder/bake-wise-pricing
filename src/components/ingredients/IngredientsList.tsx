@@ -6,6 +6,8 @@ import { IngredientForm } from './IngredientForm';
 import { DeleteOrDeactivateDialog } from '@/components/shared/DeleteOrDeactivateDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -22,7 +24,8 @@ interface IngredientsListProps {
 }
 
 export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
-  const { ingredients, isLoading, deleteIngredient, duplicateIngredient, deactivateIngredient } = useIngredients();
+  const [showInactive, setShowInactive] = useState(false);
+  const { ingredients, isLoading, deleteIngredient, duplicateIngredient, deactivateIngredient, reactivateIngredient } = useIngredients({ includeInactive: showInactive });
   const { categories } = useCategories();
   const [search, setSearch] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -33,6 +36,8 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
   useEffect(() => {
     if (initialSearch !== undefined) setSearch(initialSearch);
   }, [initialSearch]);
+
+  const activeCount = useMemo(() => ingredients.filter(i => i.is_active).length, [ingredients]);
 
   const filteredIngredients = useMemo(() => {
     return ingredients.filter((ing) => {
@@ -60,13 +65,10 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
     
     filteredIngredients.forEach((ing) => {
       const key = ing.categories?.name || 'Sem categoria';
-      if (!groups[key]) {
-        groups[key] = [];
-      }
+      if (!groups[key]) groups[key] = [];
       groups[key].push(ing);
     });
 
-    // Sort groups by category name
     const sortedGroups: Record<string, Ingredient[]> = {};
     Object.keys(groups)
       .sort((a, b) => {
@@ -74,9 +76,7 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
         if (b === 'Sem categoria') return -1;
         return a.localeCompare(b);
       })
-      .forEach((key) => {
-        sortedGroups[key] = groups[key];
-      });
+      .forEach((key) => { sortedGroups[key] = groups[key]; });
 
     return sortedGroups;
   }, [filteredIngredients, categoryFilter, categories]);
@@ -102,9 +102,7 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
 
   const handleFormClose = (open: boolean) => {
     setFormOpen(open);
-    if (!open) {
-      setEditingIngredient(null);
-    }
+    if (!open) setEditingIngredient(null);
   };
 
   if (isLoading) {
@@ -122,7 +120,7 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground truncate">Ingredientes</h1>
           <p className="text-muted-foreground">
-            {ingredients.length} ingrediente{ingredients.length !== 1 ? 's' : ''} cadastrado{ingredients.length !== 1 ? 's' : ''}
+            {activeCount} ingrediente{activeCount !== 1 ? 's' : ''} ativo{activeCount !== 1 ? 's' : ''}
           </p>
         </div>
         <Button onClick={() => setFormOpen(true)} className="gap-2 w-full sm:w-auto shrink-0">
@@ -175,6 +173,14 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
         </Select>
       </div>
 
+      {/* Show inactive toggle */}
+      <div className="flex items-center gap-2">
+        <Switch id="show-inactive-ingredients" checked={showInactive} onCheckedChange={setShowInactive} />
+        <Label htmlFor="show-inactive-ingredients" className="text-sm text-muted-foreground cursor-pointer">
+          Mostrar inativos
+        </Label>
+      </div>
+
       {/* Ingredients List */}
       {filteredIngredients.length === 0 ? (
         <div className="text-center py-12">
@@ -223,6 +229,7 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
                     onDuplicate={(ing) => duplicateIngredient.mutate(ing)}
                     onEdit={handleEdit}
                     onDelete={setDeletingIngredient}
+                    onReactivate={!ingredient.is_active ? () => reactivateIngredient.mutate(ingredient.id) : undefined}
                   />
                 ))}
               </div>
