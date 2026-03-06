@@ -188,12 +188,12 @@ export function OrderDetails({ open, onOpenChange, order, onEdit, onStatusChange
             {order.order_items && order.order_items.length > 0 ? (
               <div className="space-y-2">
                 {order.order_items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div key={item.id} className="flex items-center justify-between gap-3 p-3 bg-muted/50 rounded-lg">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.product?.name || 'Produto removido'}</p>
                       <p className="text-xs text-muted-foreground">{item.quantity}x {formatCurrency(item.unit_price)}</p>
                     </div>
-                    <span className="text-sm font-medium">{formatCurrency(item.total_price)}</span>
+                    <span className="text-sm font-medium shrink-0">{formatCurrency(item.total_price)}</span>
                   </div>
                 ))}
               </div>
@@ -204,28 +204,28 @@ export function OrderDetails({ open, onOpenChange, order, onEdit, onStatusChange
 
           {/* Resumo financeiro */}
           <div className="space-y-2 pt-3 border-t border-border">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span>{formatCurrency(order.total_amount)}</span>
+            <div className="flex justify-between gap-2 text-sm">
+              <span className="text-muted-foreground truncate">Subtotal</span>
+              <span className="shrink-0">{formatCurrency(order.total_amount)}</span>
             </div>
             {discount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Desconto</span>
-                <span className="text-accent">-{formatCurrency(discount)}</span>
+              <div className="flex justify-between gap-2 text-sm">
+                <span className="text-muted-foreground truncate">Desconto</span>
+                <span className="text-accent shrink-0">-{formatCurrency(discount)}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground font-medium">Total</span>
-              <span className="font-bold">{formatCurrency(effectiveTotal)}</span>
+            <div className="flex justify-between gap-2 text-sm">
+              <span className="text-muted-foreground font-medium truncate">Total</span>
+              <span className="font-bold shrink-0">{formatCurrency(effectiveTotal)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Valor pago</span>
-              <span className="text-green-600">{formatCurrency(order.paid_amount)}</span>
+            <div className="flex justify-between gap-2 text-sm">
+              <span className="text-muted-foreground truncate">Valor pago</span>
+              <span className="text-green-600 shrink-0">{formatCurrency(order.paid_amount)}</span>
             </div>
             {remainingAmount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Saldo restante</span>
-                <span className="text-destructive font-medium">{formatCurrency(remainingAmount)}</span>
+              <div className="flex justify-between gap-2 text-sm">
+                <span className="text-muted-foreground truncate">Saldo restante</span>
+                <span className="text-destructive font-medium shrink-0">{formatCurrency(remainingAmount)}</span>
               </div>
             )}
           </div>
