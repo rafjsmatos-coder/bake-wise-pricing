@@ -52,14 +52,17 @@ interface RecipeSelectorProps {
   selectedRecipes: SelectedRecipe[];
   onRecipesChange: (recipes: SelectedRecipe[]) => void;
   recipeCosts?: Record<string, number>;
+  linkedIds?: string[];
 }
 
 export function RecipeSelector({
   selectedRecipes,
   onRecipesChange,
   recipeCosts = {},
+  linkedIds,
 }: RecipeSelectorProps) {
-  const { recipes } = useRecipes();
+  const hasLinked = linkedIds && linkedIds.length > 0;
+  const { recipes } = useRecipes(hasLinked ? { includeInactive: true } : undefined);
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<typeof recipes[0] | null>(null);
@@ -68,7 +71,7 @@ export function RecipeSelector({
 
   const availableRecipes = useMemo(() => {
     const selectedIds = new Set(selectedRecipes.map(r => r.recipe_id));
-    return recipes.filter(r => !selectedIds.has(r.id));
+    return recipes.filter(r => !selectedIds.has(r.id) && r.is_active !== false);
   }, [recipes, selectedRecipes]);
 
   const compatibleUnits = useMemo(() => {
@@ -293,6 +296,9 @@ export function RecipeSelector({
                   <div className="flex items-center gap-2">
                     <ChefHat className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="font-medium truncate">{item.name}</span>
+                    {recipes.find(r => r.id === item.recipe_id)?.is_active === false && (
+                      <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">(Inativo)</span>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Rende: {item.yield_quantity} {item.yield_unit}

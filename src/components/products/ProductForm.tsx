@@ -244,24 +244,28 @@ export function ProductForm({ open, onOpenChange, product, recipeCosts = {} }: P
               selectedRecipes={selectedRecipes}
               onRecipesChange={setSelectedRecipes}
               recipeCosts={recipeCosts}
+              linkedIds={product ? product.product_recipes?.map(r => r.recipe_id) : undefined}
             />
 
             {/* Ingredient Selector */}
             <IngredientSelector
               selectedIngredients={selectedIngredients}
               onIngredientsChange={setSelectedIngredients}
+              linkedIds={product ? product.product_ingredients?.map(i => i.ingredient_id) : undefined}
             />
 
             {/* Decoration Selector */}
             <DecorationSelector
               selectedDecorations={selectedDecorations}
               onDecorationsChange={setSelectedDecorations}
+              linkedIds={product ? product.product_decorations?.map(d => d.decoration_id) : undefined}
             />
 
             {/* Packaging Selector */}
             <PackagingSelector
               selectedPackaging={selectedPackaging}
               onPackagingChange={setSelectedPackaging}
+              linkedIds={product ? product.product_packaging?.map(p => p.packaging_id) : undefined}
             />
 
             {/* Additional fields */}

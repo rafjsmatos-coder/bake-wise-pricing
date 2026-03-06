@@ -31,13 +31,16 @@ export interface SelectedPackaging {
 interface PackagingSelectorProps {
   selectedPackaging: SelectedPackaging[];
   onPackagingChange: (packaging: SelectedPackaging[]) => void;
+  linkedIds?: string[];
 }
 
 export function PackagingSelector({
   selectedPackaging,
   onPackagingChange,
+  linkedIds,
 }: PackagingSelectorProps) {
-  const { packagingItems } = usePackaging();
+  const hasLinked = linkedIds && linkedIds.length > 0;
+  const { packagingItems } = usePackaging(hasLinked ? { includeInactive: true } : undefined);
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<typeof packagingItems[0] | null>(null);
@@ -45,7 +48,7 @@ export function PackagingSelector({
 
   const availablePackaging = useMemo(() => {
     const selectedIds = new Set(selectedPackaging.map(p => p.packaging_id));
-    return packagingItems.filter(p => !selectedIds.has(p.id));
+    return packagingItems.filter(p => !selectedIds.has(p.id) && (p as any).is_active !== false);
   }, [packagingItems, selectedPackaging]);
 
   const handleSelectPackaging = (pkg: typeof packagingItems[0]) => {
@@ -219,6 +222,9 @@ export function PackagingSelector({
                   <div className="flex items-center gap-2">
                     <Box className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="font-medium truncate">{item.name}</span>
+                    {(packagingItems.find(p => p.id === item.packaging_id) as any)?.is_active === false && (
+                      <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">(Inativo)</span>
+                    )}
                   </div>
                   {itemCost != null && (
                     <p className="text-xs text-primary font-medium ml-6">

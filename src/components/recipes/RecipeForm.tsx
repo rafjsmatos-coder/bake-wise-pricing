@@ -348,10 +348,11 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
           </div>
 
           {/* Ingredientes */}
-          <IngredientSelector
-            selectedIngredients={selectedIngredients}
-            onIngredientsChange={setSelectedIngredients}
-          />
+            <IngredientSelector
+              selectedIngredients={selectedIngredients}
+              onIngredientsChange={setSelectedIngredients}
+              linkedIds={recipe ? recipe.recipe_ingredients?.map(ri => ri.ingredient_id) : undefined}
+            />
           {selectedIngredients.length === 0 && (
             <p className="text-sm text-destructive">Adicione pelo menos um ingrediente</p>
           )}
