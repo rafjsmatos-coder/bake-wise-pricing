@@ -39,13 +39,16 @@ export interface RecipeIngredientItem {
 interface IngredientSelectorProps {
   selectedIngredients: RecipeIngredientItem[];
   onIngredientsChange: (ingredients: RecipeIngredientItem[]) => void;
+  linkedIds?: string[];
 }
 
 export function IngredientSelector({
   selectedIngredients,
   onIngredientsChange,
+  linkedIds,
 }: IngredientSelectorProps) {
-  const { ingredients } = useIngredients();
+  const hasLinked = linkedIds && linkedIds.length > 0;
+  const { ingredients } = useIngredients(hasLinked ? { includeInactive: true } : undefined);
   const [open, setOpen] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
   const [quantity, setQuantity] = useState<string>('');
@@ -53,7 +56,7 @@ export function IngredientSelector({
 
   const availableIngredients = useMemo(() => {
     const selectedIds = new Set(selectedIngredients.map(si => si.ingredient_id));
-    return ingredients.filter(ing => !selectedIds.has(ing.id));
+    return ingredients.filter(ing => !selectedIds.has(ing.id) && ing.is_active !== false);
   }, [ingredients, selectedIngredients]);
 
   const compatibleUnits = useMemo(() => {
@@ -280,6 +283,9 @@ export function IngredientSelector({
                     <span className="font-medium truncate">
                       {ingredient?.name || 'Ingrediente'}
                     </span>
+                    {ingredient?.is_active === false && (
+                      <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">(Inativo)</span>
+                    )}
                   </div>
                 </div>
 

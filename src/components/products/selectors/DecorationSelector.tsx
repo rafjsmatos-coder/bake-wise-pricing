@@ -52,13 +52,16 @@ export interface SelectedDecoration {
 interface DecorationSelectorProps {
   selectedDecorations: SelectedDecoration[];
   onDecorationsChange: (decorations: SelectedDecoration[]) => void;
+  linkedIds?: string[];
 }
 
 export function DecorationSelector({
   selectedDecorations,
   onDecorationsChange,
+  linkedIds,
 }: DecorationSelectorProps) {
-  const { decorations } = useDecorations();
+  const hasLinked = linkedIds && linkedIds.length > 0;
+  const { decorations } = useDecorations(hasLinked ? { includeInactive: true } : undefined);
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [selectedDecoration, setSelectedDecoration] = useState<typeof decorations[0] | null>(null);
@@ -67,7 +70,7 @@ export function DecorationSelector({
 
   const availableDecorations = useMemo(() => {
     const selectedIds = new Set(selectedDecorations.map(d => d.decoration_id));
-    return decorations.filter(d => !selectedIds.has(d.id));
+    return decorations.filter(d => !selectedIds.has(d.id) && d.is_active !== false);
   }, [decorations, selectedDecorations]);
 
   const handleSelectDecoration = (decoration: typeof decorations[0]) => {
@@ -271,6 +274,9 @@ export function DecorationSelector({
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="font-medium truncate">{item.name}</span>
+                    {decorations.find(d => d.id === item.decoration_id)?.is_active === false && (
+                      <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">(Inativo)</span>
+                    )}
                   </div>
                   {itemCost != null && (
                     <p className="text-xs text-primary font-medium ml-6">

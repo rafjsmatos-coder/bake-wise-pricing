@@ -32,7 +32,7 @@ export function ProductCard({
   const isInactive = !product.is_active;
 
   return (
-    <div className={`bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow ${isInactive ? 'opacity-60' : ''}`}>
+    <div className={`bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow overflow-hidden ${isInactive ? 'opacity-60' : ''}`}>
       {/* Header */}
       <div className="mb-3">
         <div className="flex items-center gap-2 flex-wrap">
@@ -58,8 +58,8 @@ export function ProductCard({
       <div className="flex flex-wrap gap-2 text-xs mb-3">
         {recipesCount > 0 && <Badge variant="outline">{recipesCount} receita{recipesCount > 1 ? 's' : ''}</Badge>}
         {ingredientsCount > 0 && <Badge variant="outline">{ingredientsCount} ingrediente{ingredientsCount > 1 ? 's' : ''}</Badge>}
-        {decorationsCount > 0 && <Badge variant="outline">{decorationsCount} decoração{decorationsCount > 1 ? 'ões' : ''}</Badge>}
-        {packagingCount > 0 && <Badge variant="outline">{packagingCount} embalagem{packagingCount > 1 ? 'ns' : ''}</Badge>}
+        {decorationsCount > 0 && <Badge variant="outline">{decorationsCount} decoraç{decorationsCount > 1 ? 'ões' : 'ão'}</Badge>}
+        {packagingCount > 0 && <Badge variant="outline">{packagingCount} embalage{packagingCount > 1 ? 'ns' : 'm'}</Badge>}
       </div>
 
       {/* Time and margin */}

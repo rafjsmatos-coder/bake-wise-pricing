@@ -132,7 +132,7 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
     onChange(items.filter((_, i) => i !== index));
   };
 
-  const productItems = products.map((p) => ({
+  const productItems = products.filter(p => p.is_active !== false).map((p) => ({
     id: p.id,
     name: p.name,
   }));

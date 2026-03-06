@@ -52,13 +52,16 @@ export interface SelectedIngredient {
 interface IngredientSelectorProps {
   selectedIngredients: SelectedIngredient[];
   onIngredientsChange: (ingredients: SelectedIngredient[]) => void;
+  linkedIds?: string[];
 }
 
 export function IngredientSelector({
   selectedIngredients,
   onIngredientsChange,
+  linkedIds,
 }: IngredientSelectorProps) {
-  const { ingredients } = useIngredients();
+  const hasLinked = linkedIds && linkedIds.length > 0;
+  const { ingredients } = useIngredients(hasLinked ? { includeInactive: true } : undefined);
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<typeof ingredients[0] | null>(null);
@@ -67,7 +70,7 @@ export function IngredientSelector({
 
   const availableIngredients = useMemo(() => {
     const selectedIds = new Set(selectedIngredients.map(i => i.ingredient_id));
-    return ingredients.filter(i => !selectedIds.has(i.id));
+    return ingredients.filter(i => !selectedIds.has(i.id) && i.is_active !== false);
   }, [ingredients, selectedIngredients]);
 
   const handleSelectIngredient = (ingredient: typeof ingredients[0]) => {
@@ -271,6 +274,9 @@ export function IngredientSelector({
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="font-medium truncate">{item.name}</span>
+                    {ingredients.find(i => i.id === item.ingredient_id)?.is_active === false && (
+                      <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">(Inativo)</span>
+                    )}
                   </div>
                   {itemCost != null && (
                     <p className="text-xs text-primary font-medium ml-6">
