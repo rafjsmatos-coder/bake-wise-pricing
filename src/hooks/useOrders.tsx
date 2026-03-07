@@ -218,17 +218,6 @@ export function useOrders() {
     onError: (error) => { console.error('Erro ao atualizar status:', error); toast.error('Erro ao atualizar status'); },
   });
 
-  const deleteOrder = useMutation({
-    mutationFn: async (id: string) => {
-      await ensureSessionUserId();
-      const { error } = await supabase.from('orders').delete().eq('id', id);
-      if (error) throw error;
-    },
-    retry: 1,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['clients'] }); toast.success('Pedido excluído com sucesso!'); },
-    onError: (error) => { console.error('Erro ao excluir pedido:', error); toast.error('Erro ao excluir pedido'); },
-  });
-
   const duplicateOrder = useMutation({
     mutationFn: async (order: Order) => {
       const userId = await ensureSessionUserId();
