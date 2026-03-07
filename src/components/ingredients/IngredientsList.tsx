@@ -240,6 +240,13 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
         </div>
       )}
 
+      {/* View Details Dialog */}
+      <IngredientDetails
+        open={!!viewingIngredient}
+        onOpenChange={() => setViewingIngredient(null)}
+        ingredient={viewingIngredient}
+      />
+
       {/* Form Dialog */}
       <IngredientForm
         open={formOpen}
