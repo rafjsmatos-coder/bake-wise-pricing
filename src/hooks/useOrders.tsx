@@ -247,5 +247,5 @@ export function useOrders() {
     onError: (error) => { console.error('Erro ao duplicar pedido:', error); toast.error('Erro ao duplicar pedido'); },
   });
 
-  return { orders, isLoading, error, createOrder, updateOrder, updateOrderStatus, deleteOrder, duplicateOrder };
+  return { orders, isLoading, error, createOrder, updateOrder, updateOrderStatus, duplicateOrder };
 }
