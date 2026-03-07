@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useIngredients, type Ingredient } from '@/hooks/useIngredients';
 import { useCategories } from '@/hooks/useCategories';
 import { IngredientCard } from './IngredientCard';
+import { IngredientDetails } from './IngredientDetails';
 import { IngredientForm } from './IngredientForm';
 import { DeleteOrDeactivateDialog } from '@/components/shared/DeleteOrDeactivateDialog';
 import { Button } from '@/components/ui/button';
