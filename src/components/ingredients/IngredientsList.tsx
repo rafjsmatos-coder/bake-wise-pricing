@@ -32,6 +32,7 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [formOpen, setFormOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
+  const [viewingIngredient, setViewingIngredient] = useState<Ingredient | null>(null);
   const [deletingIngredient, setDeletingIngredient] = useState<Ingredient | null>(null);
 
   useEffect(() => {
