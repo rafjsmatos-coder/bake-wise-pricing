@@ -227,7 +227,7 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
                   <IngredientCard
                     key={ingredient.id}
                     ingredient={ingredient}
-                    onView={handleEdit}
+                    onView={setViewingIngredient}
                     onDuplicate={(ing) => duplicateIngredient.mutate(ing)}
                     onEdit={handleEdit}
                     onDelete={setDeletingIngredient}
