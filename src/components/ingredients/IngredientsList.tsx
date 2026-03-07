@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useIngredients, type Ingredient } from '@/hooks/useIngredients';
 import { useCategories } from '@/hooks/useCategories';
 import { IngredientCard } from './IngredientCard';
+import { IngredientDetails } from './IngredientDetails';
 import { IngredientForm } from './IngredientForm';
 import { DeleteOrDeactivateDialog } from '@/components/shared/DeleteOrDeactivateDialog';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [formOpen, setFormOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
+  const [viewingIngredient, setViewingIngredient] = useState<Ingredient | null>(null);
   const [deletingIngredient, setDeletingIngredient] = useState<Ingredient | null>(null);
 
   useEffect(() => {
@@ -225,7 +227,7 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
                   <IngredientCard
                     key={ingredient.id}
                     ingredient={ingredient}
-                    onView={handleEdit}
+                    onView={setViewingIngredient}
                     onDuplicate={(ing) => duplicateIngredient.mutate(ing)}
                     onEdit={handleEdit}
                     onDelete={setDeletingIngredient}
@@ -237,6 +239,13 @@ export function IngredientsList({ initialSearch = '' }: IngredientsListProps) {
           ))}
         </div>
       )}
+
+      {/* View Details Dialog */}
+      <IngredientDetails
+        open={!!viewingIngredient}
+        onOpenChange={() => setViewingIngredient(null)}
+        ingredient={viewingIngredient}
+      />
 
       {/* Form Dialog */}
       <IngredientForm
