@@ -196,7 +196,7 @@ export function AdminStats() {
                   <CreditCard className="h-5 w-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.subscriptions.pending}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.subscriptions.pending}</p>
                   <p className="text-xs text-muted-foreground">Pendentes</p>
                 </div>
               </div>
