@@ -238,13 +238,13 @@ export function AuditLogsManagement() {
                         <p className="text-xs text-muted-foreground">{log.admin_email || log.admin_user_id.slice(0, 8)}</p>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <div>
                         <p className="text-sm font-medium">{log.target_name || '—'}</p>
                         <p className="text-xs text-muted-foreground">{log.target_email || log.target_user_id.slice(0, 8)}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                    <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate hidden sm:table-cell">
                       {formatDetails(log.details)}
                     </TableCell>
                   </TableRow>
