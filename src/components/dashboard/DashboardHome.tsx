@@ -159,7 +159,8 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       )}
 
       {/* Summary Cards */}
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none" data-tour="summary-cards">
+      <div className="relative" data-tour="summary-cards">
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
         {summaryCards.map((card) => (
           <Card 
             key={card.title} 
