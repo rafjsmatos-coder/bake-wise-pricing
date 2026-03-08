@@ -81,10 +81,10 @@ export function usePushNotifications() {
       const registration = await navigator.serviceWorker.register('/sw-push.js', { scope: '/push/' });
       await navigator.serviceWorker.ready;
 
-      // Get VAPID public key from env or edge function
-      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      // Get VAPID public key from edge function
+      const vapidKey = await getVapidPublicKey();
       if (!vapidKey) {
-        toast.error('Chave VAPID não configurada. Configure VAPID_PUBLIC_KEY.');
+        toast.error('Erro ao obter chave VAPID. Tente novamente.');
         return;
       }
 
