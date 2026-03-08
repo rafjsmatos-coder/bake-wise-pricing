@@ -20,6 +20,8 @@ export function SubscriptionCard() {
     checkSubscription,
     isLoading 
   } = useSubscription();
+
+  const { isActive: promoActive, slotsRemaining } = usePromoStatus();
   
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [isPortalLoading, setIsPortalLoading] = useState(false);
