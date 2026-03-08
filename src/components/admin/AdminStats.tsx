@@ -267,7 +267,7 @@ export function AdminStats() {
                     {stats.funnel.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={FUNNEL_COLORS[index % FUNNEL_COLORS.length]} />
                     ))}
-                    <LabelList position="right" fill="hsl(var(--foreground))" stroke="none" dataKey="stage" />
+                    <LabelList position="center" fill="hsl(var(--foreground))" stroke="none" dataKey="stage" />
                     <LabelList position="center" fill="#fff" stroke="none" dataKey="value" />
                   </Funnel>
                 </FunnelChart>

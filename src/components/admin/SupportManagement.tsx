@@ -209,11 +209,11 @@ export function SupportManagement() {
                     <Badge variant={status.variant}>{status.label}</Badge>
                   </TableCell>
                   {showPriority && (
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge className={priority.className}>{priority.label}</Badge>
                     </TableCell>
                   )}
-                  <TableCell className="text-muted-foreground text-sm">
+                  <TableCell className="text-muted-foreground text-sm hidden sm:table-cell">
                     <div>
                       {format(new Date(ticket.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                       {ticket.needsAttention && (

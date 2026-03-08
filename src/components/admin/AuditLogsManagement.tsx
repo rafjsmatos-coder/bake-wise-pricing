@@ -254,7 +254,7 @@ export function AuditLogsManagement() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">
               {total} registro{total !== 1 ? 's' : ''} encontrado{total !== 1 ? 's' : ''}
             </p>

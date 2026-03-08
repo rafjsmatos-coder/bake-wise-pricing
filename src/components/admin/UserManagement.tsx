@@ -522,9 +522,9 @@ export function UserManagement() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
                   <p className="text-sm text-muted-foreground">
-                    Mostrando {(page - 1) * perPage + 1} a {Math.min(page * perPage, total)} de {total} usuários
+                    {total} usuário{total !== 1 ? 's' : ''}
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
