@@ -357,6 +357,21 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
             {bottomItems.map(renderSidebarItem)}
           </div>
 
+          {isAdmin && (
+            <Separator className="my-2" />
+          )}
+          {isAdmin && (
+            <div className="space-y-0.5">
+              <button
+                onClick={() => window.location.href = '/admin'}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Shield className="h-4.5 w-4.5 shrink-0" />
+                <span className="font-medium flex-1">Painel Admin</span>
+              </button>
+            </div>
+          )}
+
           <div className="px-3 pt-2">
             <ThemeToggle className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground" />
           </div>
