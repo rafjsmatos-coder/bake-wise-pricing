@@ -1,40 +1,60 @@
 
 
-# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
+## Plano: Relatórios Avançados + Notificações Push PWA
 
-## ✅ Concluído
+### 1. Relatórios Avançados
 
-### Migração de Banco
-- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
-- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
-- `client_name TEXT NOT NULL` em orders
-- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
-- Backfill de product_name e client_name para dados existentes
-- Índices parciais para is_active
-- Backfill de `cost_per_unit` em decorations
+O `RevenueReport.tsx` já tem: faturamento mensal, despesas, lucro líquido, top 5 produtos, top 5 clientes e gráfico de barras dos últimos 6 meses.
 
-### Hooks atualizados
-- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
-- Todos têm mutation `deactivate[Entity]` para soft delete
-- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
-- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
-- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
+**Novos relatórios a adicionar:**
 
-### Bugs corrigidos
-- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
-- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
-- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
+| Relatório | Descrição |
+|-----------|-----------|
+| Margem de lucro por produto | Tabela com custo, preço de venda, margem % de cada produto vendido no período |
+| Comparativo mensal | Indicadores de variação vs mês anterior (seta verde/vermelha + %) |
+| Ticket médio | Valor médio por pedido no período |
+| Taxa de conversão orçamento→pedido | % de orçamentos que viraram pedidos confirmados |
+| Gráfico de pizza | Distribuição de receita por categoria de produto |
 
-### Componentes criados/integrados
-- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
-- `useDependencyCheck` — verifica dependências em tabelas de vínculo
-- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
-- IngredientsList com aviso de histórico de preços no hard delete
+**Arquivos alterados:**
+- `src/components/financial/RevenueReport.tsx` -- Adicionar novos cards de métricas (ticket médio, comparativo, conversão) e gráfico de pizza por categoria
+- Adicionar `PieChart` do recharts (já instalado)
 
-## 🔲 Pendente (próxima iteração)
+---
 
-- Toggle "Mostrar inativos" nas listas
-- Visual diferenciado para itens inativos
-- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
-- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
-- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL
+### 2. Notificações Push (PWA)
+
+**Arquitetura:**
+
+```text
+[Usuário abre app] → [Pede permissão push] → [Salva subscription no banco]
+[Edge function cron/manual] → [Consulta entregas do dia / estoque baixo] → [Envia push via Web Push API]
+```
+
+**Etapas:**
+
+1. **Tabela `push_subscriptions`** -- Armazena endpoint + keys por user_id
+2. **Frontend: hook `usePushNotifications`** -- Solicita permissão, registra subscription no banco
+3. **Edge function `send-push-notifications`** -- Consulta pedidos do dia e estoque baixo, envia push usando web-push protocol
+4. **Secret: `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`** -- Necessárias para Web Push API (serão geradas automaticamente via edge function auxiliar)
+5. **Configuração no perfil** -- Toggle para ativar/desativar notificações + escolher quais tipos receber
+
+**Tipos de notificação:**
+- Entregas do dia (manhã)
+- Estoque baixo (ingredientes abaixo do mínimo)
+- Pagamentos pendentes (pedidos com saldo devedor)
+
+**Arquivos novos/alterados:**
+
+| Arquivo | Mudança |
+|---------|---------|
+| Migration SQL | Criar tabela `push_subscriptions` com RLS |
+| `src/hooks/usePushNotifications.tsx` | Hook para solicitar permissão e registrar subscription |
+| `src/components/settings/NotificationSettings.tsx` | UI para ativar/desativar tipos de notificação |
+| `src/components/settings/UserSettings.tsx` | Adicionar seção de notificações |
+| `supabase/functions/send-push-notifications/index.ts` | Edge function que envia as notificações |
+| `supabase/functions/generate-vapid-keys/index.ts` | Gerar par de chaves VAPID |
+| `public/sw-push.js` | Handler de push no service worker |
+
+**Nota:** Será necessário configurar 2 secrets (VAPID keys). Posso gerar automaticamente via edge function na primeira execução.
+
