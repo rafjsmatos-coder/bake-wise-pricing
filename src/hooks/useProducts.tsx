@@ -146,10 +146,10 @@ export function useProducts(options?: { includeInactive?: boolean }) {
         p_profit_margin_percent: productData.profit_margin_percent ?? 30,
         p_additional_costs: productData.additional_costs ?? 0,
         p_notes: productData.notes || null,
-        p_recipes: JSON.stringify(productData.recipes?.map(r => ({ recipe_id: r.recipe_id, quantity: r.quantity, unit: r.unit })) || []),
-        p_ingredients: JSON.stringify(productData.ingredients?.map(i => ({ ingredient_id: i.ingredient_id, quantity: i.quantity, unit: i.unit })) || []),
-        p_decorations: JSON.stringify(productData.decorations?.map(d => ({ decoration_id: d.decoration_id, quantity: d.quantity, unit: d.unit })) || []),
-        p_packaging: JSON.stringify(productData.packaging?.map(p => ({ packaging_id: p.packaging_id, quantity: p.quantity })) || []),
+        p_recipes: productData.recipes?.map(r => ({ recipe_id: r.recipe_id, quantity: r.quantity, unit: r.unit })) || [],
+        p_ingredients: productData.ingredients?.map(i => ({ ingredient_id: i.ingredient_id, quantity: i.quantity, unit: i.unit })) || [],
+        p_decorations: productData.decorations?.map(d => ({ decoration_id: d.decoration_id, quantity: d.quantity, unit: d.unit })) || [],
+        p_packaging: productData.packaging?.map(p => ({ packaging_id: p.packaging_id, quantity: p.quantity })) || [],
       });
       if (error) throw error;
       return { id };
