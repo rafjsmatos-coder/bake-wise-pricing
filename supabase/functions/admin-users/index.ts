@@ -679,6 +679,100 @@ serve(async (req) => {
         }
       }
 
+      case "listLogs": {
+        const { page = 1, perPage = 50, actionFilter, dateFrom, dateTo, search = "" } = params;
+
+        let query = supabaseAdmin
+          .from("admin_action_logs")
+          .select("*", { count: "exact" })
+          .order("created_at", { ascending: false });
+
+        if (actionFilter && actionFilter !== "all") {
+          query = query.eq("action", actionFilter);
+        }
+        if (dateFrom) {
+          query = query.gte("created_at", dateFrom);
+        }
+        if (dateTo) {
+          query = query.lte("created_at", dateTo + "T23:59:59.999Z");
+        }
+
+        const from = (page - 1) * perPage;
+        const to = from + perPage - 1;
+        query = query.range(from, to);
+
+        const { data: logs, error: logsError, count } = await query;
+
+        if (logsError) {
+          throw new Error(`Failed to list logs: ${logsError.message}`);
+        }
+
+        // Resolve admin and target user names
+        const allUserIds = new Set<string>();
+        (logs || []).forEach(log => {
+          allUserIds.add(log.admin_user_id);
+          allUserIds.add(log.target_user_id);
+        });
+
+        const userIdsArr = [...allUserIds];
+        let profileMap: Record<string, string> = {};
+        let emailMap: Record<string, string> = {};
+
+        if (userIdsArr.length > 0) {
+          const { data: profiles } = await supabaseAdmin
+            .from("profiles")
+            .select("user_id, full_name")
+            .in("user_id", userIdsArr);
+
+          profiles?.forEach(p => {
+            profileMap[p.user_id] = p.full_name || "";
+          });
+
+          // Get emails for users
+          for (const uid of userIdsArr) {
+            try {
+              const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(uid);
+              if (authUser?.user?.email) {
+                emailMap[uid] = authUser.user.email;
+              }
+            } catch {
+              // user may have been deleted
+            }
+          }
+        }
+
+        const enrichedLogs = (logs || []).map(log => ({
+          ...log,
+          admin_name: profileMap[log.admin_user_id] || null,
+          admin_email: emailMap[log.admin_user_id] || null,
+          target_name: profileMap[log.target_user_id] || null,
+          target_email: emailMap[log.target_user_id] || null,
+        }));
+
+        // Filter by search (on enriched data)
+        let filteredLogs = enrichedLogs;
+        if (search) {
+          const s = search.toLowerCase();
+          filteredLogs = enrichedLogs.filter(log =>
+            log.admin_email?.toLowerCase().includes(s) ||
+            log.admin_name?.toLowerCase().includes(s) ||
+            log.target_email?.toLowerCase().includes(s) ||
+            log.target_name?.toLowerCase().includes(s) ||
+            log.action.toLowerCase().includes(s)
+          );
+        }
+
+        logStep("Logs listed", { count, page });
+
+        return new Response(
+          JSON.stringify({ logs: filteredLogs, total: count || 0, page, perPage }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+
       case "deleteUser": {
         const { userId } = params;
 
