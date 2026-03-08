@@ -449,6 +449,9 @@ export function UserSettings() {
           )}
         </Button>
       </form>
+
+      {/* Notification Settings */}
+      <NotificationSettings />
     </div>
   );
 }
