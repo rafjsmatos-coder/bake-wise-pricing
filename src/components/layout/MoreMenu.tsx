@@ -39,6 +39,7 @@ interface MoreMenuProps {
   getInitials: () => string;
   unseenCount?: number;
   pendingTicketsCount?: number;
+  isAdmin?: boolean;
 }
 
 const FREE_PAGES: PageType[] = ['dashboard', 'support'];
