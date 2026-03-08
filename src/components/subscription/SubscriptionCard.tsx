@@ -194,13 +194,32 @@ export function SubscriptionCard() {
         {(status === 'trial' || status === 'expired' || status === 'canceled') && (
           <div className="space-y-3">
             <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg">
-              <p className="text-2xl font-bold text-foreground">
-                R$ 49,90
-                <span className="text-base font-normal text-muted-foreground">/mês</span>
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Acesso completo a todas as ferramentas
-              </p>
+              {promoActive ? (
+                <>
+                  <div className="inline-flex items-center gap-1.5 bg-accent/10 text-accent text-xs font-semibold px-2.5 py-1 rounded-full mb-2">
+                    <Zap className="w-3 h-3" />
+                    Restam {slotsRemaining} de 25 vagas
+                  </div>
+                  <p className="text-2xl font-bold text-accent">
+                    R$ 29,90
+                    <span className="text-base font-normal text-muted-foreground">/1º mês</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground line-through mt-0.5">R$ 49,90/mês</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Depois R$ 49,90/mês · Cancele quando quiser
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-foreground">
+                    R$ 49,90
+                    <span className="text-base font-normal text-muted-foreground">/mês</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Acesso completo a todas as ferramentas
+                  </p>
+                </>
+              )}
               <ul className="text-xs text-muted-foreground mt-3 space-y-1.5">
                 <li>✓ Ingredientes, receitas e produtos ilimitados</li>
                 <li>✓ Cálculo automático de custos e preços</li>
