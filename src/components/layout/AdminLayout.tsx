@@ -190,7 +190,7 @@ export function AdminLayout({ children, currentPage, onPageChange }: AdminLayout
       )}
 
       {/* Main Content */}
-      <main className="lg:pl-64 pt-16 lg:pt-0 min-h-screen overflow-x-hidden">
+      <main className="lg:pl-64 pt-14 lg:pt-0 min-h-screen overflow-x-hidden">
         <div className="p-3 sm:p-4 lg:p-8 max-w-full overflow-x-hidden">
           {children}
         </div>

@@ -181,6 +181,8 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
           </Card>
         ))}
       </div>
+      <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none lg:hidden" />
+      </div>
 
       {/* Today's Deliveries - Highlighted */}
       <div data-tour="today-deliveries">
