@@ -158,8 +158,9 @@ export function AuditLogsManagement() {
               className="pl-9"
             />
           </div>
+          <div className="flex flex-col sm:flex-row gap-3">
           <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Tipo de ação" />
             </SelectTrigger>
             <SelectContent>
