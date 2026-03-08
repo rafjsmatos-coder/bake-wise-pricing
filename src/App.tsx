@@ -32,6 +32,7 @@ function AppContent() {
     <TourWrapper onSidebarToggle={setSidebarOpen}>
       <TooltipProvider>
         <Sonner />
+        <UpdatePrompt />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
