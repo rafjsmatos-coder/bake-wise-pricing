@@ -281,7 +281,7 @@ export function SupportManagement() {
             </Select>
 
             <Select value={priorityFilter} onValueChange={(v) => setPriorityFilter(v as TicketPriority | 'all')}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Prioridade" />
               </SelectTrigger>
               <SelectContent>
