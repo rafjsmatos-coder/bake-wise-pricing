@@ -133,25 +133,25 @@ export function IngredientSelector({
               ingredient.unit
             );
             return (
-              <CommandItem
-                key={ingredient.id}
-                value={ingredient.name}
-                onSelect={() => handleSelectIngredient(ingredient)}
-                className="py-3"
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    selectedIngredient?.id === ingredient.id ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <div className="flex flex-col flex-1">
-                  <span>{ingredient.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {ingredient.categories?.name || 'Sem categoria'} · {costInfo.formatted}
-                  </span>
-                </div>
-              </CommandItem>
+               <CommandItem
+                 key={ingredient.id}
+                 value={ingredient.name}
+                 onSelect={() => handleSelectIngredient(ingredient)}
+                 className="py-3 aria-selected:bg-accent"
+               >
+                 <Check
+                   className={cn(
+                     "mr-2 h-4 w-4",
+                     selectedIngredient?.id === ingredient.id ? "opacity-100" : "opacity-0"
+                   )}
+                 />
+                 <div className="flex flex-col flex-1">
+                   <span className="aria-selected:text-accent-foreground">{ingredient.name}</span>
+                   <span className="text-xs text-muted-foreground aria-selected:text-accent-foreground/90">
+                     {ingredient.categories?.name || 'Sem categoria'} · {costInfo.formatted}
+                   </span>
+                 </div>
+               </CommandItem>
             );
           })}
         </CommandGroup>
