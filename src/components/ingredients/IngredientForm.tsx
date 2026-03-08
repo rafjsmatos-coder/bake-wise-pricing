@@ -27,7 +27,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useIngredients, type Ingredient, type CreateIngredientData } from '@/hooks/useIngredients';
 import { UNITS, type MeasurementUnit, getCostPerUnit, formatCurrency, getCompatibleUnits, getBestDisplayUnit, convertUnit } from '@/lib/unit-conversion';
 import { PriceHistoryChart } from './PriceHistoryChart';
-import { Loader2, Calculator, History, ChevronDown } from 'lucide-react';
+import { Loader2, Calculator, History, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
 
 const ingredientSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100),
