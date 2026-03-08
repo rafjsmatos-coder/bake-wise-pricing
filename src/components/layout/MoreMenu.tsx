@@ -21,6 +21,7 @@ import {
   Loader2,
   Lock,
   MessageCircle,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PageType } from './AppLayout';
