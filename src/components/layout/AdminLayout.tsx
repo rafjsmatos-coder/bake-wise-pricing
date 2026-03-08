@@ -82,7 +82,7 @@ export function AdminLayout({ children, currentPage, onPageChange }: AdminLayout
   return (
     <div className="min-h-screen bg-background overflow-x-hidden max-w-[100vw]">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 px-4 flex items-center justify-between">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-card border-b border-border z-50 px-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
