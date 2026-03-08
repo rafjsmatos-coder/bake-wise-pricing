@@ -314,11 +314,14 @@ export function DecorationForm({ open, onOpenChange, decoration }: DecorationFor
           {/* Toggle campos opcionais */}
           <Button
             type="button"
-            variant="ghost"
-            className="w-full justify-between min-h-[44px]"
+            variant="outline"
+            className="w-full justify-between min-h-[44px] border-dashed text-muted-foreground"
             onClick={() => setShowOptional(!showOptional)}
           >
-            <span>Campos opcionais</span>
+            <span className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4" />
+              Campos opcionais
+            </span>
             {showOptional ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
 
