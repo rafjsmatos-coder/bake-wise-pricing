@@ -157,7 +157,7 @@ export function AdminStats() {
                   <Clock className="h-5 w-5 text-yellow-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.subscriptions.trial}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.subscriptions.trial}</p>
                   <p className="text-xs text-muted-foreground">Em Trial</p>
                 </div>
               </div>
