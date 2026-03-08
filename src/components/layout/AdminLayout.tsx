@@ -13,11 +13,12 @@ import {
   Headphones,
   BarChart3,
   Newspaper,
+  FileText,
   Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type AdminPageType = 'stats' | 'users' | 'support' | 'updates';
+export type AdminPageType = 'stats' | 'users' | 'support' | 'updates' | 'audit';
 
 interface NavItem {
   id: AdminPageType;
@@ -70,6 +71,7 @@ export function AdminLayout({ children, currentPage, onPageChange }: AdminLayout
     { id: 'users', label: 'Usuários', icon: Users },
     { id: 'support', label: 'Suporte', icon: Headphones, badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined },
     { id: 'updates', label: 'Novidades', icon: Newspaper },
+    { id: 'audit', label: 'Auditoria', icon: FileText },
   ];
 
   const handleNavClick = (page: AdminPageType) => {

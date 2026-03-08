@@ -4,6 +4,7 @@ import { UserManagement } from '@/components/admin/UserManagement';
 import { SupportManagement } from '@/components/admin/SupportManagement';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { UpdatesManagement } from '@/components/admin/UpdatesManagement';
+import { AuditLogsManagement } from '@/components/admin/AuditLogsManagement';
 
 export function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState<AdminPageType>('stats');
@@ -14,6 +15,7 @@ export function AdminDashboard() {
       {currentPage === 'users' && <UserManagement />}
       {currentPage === 'support' && <SupportManagement />}
       {currentPage === 'updates' && <UpdatesManagement />}
+      {currentPage === 'audit' && <AuditLogsManagement />}
     </AdminLayout>
   );
 }
