@@ -379,7 +379,7 @@ export function UserManagement() {
                           <TableCell>
                             {getSubscriptionBadge(user.subscription)}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden sm:table-cell">
                             {user.isAdmin ? (
                               <Badge variant="default" className="bg-primary">
                                 <Shield className="h-3 w-3 mr-1" />
