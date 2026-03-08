@@ -81,10 +81,21 @@ serve(async (req) => {
       }
     }
 
-    logStep("Creating checkout session", { customerId, priceId: PRICE_ID });
+    // Verificar se a promoção ainda está ativa
+    let promoAvailable = false;
+    try {
+      const coupon = await stripe.coupons.retrieve(PROMO_COUPON_ID);
+      const slotsUsed = coupon.times_redeemed || 0;
+      promoAvailable = coupon.valid && slotsUsed < PROMO_SLOTS_TOTAL;
+      logStep("Promo check", { slotsUsed, promoAvailable });
+    } catch (e) {
+      logStep("Promo coupon check failed, proceeding without discount", { error: String(e) });
+    }
+
+    logStep("Creating checkout session", { customerId, priceId: PRICE_ID, promoAvailable });
 
     // Criar sessão de checkout com suporte a cartão e boleto
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       payment_method_types: ['card', 'boleto'],
@@ -106,7 +117,15 @@ serve(async (req) => {
         },
       },
       locale: 'pt-BR',
-    });
+    };
+
+    // Aplicar desconto promocional se disponível
+    if (promoAvailable) {
+      sessionParams.discounts = [{ coupon: PROMO_COUPON_ID }];
+      logStep("Promo discount applied");
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
