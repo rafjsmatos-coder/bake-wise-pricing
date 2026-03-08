@@ -1,26 +1,40 @@
 
-# Reposicionar ThemeToggle no Desktop
 
-## Problema
-No **mobile**, o ThemeToggle fica no header fixo ao lado do Refresh e Search (linha 316).
-No **desktop**, o ThemeToggle fica escondido dentro da sidebar, em uma seção inferior scrollável (linha 376).
+# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
 
-Resultado: No desktop, o botão fica pouco acessível e não mantém consistência visual com o mobile.
+## ✅ Concluído
 
-## Solução
-Criar uma **barra de controles fixa no desktop** logo abaixo do logo da sidebar (área de header) com:
-- **ThemeToggle** (ícone sol/lua)
-- **Botão Refresh** (atualizar página)
-- **Botão Search** (abrir busca global, se `onSearchOpen` fornecido)
+### Migração de Banco
+- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
+- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
+- `client_name TEXT NOT NULL` em orders
+- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
+- Backfill de product_name e client_name para dados existentes
+- Índices parciais para is_active
+- Backfill de `cost_per_unit` em decorations
 
-Essa barra terá `h-12` (altura fixa), estará imediatamente abaixo da seção do logo (`h-14`), e manterá os botões sempre visíveis e acessíveis, exatamente como no mobile.
+### Hooks atualizados
+- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
+- Todos têm mutation `deactivate[Entity]` para soft delete
+- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
+- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
+- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
 
-## Mudanças
-1. **src/components/layout/AppLayout.tsx**:
-   - Remover `ThemeToggle` da seção inferior da sidebar (linha 375-377)
-   - Adicionar nova seção na sidebar logo após o logo, com uma div `flex gap-1` contendo: ThemeToggle (com `h-9 w-9`), Refresh button, e Search button (se `onSearchOpen` existe)
-   - Aplicar classes: `flex items-center justify-between p-2 border-b border-border`
+### Bugs corrigidos
+- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
+- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
+- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
 
-## Resultado
-ThemeToggle fica acessível e visível no desktop, alinhado com o posicionamento no mobile — sem necessidade de scroll na sidebar.
+### Componentes criados/integrados
+- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
+- `useDependencyCheck` — verifica dependências em tabelas de vínculo
+- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
+- IngredientsList com aviso de histórico de preços no hard delete
 
+## 🔲 Pendente (próxima iteração)
+
+- Toggle "Mostrar inativos" nas listas
+- Visual diferenciado para itens inativos
+- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
+- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
+- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL

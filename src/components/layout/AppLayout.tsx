@@ -339,6 +339,18 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
           <ThemeLogo className="h-8 object-contain" />
         </div>
 
+        <div className="flex items-center justify-end gap-1 px-3 py-2 border-b border-border">
+          <ThemeToggle className="h-9 w-9" />
+          <Button variant="ghost" size="icon" onClick={handleReload} className="h-9 w-9">
+            <RefreshCw className="h-5 w-5" />
+          </Button>
+          {onSearchOpen && (
+            <Button variant="ghost" size="icon" onClick={onSearchOpen} className="h-9 w-9">
+              <Search className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
+
         <nav className="flex-1 px-3 py-3 space-y-4 overflow-y-auto">
           {sidebarGroups.map((group) => (
             <div key={group.label}>
@@ -372,9 +384,6 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
             </div>
           )}
 
-          <div className="px-3 pt-2">
-            <ThemeToggle className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground" />
-          </div>
         </nav>
 
         <div className="p-3 border-t border-border">
