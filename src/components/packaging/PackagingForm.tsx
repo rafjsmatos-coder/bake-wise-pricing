@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/select';
 import { usePackaging, Packaging } from '@/hooks/usePackaging';
 import { usePackagingCategories } from '@/hooks/usePackagingCategories';
-import { Calculator, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp, Loader2, Settings2 } from 'lucide-react';
 import { UNITS as UNITS_MAP, type MeasurementUnit, getCostPerUnit, getCompatibleUnits, getBestDisplayUnit, convertUnit } from '@/lib/unit-conversion';
 
 const UNITS = [
