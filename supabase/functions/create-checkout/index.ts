@@ -11,9 +11,9 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
 // Preço do PreciBake Premium - R$ 49,90/mês
 const PRICE_ID = "price_1StDnC1UfMJqJ1ycnqShIkOZ";
 
-// Cupom de lançamento: R$20 off no primeiro mês (R$29,90), limitado a 25 resgates
+// Cupom de lançamento: R$20 off no primeiro mês (R$29,90), limitado a 35 resgates
 const PROMO_COUPON_ID = "d9LqbCVP";
-const PROMO_SLOTS_TOTAL = 25;
+const PROMO_SLOTS_TOTAL = 35;
 
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);

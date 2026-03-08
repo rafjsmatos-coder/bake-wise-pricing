@@ -70,7 +70,7 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
                   </p>
                   <div className="inline-flex items-center gap-1.5 bg-accent/10 text-accent text-sm font-semibold px-3 py-1.5 rounded-full">
                     <Zap className="w-3.5 h-3.5" />
-                    Restam {slotsRemaining} de 25 vagas
+                    Restam {slotsRemaining} de 35 vagas
                   </div>
                 </div>
               ) : (

@@ -12,7 +12,7 @@ interface PromoStatus {
 export function usePromoStatus() {
   const [promo, setPromo] = useState<PromoStatus>({
     slotsUsed: 0,
-    slotsTotal: 25,
+    slotsTotal: 35,
     slotsRemaining: 0,
     isActive: false,
     isLoading: true,
