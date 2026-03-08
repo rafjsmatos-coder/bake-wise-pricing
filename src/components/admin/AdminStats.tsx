@@ -139,7 +139,7 @@ export function AdminStats() {
                 <Activity className="h-5 w-5 text-blue-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats?.retention?.last7Days ?? 0}</p>
+                <p className="text-xl sm:text-2xl font-bold">{stats?.retention?.last7Days ?? 0}</p>
                 <p className="text-xs text-muted-foreground">Ativos (7d)</p>
               </div>
             </div>
