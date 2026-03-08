@@ -114,6 +114,30 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
   const { unseenCount } = useSystemUpdates();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check admin role silently
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        if (!token || cancelled) return;
+        const { data } = await supabase.functions.invoke('check-admin-role', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!cancelled) setIsAdmin(data?.isAdmin === true);
+      } catch {
+        if (!cancelled) setIsAdmin(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   // Pull-to-refresh state
   const [pullDistance, setPullDistance] = useState(0);
