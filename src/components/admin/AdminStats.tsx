@@ -209,7 +209,7 @@ export function AdminStats() {
                   <CreditCard className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.subscriptions.canceled}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.subscriptions.canceled}</p>
                   <p className="text-xs text-muted-foreground">Cancelados</p>
                 </div>
               </div>
