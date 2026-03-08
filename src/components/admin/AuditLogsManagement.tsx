@@ -172,25 +172,28 @@ export function AuditLogsManagement() {
               <SelectItem value="deleteUser">Excluir Usuário</SelectItem>
             </SelectContent>
           </Select>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
-            className="w-[150px]"
-            placeholder="De"
-          />
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
-            className="w-[150px]"
-            placeholder="Até"
-          />
+          <div className="flex gap-2 flex-1">
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+              className="flex-1 sm:w-[150px] sm:flex-none"
+              placeholder="De"
+            />
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+              className="flex-1 sm:w-[150px] sm:flex-none"
+              placeholder="Até"
+            />
+          </div>
           {hasFilters && (
-            <Button variant="ghost" size="icon" onClick={clearFilters}>
+            <Button variant="ghost" size="icon" onClick={clearFilters} className="shrink-0">
               <X className="h-4 w-4" />
             </Button>
           )}
+          </div>
         </div>
       </Card>
 
