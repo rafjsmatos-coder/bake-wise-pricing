@@ -190,7 +190,7 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
         if (todayOrders.length === 0) return null;
 
         return (
-          <Card className="border-destructive/50 bg-destructive/5">
+          <Card className="border-destructive/50 bg-destructive/5" data-tour="today-deliveries">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2 text-destructive">
                 <AlertCircle className="h-5 w-5" />

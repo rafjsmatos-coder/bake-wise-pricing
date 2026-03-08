@@ -236,6 +236,10 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
       decorations: 'nav-decorations',
       packaging: 'nav-packaging',
       settings: 'nav-settings',
+      orders: 'nav-orders',
+      clients: 'nav-clients',
+      'cash-flow': 'nav-financial',
+      'shopping-list': 'nav-shopping-list',
     };
     return tourMap[id];
   };
