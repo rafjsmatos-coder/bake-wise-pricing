@@ -125,7 +125,7 @@ export function AdminStats() {
                 <TrendingDown className="h-5 w-5 text-red-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats?.churnRate ?? 0}%</p>
+                <p className="text-xl sm:text-2xl font-bold">{stats?.churnRate ?? 0}%</p>
                 <p className="text-xs text-muted-foreground">Churn</p>
               </div>
             </div>
