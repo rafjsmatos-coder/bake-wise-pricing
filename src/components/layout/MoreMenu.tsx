@@ -64,6 +64,7 @@ export function MoreMenu({
   getInitials,
   unseenCount = 0,
   pendingTicketsCount = 0,
+  isAdmin = false,
 }: MoreMenuProps) {
   const handleNavigate = (page: PageType) => {
     onPageChange(page);
