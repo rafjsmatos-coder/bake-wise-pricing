@@ -1413,6 +1413,22 @@ export type Database = {
         Returns: boolean
       }
       increment_faq_view: { Args: { item_id: string }; Returns: undefined }
+      update_product_with_relations: {
+        Args: {
+          p_additional_costs?: number
+          p_category_id?: string
+          p_decoration_time_minutes?: number
+          p_decorations?: Json
+          p_ingredients?: Json
+          p_name: string
+          p_notes?: string
+          p_packaging?: Json
+          p_product_id: string
+          p_profit_margin_percent?: number
+          p_recipes?: Json
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
