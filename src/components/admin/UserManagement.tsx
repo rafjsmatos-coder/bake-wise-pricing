@@ -356,11 +356,11 @@ export function UserManagement() {
               <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                     <TableRow>
                       <TableHead>Email</TableHead>
-                      <TableHead>Nome</TableHead>
+                      <TableHead className="hidden sm:table-cell">Nome</TableHead>
                       <TableHead>Assinatura</TableHead>
-                      <TableHead>Role</TableHead>
+                      <TableHead className="hidden sm:table-cell">Role</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
