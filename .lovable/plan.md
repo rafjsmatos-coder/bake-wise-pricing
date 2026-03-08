@@ -1,40 +1,41 @@
 
 
-# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
+# Auditoria de UX -- Problemas Encontrados
 
-## ✅ Concluído
+Depois de analisar detalhadamente os componentes de layout, navegação, cards, formulários, dashboard, busca, financeiro e admin, a UX está bastante sólida no geral. Os padrões mobile-first, safe areas, touch targets e responsividade estão bem implementados.
 
-### Migração de Banco
-- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
-- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
-- `client_name TEXT NOT NULL` em orders
-- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
-- Backfill de product_name e client_name para dados existentes
-- Índices parciais para is_active
-- Backfill de `cost_per_unit` em decorations
+Encontrei **3 problemas pontuais** que merecem ajuste:
 
-### Hooks atualizados
-- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
-- Todos têm mutation `deactivate[Entity]` para soft delete
-- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
-- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
-- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
+---
 
-### Bugs corrigidos
-- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
-- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
-- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
+## 1. Desktop: Sidebar sem título de página visível
+No mobile, o header exibe o título da página atual (ex: "Ingredientes", "Pedidos"). No desktop, **não existe nenhum heading** no topo do conteúdo -- o usuário vai direto ao conteúdo sem contexto visual de onde está.
 
-### Componentes criados/integrados
-- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
-- `useDependencyCheck` — verifica dependências em tabelas de vínculo
-- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
-- IngredientsList com aviso de histórico de preços no hard delete
+**Solução**: Adicionar um header discreto no topo da área de conteúdo desktop (hidden em mobile, pois já tem no header fixo). Uma `<h1>` com o `PAGE_TITLES[currentPage]` e classe `hidden lg:block text-2xl font-bold mb-6`.
 
-## 🔲 Pendente (próxima iteração)
+---
 
-- Toggle "Mostrar inativos" nas listas
-- Visual diferenciado para itens inativos
-- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
-- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
-- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL
+## 2. Admin Layout: Sidebar mobile não fecha ao clicar fora em telas intermediárias
+O overlay (`bg-background/80`) existe, mas a sidebar usa `translate-x` sem `lg:hidden` no overlay div, o que pode causar flicker em tablets. Além disso, o header admin usa `h-16` enquanto o app principal usa `h-14` -- inconsistência visual se o usuário transiciona entre os dois.
+
+**Solução**: Padronizar o header admin mobile para `h-14` (alinhado com o AppLayout) e garantir o `pt-14` correspondente no main content.
+
+---
+
+## 3. Dashboard: Cards de resumo sem indicação de scroll horizontal no mobile
+Os summary cards usam `overflow-x-auto` mas não há nenhuma indicação visual de que existem mais cards à direita. Em telas pequenas, os cards de "Decorações", "Embalagens" e "Clientes" ficam completamente ocultos.
+
+**Solução**: Adicionar um gradiente de fade sutil na borda direita do container de scroll (pseudo-element `after:` com gradiente `from-transparent to-background`) para sugerir que há mais conteúdo.
+
+---
+
+## Resumo de Mudanças
+
+| Arquivo | Mudança |
+|---|---|
+| `src/components/layout/AppLayout.tsx` | Adicionar heading desktop com título da página |
+| `src/components/layout/AdminLayout.tsx` | Padronizar `h-14` no header mobile + `pt-14` no main |
+| `src/components/dashboard/DashboardHome.tsx` | Adicionar gradiente de fade no scroll horizontal dos summary cards |
+
+Todas as mudanças são pequenas e pontuais, sem risco de quebrar funcionalidade existente.
+
