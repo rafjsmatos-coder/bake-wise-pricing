@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { NotificationSettings } from './NotificationSettings';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -448,6 +449,9 @@ export function UserSettings() {
           )}
         </Button>
       </form>
+
+      {/* Notification Settings */}
+      <NotificationSettings />
     </div>
   );
 }
