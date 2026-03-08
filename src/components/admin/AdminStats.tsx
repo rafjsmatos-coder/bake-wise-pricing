@@ -97,7 +97,7 @@ export function AdminStats() {
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats?.total || 0}</p>
+                <p className="text-xl sm:text-2xl font-bold">{stats?.total || 0}</p>
                 <p className="text-xs text-muted-foreground">Total Usuários</p>
               </div>
             </div>
