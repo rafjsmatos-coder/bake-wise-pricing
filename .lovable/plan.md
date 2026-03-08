@@ -1,40 +1,24 @@
 
 
-# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
+## Analise do Tour - Erros Encontrados
 
-## ✅ Concluído
+### Problemas identificados
 
-### Migração de Banco
-- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
-- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
-- `client_name TEXT NOT NULL` em orders
-- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
-- Backfill de product_name e client_name para dados existentes
-- Índices parciais para is_active
-- Backfill de `cost_per_unit` em decorations
+**1. `data-tour="today-deliveries"` -- elemento condicional**
+O card "Entregas Hoje" so renderiza quando existem pedidos para hoje (`if (todayOrders.length === 0) return null`). Se nao ha pedidos, o elemento nao existe no DOM e o step 3 aponta para o nada -- o popover flutua deslocado (visivel no print IMG_1204).
 
-### Hooks atualizados
-- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
-- Todos têm mutation `deactivate[Entity]` para soft delete
-- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
-- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
-- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
+**2. `data-tour="stock-alerts"` -- elemento condicional**
+O `data-tour="stock-alerts"` so esta no Card de alertas (linha 153). Quando nao ha alertas, o componente retorna o card "Tudo OK" (linha 136) **sem** `data-tour`. Resultado: step 4 tambem aponta para elemento inexistente (visivel no print IMG_1205 -- popover deslocado no canto).
 
-### Bugs corrigidos
-- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
-- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
-- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
+**3. Duplicacao de texto entre mobile e desktop**
+Os steps de Pedidos, Financeiro e Produtos tem conteudo identico nos dois roteiros. No mobile deveria dizer "Toque" em vez de "Clique", e as dicas poderiam ser mais curtas.
 
-### Componentes criados/integrados
-- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
-- `useDependencyCheck` — verifica dependências em tabelas de vínculo
-- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
-- IngredientsList com aviso de histórico de preços no hard delete
+### Plano de correcao
 
-## 🔲 Pendente (próxima iteração)
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/dashboard/DashboardHome.tsx` | Envolver a secao de entregas do dia em uma `div` com `data-tour="today-deliveries"` que **sempre renderiza**, mesmo quando vazia (o card condicional fica dentro) |
+| `src/components/dashboard/StockAlertsCard.tsx` | Adicionar `data-tour="stock-alerts"` tambem no card "Tudo OK" (linha 136), para que o tour sempre encontre o elemento |
 
-- Toggle "Mostrar inativos" nas listas
-- Visual diferenciado para itens inativos
-- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
-- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
-- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL
+Essas duas correcoes garantem que os steps 3 e 4 sempre encontram um elemento no DOM, independente de haver pedidos ou alertas.
+
