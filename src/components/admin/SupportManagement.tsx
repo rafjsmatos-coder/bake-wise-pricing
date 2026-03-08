@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, Headphones, Lightbulb, Loader2, Eye, Filter, X, HelpCircle } from 'lucide-react';
+import { Search, Headphones, Lightbulb, Loader2, Eye, Filter, X, HelpCircle, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AdminTicketModal } from './AdminTicketModal';
