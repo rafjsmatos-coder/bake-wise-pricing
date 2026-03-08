@@ -11,6 +11,10 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
 // Preço do PreciBake Premium - R$ 49,90/mês
 const PRICE_ID = "price_1StDnC1UfMJqJ1ycnqShIkOZ";
 
+// Cupom de lançamento: R$20 off no primeiro mês (R$29,90), limitado a 25 resgates
+const PROMO_COUPON_ID = "d9LqbCVP";
+const PROMO_SLOTS_TOTAL = 25;
+
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
   if (corsResponse) return corsResponse;
@@ -77,10 +81,21 @@ serve(async (req) => {
       }
     }
 
-    logStep("Creating checkout session", { customerId, priceId: PRICE_ID });
+    // Verificar se a promoção ainda está ativa
+    let promoAvailable = false;
+    try {
+      const coupon = await stripe.coupons.retrieve(PROMO_COUPON_ID);
+      const slotsUsed = coupon.times_redeemed || 0;
+      promoAvailable = coupon.valid && slotsUsed < PROMO_SLOTS_TOTAL;
+      logStep("Promo check", { slotsUsed, promoAvailable });
+    } catch (e) {
+      logStep("Promo coupon check failed, proceeding without discount", { error: String(e) });
+    }
+
+    logStep("Creating checkout session", { customerId, priceId: PRICE_ID, promoAvailable });
 
     // Criar sessão de checkout com suporte a cartão e boleto
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       payment_method_types: ['card', 'boleto'],
@@ -102,7 +117,15 @@ serve(async (req) => {
         },
       },
       locale: 'pt-BR',
-    });
+    };
+
+    // Aplicar desconto promocional se disponível
+    if (promoAvailable) {
+      sessionParams.discounts = [{ coupon: PROMO_COUPON_ID }];
+      logStep("Promo discount applied");
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
