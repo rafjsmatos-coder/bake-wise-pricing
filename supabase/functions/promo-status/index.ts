@@ -3,7 +3,7 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const COUPON_ID = "d9LqbCVP";
-const PROMO_SLOTS_TOTAL = 25;
+const PROMO_SLOTS_TOTAL = 35;
 
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);

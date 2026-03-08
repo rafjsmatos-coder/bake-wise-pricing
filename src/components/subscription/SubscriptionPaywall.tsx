@@ -42,11 +42,11 @@ export function SubscriptionPaywall() {
             Continue usando todas as ferramentas do PreciBake para precificar seus produtos com precisão.
           </p>
           
-          {isActive && !promoLoading ? (
+           {isActive && !promoLoading ? (
             <div className="bg-muted/50 rounded-lg p-6 space-y-3">
               <div className="inline-flex items-center gap-1.5 bg-accent/10 text-accent text-sm font-semibold px-3 py-1.5 rounded-full">
                 <Zap className="w-3.5 h-3.5" />
-                Restam {slotsRemaining} de 25 vagas
+                Restam {slotsRemaining} de 35 vagas
               </div>
               <p className="text-3xl font-bold text-accent">
                 R$ 29,90
