@@ -225,9 +225,9 @@ export function AdminStats() {
             <CardTitle>Retenção</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div className="text-center p-4 rounded-lg bg-muted/50">
-                <p className="text-3xl font-bold text-primary">{stats.retention.last7Days}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-primary">{stats.retention.last7Days}</p>
                 <p className="text-sm text-muted-foreground mt-1">Ativos nos últimos 7 dias</p>
                 <p className="text-xs text-muted-foreground">
                   {stats.total > 0 ? Math.round((stats.retention.last7Days / stats.total) * 100) : 0}% do total
