@@ -1,40 +1,51 @@
 
 
-# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
+# Promoção "Primeiro Mês R$29,90" para os 25 Primeiros
 
-## ✅ Concluído
+## Minha Recomendação
 
-### Migração de Banco
-- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
-- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
-- `client_name TEXT NOT NULL` em orders
-- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
-- Backfill de product_name e client_name para dados existentes
-- Índices parciais para is_active
-- Backfill de `cost_per_unit` em decorations
+O problema que você levantou é real: se contarmos os 25 slots pelo cadastro (trial), qualquer pessoa que se cadastra e nunca paga "desperdiça" uma vaga. 
 
-### Hooks atualizados
-- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
-- Todos têm mutation `deactivate[Entity]` para soft delete
-- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
-- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
-- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
+**A melhor abordagem: contar apenas quem realmente pagou.** Os 25 slots são consumidos no momento do checkout, não no signup. Assim:
+- Cadastrou e ficou no trial? Não consome vaga.
+- Cadastrou, trial expirou, decidiu assinar? Aí sim consome a vaga (se ainda houver).
 
-### Bugs corrigidos
-- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
-- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
-- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
+## Como funciona tecnicamente
 
-### Componentes criados/integrados
-- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
-- `useDependencyCheck` — verifica dependências em tabelas de vínculo
-- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
-- IngredientsList com aviso de histórico de preços no hard delete
+1. **Cupom no Stripe** -- Criar um cupom com desconto fixo de R$20,00 (R$49,90 - R$29,90), válido apenas para o primeiro mês (`duration: 'once'`), com `max_redemptions: 25`.
 
-## 🔲 Pendente (próxima iteração)
+2. **`create-checkout`** -- Antes de criar a sessão, verificar no Stripe se o cupom ainda tem resgates disponíveis. Se sim, aplicar automaticamente via `discounts: [{ coupon: 'COUPON_ID' }]`. Se não, criar sessão sem desconto.
 
-- Toggle "Mostrar inativos" nas listas
-- Visual diferenciado para itens inativos
-- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
-- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
-- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL
+3. **Endpoint de contagem** -- Criar uma edge function leve (`promo-status`) que retorna `{ slotsUsed, slotsTotal, isActive }` consultando o cupom no Stripe.
+
+4. **UI** -- Atualizar PricingSection, SubscriptionPaywall e SubscriptionCard para mostrar:
+   - "De R$59,90 por R$29,90 no primeiro mês" (com o preço riscado)
+   - "Restam X vagas de 25" (contador dinâmico)
+   - Quando esgotado: volta ao preço normal sem menção à promoção
+
+## Arquivos a modificar
+
+| Arquivo | Mudança |
+|---|---|
+| Stripe (via tool) | Criar cupom `LAUNCH_25` com R$20 off, `duration: once`, `max_redemptions: 25` |
+| `supabase/functions/create-checkout/index.ts` | Verificar cupom e aplicar `discounts` na sessão |
+| `supabase/functions/promo-status/index.ts` | Nova function -- retorna vagas restantes |
+| `src/hooks/usePromoStatus.tsx` | Novo hook -- consulta `promo-status` |
+| `src/components/landing/PricingSection.tsx` | Exibir R$29,90 primeiro mês + contador de vagas |
+| `src/components/subscription/SubscriptionPaywall.tsx` | Exibir promoção + vagas restantes |
+| `src/components/subscription/SubscriptionCard.tsx` | Mostrar promoção no card do dashboard |
+
+## Fluxo do usuário
+
+1. Landing page: vê "R$29,90 no primeiro mês · Restam 18 de 25 vagas"
+2. Se cadastra, usa trial de 7 dias normalmente
+3. Trial expira, paywall mostra a promoção (se ainda houver vagas)
+4. Clica "Assinar", checkout do Stripe já vem com desconto aplicado
+5. Segundo mês em diante: R$49,90 automaticamente (o Stripe cuida disso)
+
+## Vantagens dessa abordagem
+- **Zero risco de desperdício**: só conta quem pagou
+- **Stripe controla o limite**: `max_redemptions: 25` é enforced pelo próprio Stripe
+- **Urgência real**: o contador diminui conforme pessoas pagam, criando FOMO genuíno
+- **Sem complexidade no banco**: não precisa de tabela nova, o Stripe é a fonte de verdade
+
