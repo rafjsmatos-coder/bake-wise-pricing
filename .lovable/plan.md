@@ -1,40 +1,39 @@
 
 
-# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
+# Realçar o Botão "Campos Opcionais"
 
-## ✅ Concluído
+## Problema
+O botão `variant="ghost"` com `text-muted-foreground` é muito discreto e passa despercebido. Ele aparece em **4 formulários**: RecipeForm, IngredientForm, DecorationForm e PackagingForm.
 
-### Migração de Banco
-- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
-- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
-- `client_name TEXT NOT NULL` em orders
-- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
-- Backfill de product_name e client_name para dados existentes
-- Índices parciais para is_active
-- Backfill de `cost_per_unit` em decorations
+## Solução
+Padronizar todos os 4 botões com um estilo levemente mais visível, sem exagerar:
 
-### Hooks atualizados
-- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
-- Todos têm mutation `deactivate[Entity]` para soft delete
-- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
-- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
-- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
+- Trocar `variant="ghost"` por `variant="outline"` — adiciona uma borda sutil que destaca o botão sem ser agressivo
+- Usar `text-muted-foreground` para manter o tom secundário
+- Padronizar o layout: ícone `ChevronDown`/`ChevronUp` à direita + texto "Campos opcionais" à esquerda + ícone `Settings2` em todos
+- Adicionar `border-dashed` para diferenciar visualmente de botões de ação primária (borda tracejada = "há mais aqui")
 
-### Bugs corrigidos
-- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
-- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
-- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
+Resultado visual: um botão com borda tracejada sutil, ícone de engrenagem e chevron, que comunica claramente "expanda para ver mais" sem competir com os botões principais.
 
-### Componentes criados/integrados
-- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
-- `useDependencyCheck` — verifica dependências em tabelas de vínculo
-- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
-- IngredientsList com aviso de histórico de preços no hard delete
+## Arquivos a modificar (4)
+1. **`src/components/recipes/RecipeForm.tsx`** — já tem `Settings2`, padronizar estilo
+2. **`src/components/ingredients/IngredientForm.tsx`** — adicionar `Settings2`, trocar variant
+3. **`src/components/decorations/DecorationForm.tsx`** — adicionar `Settings2`, trocar variant
+4. **`src/components/packaging/PackagingForm.tsx`** — adicionar `Settings2`, trocar variant
 
-## 🔲 Pendente (próxima iteração)
+Padrão unificado para todos:
+```tsx
+<Button
+  type="button"
+  variant="outline"
+  className="w-full justify-between min-h-[44px] border-dashed text-muted-foreground"
+  onClick={() => setShowOptional(!showOptional)}
+>
+  <span className="flex items-center gap-2">
+    <Settings2 className="h-4 w-4" />
+    Campos opcionais
+  </span>
+  {showOptional ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+</Button>
+```
 
-- Toggle "Mostrar inativos" nas listas
-- Visual diferenciado para itens inativos
-- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
-- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
-- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL
