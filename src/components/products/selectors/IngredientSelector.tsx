@@ -168,50 +168,26 @@ export function IngredientSelector({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Ingredient Selector */}
           <div className="sm:col-span-1">
-            {isMobile ? (
-              <Drawer open={open} onOpenChange={setOpen}>
-                <DrawerTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-between min-h-[44px]"
-                  >
-                    {selectedIngredient ? (
-                      <span className="truncate">{selectedIngredient.name}</span>
-                    ) : (
-                      <span className="text-muted-foreground">Selecionar ingrediente...</span>
-                    )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </DrawerTrigger>
-                <DrawerContent className="p-4">
-                  <div className="mt-4">
-                    {CommandContent}
-                  </div>
-                </DrawerContent>
-              </Drawer>
-            ) : (
-              <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={open}
-                    className="w-full justify-between min-h-[44px]"
-                  >
-                    {selectedIngredient ? (
-                      <span className="truncate">{selectedIngredient.name}</span>
-                    ) : (
-                      <span className="text-muted-foreground">Selecionar ingrediente...</span>
-                    )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[300px] p-0">
-                  {CommandContent}
-                </PopoverContent>
-              </Popover>
-            )}
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full justify-between min-h-[44px]"
+                >
+                  {selectedIngredient ? (
+                    <span className="truncate">{selectedIngredient.name}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Selecionar ingrediente...</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[300px] p-0">
+                {CommandContent}
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Quantity */}
