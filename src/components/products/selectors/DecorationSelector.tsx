@@ -22,8 +22,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useDecorations } from '@/hooks/useDecorations';
 import { Plus, X, Check, ChevronsUpDown, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
