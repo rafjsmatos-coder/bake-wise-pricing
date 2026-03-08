@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type AdminPageType = 'stats' | 'users' | 'support' | 'updates';
+export type AdminPageType = 'stats' | 'users' | 'support' | 'updates' | 'audit';
 
 interface NavItem {
   id: AdminPageType;
