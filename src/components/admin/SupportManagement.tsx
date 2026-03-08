@@ -182,9 +182,9 @@ export function SupportManagement() {
               <TableHead>Usuário</TableHead>
               <TableHead>Assunto</TableHead>
               <TableHead>Status</TableHead>
-              {showPriority && <TableHead>Prioridade</TableHead>}
-              <TableHead>Data</TableHead>
-              <TableHead className="w-[80px]">Ações</TableHead>
+              {showPriority && <TableHead className="hidden sm:table-cell">Prioridade</TableHead>}
+              <TableHead className="hidden sm:table-cell">Data</TableHead>
+              <TableHead className="w-[60px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
