@@ -73,15 +73,43 @@ export function SupportManagement() {
         .select('user_id, full_name')
         .in('user_id', userIds);
 
+      // Fetch latest admin replies per ticket to calculate SLA
+      const ticketIds = (data || []).map(t => t.id);
+      const { data: replies } = ticketIds.length > 0
+        ? await supabase
+            .from('support_replies')
+            .select('ticket_id, created_at, is_admin_reply')
+            .in('ticket_id', ticketIds)
+            .order('created_at', { ascending: false })
+        : { data: [] };
+
+      const lastAdminReplyMap = new Map<string, string>();
+      (replies || []).forEach(r => {
+        if (r.is_admin_reply && !lastAdminReplyMap.has(r.ticket_id)) {
+          lastAdminReplyMap.set(r.ticket_id, r.created_at);
+        }
+      });
+
       const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
 
-      const typedTickets: AdminTicket[] = (data || []).map(ticket => ({
-        ...ticket,
-        type: ticket.type as TicketType,
-        status: ticket.status as TicketStatus,
-        priority: ticket.priority as TicketPriority,
-        user_name: profileMap.get(ticket.user_id) || 'Usuário',
-      }));
+      const typedTickets: AdminTicket[] = (data || []).map(ticket => {
+        const lastAdminReply = lastAdminReplyMap.get(ticket.id);
+        const createdAt = new Date(ticket.created_at);
+        const now = new Date();
+        const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+        const isOpen = ticket.status === 'open' || ticket.status === 'in_progress';
+        const needsAttention = isOpen && !lastAdminReply && hoursSinceCreation > 24;
+
+        return {
+          ...ticket,
+          type: ticket.type as TicketType,
+          status: ticket.status as TicketStatus,
+          priority: ticket.priority as TicketPriority,
+          user_name: profileMap.get(ticket.user_id) || 'Usuário',
+          needsAttention,
+          hoursSinceCreation: Math.round(hoursSinceCreation),
+        };
+      });
 
       setTickets(typedTickets);
     } catch (error: any) {
