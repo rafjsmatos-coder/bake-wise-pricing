@@ -150,7 +150,7 @@ export function RecipeSelector({
                  key={recipe.id}
                  value={recipe.name}
                  onSelect={() => handleSelectRecipe(recipe)}
-                 className="py-3 aria-selected:bg-accent"
+                 className="group py-3"
                >
                  <Check
                    className={cn(
@@ -159,8 +159,8 @@ export function RecipeSelector({
                    )}
                  />
                  <div className="flex flex-col flex-1">
-                   <span className="aria-selected:text-accent-foreground">{recipe.name}</span>
-                   <span className="text-xs text-muted-foreground aria-selected:text-accent-foreground/90">
+                   <span className="group-aria-selected:text-accent-foreground">{recipe.name}</span>
+                   <span className="text-xs text-muted-foreground group-aria-selected:text-accent-foreground">
                      Rende: {recipe.yield_quantity} {recipe.yield_unit}
                      {cost != null && ` · ${formatCurrency(cost)}`}
                    </span>
