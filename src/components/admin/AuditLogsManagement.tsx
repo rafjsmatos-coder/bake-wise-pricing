@@ -221,8 +221,8 @@ export function AuditLogsManagement() {
                   <TableHead>Data/Hora</TableHead>
                   <TableHead>Ação</TableHead>
                   <TableHead>Admin</TableHead>
-                  <TableHead>Usuário Afetado</TableHead>
-                  <TableHead>Detalhes</TableHead>
+                  <TableHead className="hidden sm:table-cell">Usuário Afetado</TableHead>
+                  <TableHead className="hidden sm:table-cell">Detalhes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
