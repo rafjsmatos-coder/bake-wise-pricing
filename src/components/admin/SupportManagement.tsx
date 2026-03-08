@@ -214,7 +214,14 @@ export function SupportManagement() {
                     </TableCell>
                   )}
                   <TableCell className="text-muted-foreground text-sm">
-                    {format(new Date(ticket.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                    <div>
+                      {format(new Date(ticket.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                      {ticket.needsAttention && (
+                        <p className="text-xs text-destructive font-medium">
+                          {ticket.hoursSinceCreation}h sem resposta
+                        </p>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Button
