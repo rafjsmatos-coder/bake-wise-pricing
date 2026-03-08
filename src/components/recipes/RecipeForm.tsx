@@ -27,7 +27,7 @@ import { IngredientSelector, type RecipeIngredientItem } from './IngredientSelec
 import { CostBreakdown } from './CostBreakdown';
 import { calculateRecipeCost, calculateIngredientCost, type IngredientData } from '@/lib/recipe-cost-calculator';
 import { type MeasurementUnit } from '@/lib/unit-conversion';
-import { Loader2, Clock, Flame, Settings2, Zap } from 'lucide-react';
+import { Loader2, Clock, Flame, Settings2, Zap, ChevronUp, ChevronDown } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const recipeSchema = z.object({
