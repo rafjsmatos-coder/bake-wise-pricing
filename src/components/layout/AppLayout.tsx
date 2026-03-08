@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useSidebarControl } from '@/hooks/useSidebarControl';
 import { useSupport } from '@/hooks/useSupport';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -28,6 +29,7 @@ import {
   Search,
   MessageCircle,
   RefreshCw,
+  Shield,
 } from 'lucide-react';
 import { useSystemUpdates } from '@/hooks/useSystemUpdates';
 import { cn } from '@/lib/utils';
@@ -112,6 +114,30 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
   const { unseenCount } = useSystemUpdates();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check admin role silently
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        if (!token || cancelled) return;
+        const { data } = await supabase.functions.invoke('check-admin-role', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!cancelled) setIsAdmin(data?.isAdmin === true);
+      } catch {
+        if (!cancelled) setIsAdmin(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   // Pull-to-refresh state
   const [pullDistance, setPullDistance] = useState(0);
@@ -331,6 +357,21 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
             {bottomItems.map(renderSidebarItem)}
           </div>
 
+          {isAdmin && (
+            <Separator className="my-2" />
+          )}
+          {isAdmin && (
+            <div className="space-y-0.5">
+              <button
+                onClick={() => window.location.href = '/admin'}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Shield className="h-4.5 w-4.5 shrink-0" />
+                <span className="font-medium flex-1">Painel Admin</span>
+              </button>
+            </div>
+          )}
+
           <div className="px-3 pt-2">
             <ThemeToggle className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground" />
           </div>
@@ -435,6 +476,7 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
         getInitials={getInitials}
         unseenCount={unseenCount}
         pendingTicketsCount={pendingTicketsCount}
+        isAdmin={isAdmin}
       />
     </div>
   );

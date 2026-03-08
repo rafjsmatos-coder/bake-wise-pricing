@@ -1,29 +1,40 @@
 
 
-# Acesso Admin pelo PWA — Abordagem Mais Segura
+# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
 
-## Concordo — o gesto secreto é frágil
+## ✅ Concluído
 
-O "5 toques na versão" pode ser descoberto acidentalmente ou por engenharia social. Vamos usar uma abordagem melhor.
+### Migração de Banco
+- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
+- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
+- `client_name TEXT NOT NULL` em orders
+- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
+- Backfill de product_name e client_name para dados existentes
+- Índices parciais para is_active
+- Backfill de `cost_per_unit` em decorations
 
-## Solução: Mostrar botão "Painel Admin" **apenas para quem já tem role admin**
+### Hooks atualizados
+- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
+- Todos têm mutation `deactivate[Entity]` para soft delete
+- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
+- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
+- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
 
-A ideia é simples: no menu de Configurações (ou no MoreMenu), verificar se o usuário logado tem role `admin` no backend. Se sim, mostrar um botão discreto "Painel Admin" que navega para `/admin`. Se não tem role, o botão nunca aparece.
+### Bugs corrigidos
+- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
+- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
+- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
 
-### Por que é seguro?
-- A verificação usa a Edge Function `check-admin-role` que já existe — validação 100% no backend
-- Usuários comuns **nunca veem** o botão — nem sabem que existe
-- Mesmo que alguém inspecione o código fonte e force a navegação para `/admin`, a tela de login + verificação de role impede o acesso
-- Zero risco de acesso acidental
+### Componentes criados/integrados
+- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
+- `useDependencyCheck` — verifica dependências em tabelas de vínculo
+- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
+- IngredientsList com aviso de histórico de preços no hard delete
 
-### Implementação
+## 🔲 Pendente (próxima iteração)
 
-1. **No `MoreMenu.tsx`** (menu "Mais" do BottomNav): adicionar item condicional "Painel Admin" com ícone `Shield`, visível apenas quando `isAdmin === true`
-2. **Usar o hook `useAdminRole`** já existente para verificar o role — ele já chama a Edge Function
-3. **Ao clicar**: `window.location.href = '/admin'` (navegação completa, não SPA)
-4. **No desktop sidebar**: mesma lógica — item condicional no final do menu
-
-### Arquivos a modificar
-- `src/components/layout/MoreMenu.tsx` — adicionar item admin condicional
-- `src/components/layout/AppLayout.tsx` — importar e usar `useAdminRole` para passar a flag ao MoreMenu
-
+- Toggle "Mostrar inativos" nas listas
+- Visual diferenciado para itens inativos
+- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
+- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
+- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL
