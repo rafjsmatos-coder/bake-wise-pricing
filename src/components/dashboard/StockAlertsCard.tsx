@@ -133,7 +133,7 @@ export function StockAlertsCard({ onNavigate }: StockAlertsCardProps) {
 
   if (!hasAlerts) {
     return (
-      <Card>
+      <Card data-tour="stock-alerts">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-green-500" />
