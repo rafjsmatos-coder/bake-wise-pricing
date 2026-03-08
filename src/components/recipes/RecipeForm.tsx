@@ -457,10 +457,13 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                 <Label htmlFor="instructions">Modo de Preparo</Label>
                 <Textarea
                   id="instructions"
-                  placeholder="Descreva o passo a passo da receita..."
+                  placeholder={"Misture os ingredientes secos\nAdicione os líquidos\nLeve ao forno por 30 min"}
                   rows={4}
                   {...register('instructions')}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Cada linha será exibida como um passo numerado (1, 2, 3...)
+                </p>
               </div>
 
               {/* Notas */}
