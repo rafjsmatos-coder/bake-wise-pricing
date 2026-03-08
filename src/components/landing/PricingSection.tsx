@@ -40,7 +40,7 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
           </h2>
           <p className="text-lg text-muted-foreground">
             {isActive 
-              ? `Apenas para os primeiros 25 assinantes — restam ${slotsRemaining} vagas`
+              ? `Apenas para os primeiros 35 assinantes — restam ${slotsRemaining} vagas`
               : 'Quem assinar agora garante esse valor para sempre'}
           </p>
         </div>
