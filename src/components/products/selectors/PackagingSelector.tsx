@@ -96,25 +96,25 @@ export function PackagingSelector({
           {availablePackaging.map((pkg) => {
             const costPerUnit = Number(pkg.purchase_price) / Number(pkg.package_quantity);
             return (
-              <CommandItem
-                key={pkg.id}
-                value={pkg.name}
-                onSelect={() => handleSelectPackaging(pkg)}
-                className="py-3"
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    selectedItem?.id === pkg.id ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <div className="flex flex-col flex-1">
-                  <span>{pkg.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {pkg.dimensions || pkg.category?.name || 'Sem categoria'} · {formatCurrency(costPerUnit)}/un
-                  </span>
-                </div>
-              </CommandItem>
+               <CommandItem
+                 key={pkg.id}
+                 value={pkg.name}
+                 onSelect={() => handleSelectPackaging(pkg)}
+                 className="py-3 aria-selected:bg-accent"
+               >
+                 <Check
+                   className={cn(
+                     "mr-2 h-4 w-4",
+                     selectedItem?.id === pkg.id ? "opacity-100" : "opacity-0"
+                   )}
+                 />
+                 <div className="flex flex-col flex-1">
+                   <span className="aria-selected:text-accent-foreground">{pkg.name}</span>
+                   <span className="text-xs text-muted-foreground aria-selected:text-accent-foreground/90">
+                     {pkg.dimensions || pkg.category?.name || 'Sem categoria'} · {formatCurrency(costPerUnit)}/un
+                   </span>
+                 </div>
+               </CommandItem>
             );
           })}
         </CommandGroup>

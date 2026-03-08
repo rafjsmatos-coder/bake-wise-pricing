@@ -146,26 +146,26 @@ export function RecipeSelector({
           {availableRecipes.map((recipe) => {
             const cost = recipeCosts[recipe.id];
             return (
-              <CommandItem
-                key={recipe.id}
-                value={recipe.name}
-                onSelect={() => handleSelectRecipe(recipe)}
-                className="py-3"
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    selectedRecipe?.id === recipe.id ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <div className="flex flex-col flex-1">
-                  <span>{recipe.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    Rende: {recipe.yield_quantity} {recipe.yield_unit}
-                    {cost != null && ` · ${formatCurrency(cost)}`}
-                  </span>
-                </div>
-              </CommandItem>
+               <CommandItem
+                 key={recipe.id}
+                 value={recipe.name}
+                 onSelect={() => handleSelectRecipe(recipe)}
+                 className="py-3 aria-selected:bg-accent"
+               >
+                 <Check
+                   className={cn(
+                     "mr-2 h-4 w-4",
+                     selectedRecipe?.id === recipe.id ? "opacity-100" : "opacity-0"
+                   )}
+                 />
+                 <div className="flex flex-col flex-1">
+                   <span className="aria-selected:text-accent-foreground">{recipe.name}</span>
+                   <span className="text-xs text-muted-foreground aria-selected:text-accent-foreground/90">
+                     Rende: {recipe.yield_quantity} {recipe.yield_unit}
+                     {cost != null && ` · ${formatCurrency(cost)}`}
+                   </span>
+                 </div>
+               </CommandItem>
             );
           })}
         </CommandGroup>
