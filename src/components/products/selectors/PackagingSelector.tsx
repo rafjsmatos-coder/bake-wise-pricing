@@ -39,7 +39,7 @@ export function PackagingSelector({
 }: PackagingSelectorProps) {
   const hasLinked = linkedIds && linkedIds.length > 0;
   const { packagingItems } = usePackaging(hasLinked ? { includeInactive: true } : undefined);
-  const isMobile = useIsMobile();
+  
   const [open, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<typeof packagingItems[0] | null>(null);
   const [quantity, setQuantity] = useState<string>('');
