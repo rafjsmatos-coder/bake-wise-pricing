@@ -476,6 +476,7 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
         getInitials={getInitials}
         unseenCount={unseenCount}
         pendingTicketsCount={pendingTicketsCount}
+        isAdmin={isAdmin}
       />
     </div>
   );
