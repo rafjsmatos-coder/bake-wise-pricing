@@ -111,7 +111,7 @@ export function AdminStats() {
                 <TrendingUp className="h-5 w-5 text-green-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats?.conversionRate ?? 0}%</p>
+                <p className="text-xl sm:text-2xl font-bold">{stats?.conversionRate ?? 0}%</p>
                 <p className="text-xs text-muted-foreground">Conversão</p>
               </div>
             </div>
