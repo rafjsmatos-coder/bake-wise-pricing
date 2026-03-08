@@ -193,9 +193,14 @@ export function SupportManagement() {
               const priority = priorityConfig[ticket.priority];
 
               return (
-                <TableRow key={ticket.id}>
+                <TableRow key={ticket.id} className={ticket.needsAttention ? 'bg-destructive/5' : ''}>
                   <TableCell className="font-medium">
-                    {ticket.user_name || 'Usuário'}
+                    <div className="flex items-center gap-2">
+                      {ticket.needsAttention && (
+                        <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+                      )}
+                      {ticket.user_name || 'Usuário'}
+                    </div>
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate">
                     {ticket.subject}
