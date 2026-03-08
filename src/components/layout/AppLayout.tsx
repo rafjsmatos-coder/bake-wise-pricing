@@ -384,9 +384,6 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
             </div>
           )}
 
-          <div className="px-3 pt-2">
-            <ThemeToggle className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground" />
-          </div>
         </nav>
 
         <div className="p-3 border-t border-border">
