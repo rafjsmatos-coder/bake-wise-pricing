@@ -61,7 +61,7 @@ export function RecipeSelector({
 }: RecipeSelectorProps) {
   const hasLinked = linkedIds && linkedIds.length > 0;
   const { recipes } = useRecipes(hasLinked ? { includeInactive: true } : undefined);
-  const isMobile = useIsMobile();
+  
   const [open, setOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<typeof recipes[0] | null>(null);
   const [quantity, setQuantity] = useState<string>('');
