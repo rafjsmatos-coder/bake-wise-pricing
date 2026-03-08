@@ -159,7 +159,8 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       )}
 
       {/* Summary Cards */}
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none" data-tour="summary-cards">
+      <div className="relative" data-tour="summary-cards">
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
         {summaryCards.map((card) => (
           <Card 
             key={card.title} 
@@ -179,6 +180,8 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
             </CardContent>
           </Card>
         ))}
+      </div>
+      <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none lg:hidden" />
       </div>
 
       {/* Today's Deliveries - Highlighted */}

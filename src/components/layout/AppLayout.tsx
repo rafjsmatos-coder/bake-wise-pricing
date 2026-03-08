@@ -456,6 +456,11 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
         }}
       >
         <div className="p-4 lg:p-8 max-w-full overflow-x-hidden">
+          {currentPage !== 'dashboard' && (
+            <h1 className="hidden lg:block text-2xl font-bold text-foreground mb-6">
+              {PAGE_TITLES[currentPage]}
+            </h1>
+          )}
           {children}
         </div>
       </main>
