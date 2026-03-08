@@ -71,6 +71,7 @@ export function AdminLayout({ children, currentPage, onPageChange }: AdminLayout
     { id: 'users', label: 'Usuários', icon: Users },
     { id: 'support', label: 'Suporte', icon: Headphones, badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined },
     { id: 'updates', label: 'Novidades', icon: Newspaper },
+    { id: 'audit', label: 'Auditoria', icon: FileText },
   ];
 
   const handleNavClick = (page: AdminPageType) => {

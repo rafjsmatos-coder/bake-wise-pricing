@@ -203,9 +203,55 @@ serve(async (req) => {
           .map(([month, count]) => ({ month, count }))
           .sort((a, b) => a.month.localeCompare(b.month));
 
+        // Advanced stats: conversion rate, churn, retention
+        const { data: allSubscriptions } = await supabaseAdmin
+          .from("subscriptions")
+          .select("user_id, status, trial_ends_at, subscription_ends_at, created_at");
+
+        const totalWithSub = allSubscriptions?.length || 0;
+        const trialCount = allSubscriptions?.filter(s => s.status === 'trial').length || 0;
+        const activeCount = allSubscriptions?.filter(s => s.status === 'active').length || 0;
+        const canceledCount = allSubscriptions?.filter(s => s.status === 'canceled').length || 0;
+        const expiredCount = allSubscriptions?.filter(s => s.status === 'expired').length || 0;
+
+        // Conversion rate: users who went from trial to active
+        const conversionRate = totalWithSub > 0
+          ? Math.round((activeCount / totalWithSub) * 100)
+          : 0;
+
+        // Churn rate: canceled / (active + canceled)
+        const churnBase = activeCount + canceledCount;
+        const churnRate = churnBase > 0
+          ? Math.round((canceledCount / churnBase) * 100)
+          : 0;
+
+        // Retention: users with last_sign_in in last 7/30 days
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        const activeIn7Days = authUsers.users.filter(
+          u => u.last_sign_in_at && new Date(u.last_sign_in_at) >= sevenDaysAgo
+        ).length;
+        const activeIn30Days = authUsers.users.filter(
+          u => u.last_sign_in_at && new Date(u.last_sign_in_at) >= thirtyDaysAgo
+        ).length;
+
+        // Funnel data
+        const funnel = [
+          { stage: 'Cadastros', value: totalUsers },
+          { stage: 'Trial', value: trialCount + activeCount + canceledCount + expiredCount },
+          { stage: 'Premium', value: activeCount },
+          { stage: 'Cancelados', value: canceledCount },
+        ];
+
         const stats = {
           total: totalUsers,
           subscriptions: subscriptionStats,
+          conversionRate,
+          churnRate,
+          retention: { last7Days: activeIn7Days, last30Days: activeIn30Days },
+          funnel,
         };
 
         logStep("Stats retrieved", stats);
