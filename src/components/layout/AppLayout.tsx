@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useSidebarControl } from '@/hooks/useSidebarControl';
@@ -25,10 +25,9 @@ import {
   ShoppingCart,
   DollarSign,
   Lock,
-  BarChart3,
-  Receipt,
   Search,
   MessageCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { useSystemUpdates } from '@/hooks/useSystemUpdates';
 import { cn } from '@/lib/utils';
@@ -69,7 +68,6 @@ interface AppLayoutProps {
 
 const FREE_PAGES: PageType[] = ['dashboard', 'support'];
 
-// Page title mapping
 const PAGE_TITLES: Record<PageType, string> = {
   dashboard: 'Dashboard',
   ingredients: 'Ingredientes',
@@ -95,13 +93,16 @@ const PAGE_TITLES: Record<PageType, string> = {
   updates: 'Novidades',
 };
 
-// Sidebar nav groups
 interface SidebarItem {
   id: PageType;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
 }
+
+// Pull-to-refresh constants
+const PULL_THRESHOLD = 120;
+const MAX_PULL = 160;
 
 export function AppLayout({ children, currentPage, onPageChange, canAccess = true, onSearchOpen }: AppLayoutProps) {
   const { user, signOut } = useAuth();
@@ -111,6 +112,13 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
   const { unseenCount } = useSystemUpdates();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+
+  // Pull-to-refresh state
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartY = useRef(0);
+  const isPulling = useRef(false);
+  const mainRef = useRef<HTMLElement>(null);
 
   const getInitials = () => {
     if (profile?.full_name) {
@@ -128,15 +136,54 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
     setIsSigningOut(true);
     try {
       await signOut();
+      window.location.replace('/');
     } catch (error) {
       console.error('Error signing out:', error);
-    } finally {
-      setTimeout(() => {
-        window.localStorage.removeItem('sb-ektodtogznnlwvcsawgu-auth-token');
-        window.location.replace('/');
-      }, 100);
+      window.location.replace('/');
     }
   };
+
+  const handleReload = () => {
+    window.location.reload();
+  };
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (window.scrollY === 0 && !isRefreshing) {
+      touchStartY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    }
+  }, [isRefreshing]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isPulling.current || isRefreshing) return;
+    
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - touchStartY.current;
+    
+    if (diff > 0 && window.scrollY === 0) {
+      const distance = Math.min(diff * 0.5, MAX_PULL);
+      setPullDistance(distance);
+    } else {
+      isPulling.current = false;
+      setPullDistance(0);
+    }
+  }, [isRefreshing]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!isPulling.current) return;
+    isPulling.current = false;
+
+    if (pullDistance >= PULL_THRESHOLD) {
+      setIsRefreshing(true);
+      setPullDistance(PULL_THRESHOLD);
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
+    } else {
+      setPullDistance(0);
+    }
+  }, [pullDistance]);
 
   const isPageFree = (page: PageType) => FREE_PAGES.includes(page);
   const isItemLocked = (page: PageType) => !canAccess && !isPageFree(page);
@@ -146,7 +193,6 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
     setSidebarOpen(false);
   };
 
-  // Sidebar groups for desktop
   const sidebarGroups: { label: string; items: SidebarItem[] }[] = [
     {
       label: 'Principal',
@@ -224,9 +270,11 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
     );
   };
 
+  const pullProgress = Math.min(pullDistance / PULL_THRESHOLD, 1);
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden max-w-[100vw]">
-      {/* Mobile Header - Contextual */}
+      {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-card border-b border-border z-50 px-4 flex items-center justify-between">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <ThemeLogo className="h-7 w-7 rounded object-contain shrink-0" />
@@ -236,15 +284,15 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle className="h-9 w-9" />
+          <Button variant="ghost" size="icon" onClick={handleReload} className="h-9 w-9">
+            <RefreshCw className="h-5 w-5" />
+          </Button>
           {onSearchOpen && (
             <Button variant="ghost" size="icon" onClick={onSearchOpen} className="h-9 w-9">
               <Search className="h-5 w-5" />
             </Button>
           )}
-          <button
-            onClick={() => handleNavClick('profile')}
-            className="shrink-0"
-          >
+          <button onClick={() => handleNavClick('profile')} className="shrink-0">
             <Avatar className="h-8 w-8">
               <AvatarImage src={profile?.avatar_url || undefined} />
               <AvatarFallback className="bg-primary text-primary-foreground text-xs">
@@ -257,12 +305,10 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex fixed top-0 left-0 h-full w-60 bg-card border-r border-border z-40 flex-col">
-        {/* Logo */}
         <div className="h-14 px-5 flex items-center border-b border-border">
           <ThemeLogo className="h-8 object-contain" />
         </div>
 
-        {/* Navigation Groups */}
         <nav className="flex-1 px-3 py-3 space-y-4 overflow-y-auto">
           {sidebarGroups.map((group) => (
             <div key={group.label}>
@@ -286,7 +332,6 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
           </div>
         </nav>
 
-        {/* User Section */}
         <div className="p-3 border-t border-border">
           <button
             onClick={() => handleNavClick('profile')}
@@ -324,8 +369,38 @@ export function AppLayout({ children, currentPage, onPageChange, canAccess = tru
         </div>
       </aside>
 
+      {/* Pull-to-refresh indicator (mobile only) */}
+      <div
+        className="lg:hidden fixed left-0 right-0 z-[45] flex items-center justify-center pointer-events-none transition-all duration-200"
+        style={{
+          top: '3.5rem',
+          height: `${pullDistance}px`,
+          opacity: pullProgress,
+        }}
+      >
+        <div className={cn(
+          'rounded-full p-2 bg-card border border-border shadow-sm transition-transform duration-200',
+          isRefreshing && 'animate-spin'
+        )}>
+          <RefreshCw
+            className="h-5 w-5 text-primary transition-transform duration-200"
+            style={{ transform: `rotate(${pullProgress * 360}deg)` }}
+          />
+        </div>
+      </div>
+
       {/* Main Content */}
-      <main className="lg:pl-60 pt-14 lg:pt-0 pb-20 lg:pb-0 min-h-screen overflow-x-hidden">
+      <main
+        ref={mainRef}
+        className="lg:pl-60 pt-14 lg:pt-0 pb-20 lg:pb-0 min-h-screen overflow-x-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined,
+          transition: isPulling.current ? 'none' : 'transform 0.2s ease-out',
+        }}
+      >
         <div className="p-4 lg:p-8 max-w-full overflow-x-hidden">
           {children}
         </div>
