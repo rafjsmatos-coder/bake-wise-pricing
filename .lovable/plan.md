@@ -1,27 +1,40 @@
 
 
-## Plano: Melhorias do projeto + Pull-to-refresh + Botão reload
+# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
 
-### 1. Corrigir conflito skipWaiting no `vite.config.ts`
-Remover `skipWaiting: true` e `clientsClaim: true` do bloco workbox. Esses valores conflitam com `registerType: "prompt"` — fazem o SW ativar sozinho antes do usuário clicar "Atualizar".
+## ✅ Concluído
 
-### 2. Corrigir signOut frágil no `AppLayout.tsx`
-Remover o `setTimeout` + `localStorage.removeItem` manual (linhas 134-137). Confiar no `signOut()` do hook que já limpa a sessão. Usar `window.location.replace('/')` apenas no catch como fallback.
+### Migração de Banco
+- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
+- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
+- `client_name TEXT NOT NULL` em orders
+- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
+- Backfill de product_name e client_name para dados existentes
+- Índices parciais para is_active
+- Backfill de `cost_per_unit` em decorations
 
-### 3. Sincronizar tab do FinancialPage
-Adicionar `useEffect` para atualizar `activeTab` quando `initialTab` mudar (navegação lateral).
+### Hooks atualizados
+- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
+- Todos têm mutation `deactivate[Entity]` para soft delete
+- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
+- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
+- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
 
-### 4. Pull-to-refresh (mobile) + botão reload (header)
+### Bugs corrigidos
+- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
+- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
+- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
 
-**Pull-to-refresh**: Implementar um gesto de arrastar para baixo no `<main>` do `AppLayout` que executa `window.location.reload()`. Usar touch events nativos (`touchstart`, `touchmove`, `touchend`) com um indicador visual (ícone de refresh + spinner). Ativa apenas quando o scroll está no topo.
+### Componentes criados/integrados
+- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
+- `useDependencyCheck` — verifica dependências em tabelas de vínculo
+- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
+- IngredientsList com aviso de histórico de preços no hard delete
 
-**Botão reload no header mobile**: Adicionar um ícone `RefreshCw` ao lado do avatar no header mobile que faz `window.location.reload()`.
+## 🔲 Pendente (próxima iteração)
 
-### Arquivos a alterar
-
-| Arquivo | Mudança |
-|---------|---------|
-| `vite.config.ts` | Remover `skipWaiting` e `clientsClaim` |
-| `src/components/layout/AppLayout.tsx` | Limpar signOut, adicionar botão reload no header, implementar pull-to-refresh |
-| `src/components/financial/FinancialPage.tsx` | Adicionar useEffect para sincronizar tab |
-
+- Toggle "Mostrar inativos" nas listas
+- Visual diferenciado para itens inativos
+- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
+- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
+- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL

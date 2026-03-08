@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DollarSign, BarChart3, Receipt } from 'lucide-react';
 import { TransactionsList } from './TransactionsList';
@@ -13,6 +13,10 @@ interface FinancialPageProps {
 
 export function FinancialPage({ initialTab = 'cash-flow' }: FinancialPageProps) {
   const [activeTab, setActiveTab] = useState<FinancialTab>(initialTab);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   return (
     <div className="space-y-4 max-w-full overflow-x-hidden">
