@@ -133,25 +133,25 @@ export function DecorationSelector({
               decoration.unit
             );
             return (
-              <CommandItem
-                key={decoration.id}
-                value={decoration.name}
-                onSelect={() => handleSelectDecoration(decoration)}
-                className="py-3"
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    selectedDecoration?.id === decoration.id ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <div className="flex flex-col flex-1">
-                  <span>{decoration.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {decoration.decoration_categories?.name || 'Sem categoria'} · {costInfo.formatted}
-                  </span>
-                </div>
-              </CommandItem>
+               <CommandItem
+                 key={decoration.id}
+                 value={decoration.name}
+                 onSelect={() => handleSelectDecoration(decoration)}
+                 className="py-3 aria-selected:bg-accent"
+               >
+                 <Check
+                   className={cn(
+                     "mr-2 h-4 w-4",
+                     selectedDecoration?.id === decoration.id ? "opacity-100" : "opacity-0"
+                   )}
+                 />
+                 <div className="flex flex-col flex-1">
+                   <span className="aria-selected:text-accent-foreground">{decoration.name}</span>
+                   <span className="text-xs text-muted-foreground aria-selected:text-accent-foreground/90">
+                     {decoration.decoration_categories?.name || 'Sem categoria'} · {costInfo.formatted}
+                   </span>
+                 </div>
+               </CommandItem>
             );
           })}
         </CommandGroup>
