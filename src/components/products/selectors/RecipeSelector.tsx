@@ -22,8 +22,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useRecipes } from '@/hooks/useRecipes';
 import { Plus, X, Check, ChevronsUpDown, ChefHat } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -63,7 +61,7 @@ export function RecipeSelector({
 }: RecipeSelectorProps) {
   const hasLinked = linkedIds && linkedIds.length > 0;
   const { recipes } = useRecipes(hasLinked ? { includeInactive: true } : undefined);
-  const isMobile = useIsMobile();
+  
   const [open, setOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<typeof recipes[0] | null>(null);
   const [quantity, setQuantity] = useState<string>('');
@@ -184,50 +182,26 @@ export function RecipeSelector({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Recipe Selector */}
           <div className="sm:col-span-1">
-            {isMobile ? (
-              <Drawer open={open} onOpenChange={setOpen}>
-                <DrawerTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-between min-h-[44px]"
-                  >
-                    {selectedRecipe ? (
-                      <span className="truncate">{selectedRecipe.name}</span>
-                    ) : (
-                      <span className="text-muted-foreground">Selecionar receita...</span>
-                    )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </DrawerTrigger>
-                <DrawerContent className="p-4">
-                  <div className="mt-4">
-                    {CommandContent}
-                  </div>
-                </DrawerContent>
-              </Drawer>
-            ) : (
-              <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={open}
-                    className="w-full justify-between min-h-[44px]"
-                  >
-                    {selectedRecipe ? (
-                      <span className="truncate">{selectedRecipe.name}</span>
-                    ) : (
-                      <span className="text-muted-foreground">Selecionar receita...</span>
-                    )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[300px] p-0">
-                  {CommandContent}
-                </PopoverContent>
-              </Popover>
-            )}
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full justify-between min-h-[44px]"
+                >
+                  {selectedRecipe ? (
+                    <span className="truncate">{selectedRecipe.name}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Selecionar receita...</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[300px] p-0">
+                {CommandContent}
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Quantity */}
