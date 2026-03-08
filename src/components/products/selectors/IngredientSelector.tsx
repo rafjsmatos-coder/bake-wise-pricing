@@ -137,7 +137,7 @@ export function IngredientSelector({
                  key={ingredient.id}
                  value={ingredient.name}
                  onSelect={() => handleSelectIngredient(ingredient)}
-                 className="py-3 aria-selected:bg-accent"
+                 className="group py-3"
                >
                  <Check
                    className={cn(
@@ -146,8 +146,8 @@ export function IngredientSelector({
                    )}
                  />
                  <div className="flex flex-col flex-1">
-                   <span className="aria-selected:text-accent-foreground">{ingredient.name}</span>
-                   <span className="text-xs text-muted-foreground aria-selected:text-accent-foreground/90">
+                   <span className="group-aria-selected:text-accent-foreground">{ingredient.name}</span>
+                   <span className="text-xs text-muted-foreground group-aria-selected:text-accent-foreground">
                      {ingredient.categories?.name || 'Sem categoria'} · {costInfo.formatted}
                    </span>
                  </div>

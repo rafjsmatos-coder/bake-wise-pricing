@@ -137,7 +137,7 @@ export function DecorationSelector({
                  key={decoration.id}
                  value={decoration.name}
                  onSelect={() => handleSelectDecoration(decoration)}
-                 className="py-3 aria-selected:bg-accent"
+                 className="group py-3"
                >
                  <Check
                    className={cn(
@@ -146,8 +146,8 @@ export function DecorationSelector({
                    )}
                  />
                  <div className="flex flex-col flex-1">
-                   <span className="aria-selected:text-accent-foreground">{decoration.name}</span>
-                   <span className="text-xs text-muted-foreground aria-selected:text-accent-foreground/90">
+                   <span className="group-aria-selected:text-accent-foreground">{decoration.name}</span>
+                   <span className="text-xs text-muted-foreground group-aria-selected:text-accent-foreground">
                      {decoration.decoration_categories?.name || 'Sem categoria'} · {costInfo.formatted}
                    </span>
                  </div>

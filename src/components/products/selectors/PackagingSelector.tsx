@@ -100,7 +100,7 @@ export function PackagingSelector({
                  key={pkg.id}
                  value={pkg.name}
                  onSelect={() => handleSelectPackaging(pkg)}
-                 className="py-3 aria-selected:bg-accent"
+                 className="group py-3"
                >
                  <Check
                    className={cn(
@@ -109,8 +109,8 @@ export function PackagingSelector({
                    )}
                  />
                  <div className="flex flex-col flex-1">
-                   <span className="aria-selected:text-accent-foreground">{pkg.name}</span>
-                   <span className="text-xs text-muted-foreground aria-selected:text-accent-foreground/90">
+                   <span className="group-aria-selected:text-accent-foreground">{pkg.name}</span>
+                   <span className="text-xs text-muted-foreground group-aria-selected:text-accent-foreground">
                      {pkg.dimensions || pkg.category?.name || 'Sem categoria'} · {formatCurrency(costPerUnit)}/un
                    </span>
                  </div>
