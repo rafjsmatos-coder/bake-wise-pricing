@@ -60,7 +60,7 @@ export function IngredientSelector({
 }: IngredientSelectorProps) {
   const hasLinked = linkedIds && linkedIds.length > 0;
   const { ingredients } = useIngredients(hasLinked ? { includeInactive: true } : undefined);
-  const isMobile = useIsMobile();
+  
   const [open, setOpen] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<typeof ingredients[0] | null>(null);
   const [quantity, setQuantity] = useState<string>('');
