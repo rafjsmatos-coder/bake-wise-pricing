@@ -374,8 +374,8 @@ export function UserManagement() {
                     ) : (
                       users.map((user) => (
                         <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.email}</TableCell>
-                          <TableCell>{user.fullName || '-'}</TableCell>
+                          <TableCell className="font-medium max-w-[180px] truncate">{user.email}</TableCell>
+                          <TableCell className="hidden sm:table-cell">{user.fullName || '-'}</TableCell>
                           <TableCell>
                             {getSubscriptionBadge(user.subscription)}
                           </TableCell>
