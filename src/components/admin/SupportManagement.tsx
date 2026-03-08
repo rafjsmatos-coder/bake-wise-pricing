@@ -31,6 +31,8 @@ import type { SupportTicket, TicketStatus, TicketPriority, TicketType } from '@/
 interface AdminTicket extends SupportTicket {
   user_email?: string;
   user_name?: string;
+  needsAttention?: boolean;
+  hoursSinceCreation?: number;
 }
 
 const statusConfig: Record<TicketStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
