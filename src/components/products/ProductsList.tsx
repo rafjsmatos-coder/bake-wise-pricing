@@ -183,7 +183,7 @@ export function ProductsList({ initialSearch = '' }: ProductsListProps) {
         </div>
       )}
 
-      <ProductForm open={formOpen} onOpenChange={handleFormClose} product={editingProduct} recipeCosts={recipeCosts} />
+      <ProductForm key={editingProduct?.id || 'new'} open={formOpen} onOpenChange={handleFormClose} product={editingProduct} recipeCosts={recipeCosts} />
       <ProductDetails
         open={!!viewingProduct} onOpenChange={(open) => !open && setViewingProduct(null)}
         product={viewingProduct} recipeCosts={recipeCosts}
