@@ -14,6 +14,10 @@ interface FinancialPageProps {
 export function FinancialPage({ initialTab = 'cash-flow' }: FinancialPageProps) {
   const [activeTab, setActiveTab] = useState<FinancialTab>(initialTab);
 
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   return (
     <div className="space-y-4 max-w-full overflow-x-hidden">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FinancialTab)}>

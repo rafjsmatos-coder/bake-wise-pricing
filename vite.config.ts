@@ -21,8 +21,6 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/, /^\/sitemap\.xml$/, /^\/robots\.txt$/, /^\/llms\.txt$/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
-        skipWaiting: true,
-        clientsClaim: true,
       },
       manifest: {
         name: "PreciBake - Gestão para Confeitaria",
