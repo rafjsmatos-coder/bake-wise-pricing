@@ -97,7 +97,7 @@ export function AdminStats() {
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats?.total || 0}</p>
+                <p className="text-xl sm:text-2xl font-bold">{stats?.total || 0}</p>
                 <p className="text-xs text-muted-foreground">Total Usuários</p>
               </div>
             </div>
@@ -111,7 +111,7 @@ export function AdminStats() {
                 <TrendingUp className="h-5 w-5 text-green-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats?.conversionRate ?? 0}%</p>
+                <p className="text-xl sm:text-2xl font-bold">{stats?.conversionRate ?? 0}%</p>
                 <p className="text-xs text-muted-foreground">Conversão</p>
               </div>
             </div>
@@ -125,7 +125,7 @@ export function AdminStats() {
                 <TrendingDown className="h-5 w-5 text-red-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats?.churnRate ?? 0}%</p>
+                <p className="text-xl sm:text-2xl font-bold">{stats?.churnRate ?? 0}%</p>
                 <p className="text-xs text-muted-foreground">Churn</p>
               </div>
             </div>
@@ -139,7 +139,7 @@ export function AdminStats() {
                 <Activity className="h-5 w-5 text-blue-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats?.retention?.last7Days ?? 0}</p>
+                <p className="text-xl sm:text-2xl font-bold">{stats?.retention?.last7Days ?? 0}</p>
                 <p className="text-xs text-muted-foreground">Ativos (7d)</p>
               </div>
             </div>
@@ -157,7 +157,7 @@ export function AdminStats() {
                   <Clock className="h-5 w-5 text-yellow-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.subscriptions.trial}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.subscriptions.trial}</p>
                   <p className="text-xs text-muted-foreground">Em Trial</p>
                 </div>
               </div>
@@ -170,7 +170,7 @@ export function AdminStats() {
                   <Crown className="h-5 w-5 text-green-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.subscriptions.active}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.subscriptions.active}</p>
                   <p className="text-xs text-muted-foreground">Premium</p>
                 </div>
               </div>
@@ -183,7 +183,7 @@ export function AdminStats() {
                   <XCircle className="h-5 w-5 text-red-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.subscriptions.expired}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.subscriptions.expired}</p>
                   <p className="text-xs text-muted-foreground">Expirados</p>
                 </div>
               </div>
@@ -196,7 +196,7 @@ export function AdminStats() {
                   <CreditCard className="h-5 w-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.subscriptions.pending}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.subscriptions.pending}</p>
                   <p className="text-xs text-muted-foreground">Pendentes</p>
                 </div>
               </div>
@@ -209,7 +209,7 @@ export function AdminStats() {
                   <CreditCard className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.subscriptions.canceled}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.subscriptions.canceled}</p>
                   <p className="text-xs text-muted-foreground">Cancelados</p>
                 </div>
               </div>
@@ -225,16 +225,16 @@ export function AdminStats() {
             <CardTitle>Retenção</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div className="text-center p-4 rounded-lg bg-muted/50">
-                <p className="text-3xl font-bold text-primary">{stats.retention.last7Days}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-primary">{stats.retention.last7Days}</p>
                 <p className="text-sm text-muted-foreground mt-1">Ativos nos últimos 7 dias</p>
                 <p className="text-xs text-muted-foreground">
                   {stats.total > 0 ? Math.round((stats.retention.last7Days / stats.total) * 100) : 0}% do total
                 </p>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted/50">
-                <p className="text-3xl font-bold text-primary">{stats.retention.last30Days}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-primary">{stats.retention.last30Days}</p>
                 <p className="text-sm text-muted-foreground mt-1">Ativos nos últimos 30 dias</p>
                 <p className="text-xs text-muted-foreground">
                   {stats.total > 0 ? Math.round((stats.retention.last30Days / stats.total) * 100) : 0}% do total
@@ -267,7 +267,7 @@ export function AdminStats() {
                     {stats.funnel.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={FUNNEL_COLORS[index % FUNNEL_COLORS.length]} />
                     ))}
-                    <LabelList position="right" fill="hsl(var(--foreground))" stroke="none" dataKey="stage" />
+                    <LabelList position="center" fill="hsl(var(--foreground))" stroke="none" dataKey="stage" />
                     <LabelList position="center" fill="#fff" stroke="none" dataKey="value" />
                   </Funnel>
                 </FunnelChart>

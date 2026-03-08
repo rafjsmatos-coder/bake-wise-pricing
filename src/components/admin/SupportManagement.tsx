@@ -175,16 +175,16 @@ export function SupportManagement() {
     }
 
     return (
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border overflow-x-auto">
+        <Table className="min-w-[600px]">
           <TableHeader>
             <TableRow>
               <TableHead>Usuário</TableHead>
               <TableHead>Assunto</TableHead>
               <TableHead>Status</TableHead>
-              {showPriority && <TableHead>Prioridade</TableHead>}
-              <TableHead>Data</TableHead>
-              <TableHead className="w-[80px]">Ações</TableHead>
+              {showPriority && <TableHead className="hidden sm:table-cell">Prioridade</TableHead>}
+              <TableHead className="hidden sm:table-cell">Data</TableHead>
+              <TableHead className="w-[60px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -209,11 +209,11 @@ export function SupportManagement() {
                     <Badge variant={status.variant}>{status.label}</Badge>
                   </TableCell>
                   {showPriority && (
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge className={priority.className}>{priority.label}</Badge>
                     </TableCell>
                   )}
-                  <TableCell className="text-muted-foreground text-sm">
+                  <TableCell className="text-muted-foreground text-sm hidden sm:table-cell">
                     <div>
                       {format(new Date(ticket.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                       {ticket.needsAttention && (
@@ -265,9 +265,9 @@ export function SupportManagement() {
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as TicketStatus | 'all')}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -281,7 +281,7 @@ export function SupportManagement() {
             </Select>
 
             <Select value={priorityFilter} onValueChange={(v) => setPriorityFilter(v as TicketPriority | 'all')}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Prioridade" />
               </SelectTrigger>
               <SelectContent>

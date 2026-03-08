@@ -1,41 +1,40 @@
 
 
-# Tornar o Painel Admin Responsivo
+# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
 
-## Problemas Identificados
+## ✅ Concluído
 
-O painel admin usa tabelas HTML (`<Table>`) com múltiplas colunas que não se adaptam a telas pequenas. Os filtros também usam layouts fixos que quebram em mobile. Principais problemas:
+### Migração de Banco
+- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
+- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
+- `client_name TEXT NOT NULL` em orders
+- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
+- Backfill de product_name e client_name para dados existentes
+- Índices parciais para is_active
+- Backfill de `cost_per_unit` em decorations
 
-1. **AdminLayout**: O sidebar funciona com toggle mobile, mas o conteúdo principal não tem padding adequado para mobile
-2. **Tabelas**: UserManagement (7+ colunas), SupportManagement (6 colunas), AuditLogsManagement (5 colunas) — todas transbordam horizontalmente
-3. **Filtros**: Campos de data e selects com largura fixa (`w-[150px]`, `w-[180px]`) não se adaptam
-4. **Cards de estatísticas**: Grid `grid-cols-2 lg:grid-cols-4` funciona, mas textos e valores podem ser cortados
-5. **Gráficos**: FunnelChart com `LabelList position="right"` corta labels em telas pequenas
+### Hooks atualizados
+- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
+- Todos têm mutation `deactivate[Entity]` para soft delete
+- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
+- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
+- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
 
-## Plano de Implementação
+### Bugs corrigidos
+- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
+- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
+- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
 
-### 1. Tabelas com scroll horizontal + cards mobile
-Para cada tabela (UserManagement, SupportManagement, AuditLogsManagement):
-- Envolver em `<div className="overflow-x-auto -mx-4 px-4">` para scroll horizontal em mobile
-- Adicionar `min-w-[600px]` nas tabelas para evitar compressão excessiva
-- Esconder colunas menos importantes em mobile com `hidden sm:table-cell`
+### Componentes criados/integrados
+- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
+- `useDependencyCheck` — verifica dependências em tabelas de vínculo
+- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
+- IngredientsList com aviso de histórico de preços no hard delete
 
-### 2. Filtros responsivos
-- AuditLogsManagement: Empilhar filtros em coluna única em mobile (`flex-col` ao invés de `sm:flex-row` para os inputs de data)
-- SupportManagement: Selects já usam `flex-col sm:flex-row`, ajustar larguras para `w-full sm:w-[140px]`
+## 🔲 Pendente (próxima iteração)
 
-### 3. AdminStats responsivo
-- Reduzir `text-2xl` para `text-xl` em mobile nos cards
-- FunnelChart: Usar `LabelList position="center"` em vez de `"right"` ou esconder labels externos
-- Retenção: `grid-cols-1 sm:grid-cols-2`
-
-### 4. Paginação responsiva
-- Empilhar texto e botões em mobile (`flex-col sm:flex-row`)
-
-### Arquivos a modificar
-- `src/components/admin/AdminStats.tsx` — grids e gráficos responsivos
-- `src/components/admin/UserManagement.tsx` — tabela com scroll, colunas ocultas em mobile
-- `src/components/admin/SupportManagement.tsx` — tabela e filtros responsivos
-- `src/components/admin/AuditLogsManagement.tsx` — tabela, filtros e paginação responsivos
-- `src/components/layout/AdminLayout.tsx` — ajustes menores de padding
-
+- Toggle "Mostrar inativos" nas listas
+- Visual diferenciado para itens inativos
+- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
+- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
+- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL

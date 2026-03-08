@@ -148,7 +148,7 @@ export function AuditLogsManagement() {
 
       {/* Filters */}
       <Card className="p-4">
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -158,8 +158,9 @@ export function AuditLogsManagement() {
               className="pl-9"
             />
           </div>
+          <div className="flex flex-col sm:flex-row gap-3">
           <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Tipo de ação" />
             </SelectTrigger>
             <SelectContent>
@@ -171,25 +172,28 @@ export function AuditLogsManagement() {
               <SelectItem value="deleteUser">Excluir Usuário</SelectItem>
             </SelectContent>
           </Select>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
-            className="w-[150px]"
-            placeholder="De"
-          />
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
-            className="w-[150px]"
-            placeholder="Até"
-          />
+          <div className="flex gap-2 flex-1">
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+              className="flex-1 sm:w-[150px] sm:flex-none"
+              placeholder="De"
+            />
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+              className="flex-1 sm:w-[150px] sm:flex-none"
+              placeholder="Até"
+            />
+          </div>
           {hasFilters && (
-            <Button variant="ghost" size="icon" onClick={clearFilters}>
+            <Button variant="ghost" size="icon" onClick={clearFilters} className="shrink-0">
               <X className="h-4 w-4" />
             </Button>
           )}
+          </div>
         </div>
       </Card>
 
@@ -210,15 +214,15 @@ export function AuditLogsManagement() {
         </div>
       ) : (
         <>
-          <div className="rounded-md border">
-            <Table>
+          <div className="rounded-md border overflow-x-auto">
+            <Table className="min-w-[600px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Data/Hora</TableHead>
                   <TableHead>Ação</TableHead>
                   <TableHead>Admin</TableHead>
-                  <TableHead>Usuário Afetado</TableHead>
-                  <TableHead>Detalhes</TableHead>
+                  <TableHead className="hidden sm:table-cell">Usuário Afetado</TableHead>
+                  <TableHead className="hidden sm:table-cell">Detalhes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -234,13 +238,13 @@ export function AuditLogsManagement() {
                         <p className="text-xs text-muted-foreground">{log.admin_email || log.admin_user_id.slice(0, 8)}</p>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <div>
                         <p className="text-sm font-medium">{log.target_name || '—'}</p>
                         <p className="text-xs text-muted-foreground">{log.target_email || log.target_user_id.slice(0, 8)}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                    <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate hidden sm:table-cell">
                       {formatDetails(log.details)}
                     </TableCell>
                   </TableRow>
@@ -250,7 +254,7 @@ export function AuditLogsManagement() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">
               {total} registro{total !== 1 ? 's' : ''} encontrado{total !== 1 ? 's' : ''}
             </p>
