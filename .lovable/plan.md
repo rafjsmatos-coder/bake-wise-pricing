@@ -1,96 +1,40 @@
 
-# Plano de Teste dos Fluxos do Sistema
 
-Baseado na análise do código, vou testar os 4 fluxos principais do sistema de precificação:
+# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
 
-## Fluxos a Testar
+## ✅ Concluído
 
-### 1. **Ingredientes** → Receitas → Produtos → Pedidos  
-Testar a cadeia completa de criação, desde a matéria-prima até a venda final.
+### Migração de Banco
+- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
+- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
+- `client_name TEXT NOT NULL` em orders
+- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
+- Backfill de product_name e client_name para dados existentes
+- Índices parciais para is_active
+- Backfill de `cost_per_unit` em decorations
 
-### 2. **Cálculos de Custo**  
-Verificar se os cálculos estão corretos em cada etapa:
-- Custo por unidade de ingredientes
-- Custo total de receitas (com margem de segurança)
-- Custo de produção de produtos (receitas + ingredientes diretos + decorações + embalagens)
-- Margem de lucro nos pedidos
+### Hooks atualizados
+- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
+- Todos têm mutation `deactivate[Entity]` para soft delete
+- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
+- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
+- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
 
-### 3. **Conversões de Unidade**  
-Validar as conversões automáticas (kg ↔ g, L ↔ ml, etc.)
+### Bugs corrigidos
+- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
+- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
+- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
 
-### 4. **Dependências e Integridade**  
-Verificar se o sistema impede exclusões que quebrariam vínculos:
-- Ingrediente usado em receita
-- Receita usada em produto
-- Produto usado em pedido
+### Componentes criados/integrados
+- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
+- `useDependencyCheck` — verifica dependências em tabelas de vínculo
+- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
+- IngredientsList com aviso de histórico de preços no hard delete
 
-## Estratégia de Teste
+## 🔲 Pendente (próxima iteração)
 
-### Teste Prático (via Browser)
-Vou executar interações reais com a aplicação:
-
-1. **Criar Ingrediente**
-   - Nome: "Farinha de Trigo"
-   - Preço: R$ 15,00
-   - Quantidade: 5 kg
-   - Verificar cálculo: R$ 3,00/kg
-
-2. **Criar Receita**
-   - Nome: "Massa de Bolo Básica"
-   - Adicionar 0.5kg da farinha criada
-   - Rendimento: 2 un
-   - Verificar custo calculado automaticamente
-
-3. **Criar Produto**
-   - Nome: "Bolo de Chocolate"
-   - Adicionar 1 unidade da receita
-   - Margem de lucro: 30%
-   - Verificar breakdown de custos e preço sugerido
-
-4. **Criar Cliente e Pedido**
-   - Cliente: "Maria Silva"
-   - Produto: 1x Bolo de Chocolate
-   - Verificar cálculo do total e registro financeiro
-
-### Pontos de Verificação
-
-**Após cada etapa:**
-- ✓ Dados foram salvos corretamente
-- ✓ Cálculos estão precisos
-- ✓ Interface atualiza em tempo real
-- ✓ Relacionamentos entre entidades funcionam
-
-**Casos Especiais:**
-- Tentativa de excluir ingrediente usado em receita (deve alertar)
-- Edição de preço de ingrediente (deve atualizar custos)
-- Conversão de unidades (ex: adicionar 500g quando ingrediente está em kg)
-
-## Resultado Esperado
-
-Se todos os fluxos funcionarem:
-1. **Integridade de dados**: Nenhum erro de RLS ou foreign keys
-2. **Cálculos corretos**: Custos e margens calculados corretamente
-3. **UX fluido**: Formulários responsivos, feedback visual adequado
-4. **Dependências preservadas**: Sistema impede ações que quebram vínculos
-
-## Limitações do Teste
-
-**O que posso testar:**
-- Criação, edição e visualização de todas as entidades
-- Cálculos de custo em tempo real
-- Navegação entre páginas
-- Validações de formulário
-
-**O que não posso testar automaticamente:**
-- Comportamento sob carga (múltiplos usuários)
-- Sincronização realtime entre dispositivos
-- Edge cases complexos (ex: receitas com 50+ ingredientes)
-- Integrações externas (WhatsApp, Stripe)
-
-## Execução
-
-Vou começar o teste prático navegando para a página de Ingredientes e criando o primeiro item. A cada etapa, documentarei:
-- Ação executada
-- Resultado obtido
-- Problemas encontrados (se houver)
-- Screenshots de evidência
+- Toggle "Mostrar inativos" nas listas
+- Visual diferenciado para itens inativos
+- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
+- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
+- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL
