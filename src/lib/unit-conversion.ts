@@ -162,6 +162,22 @@ function countSignificantDecimals(n: number): number {
   return dot === -1 ? 0 : s.length - dot - 1;
 }
 
+function formatSmallCurrency(value: number): string {
+  if (value === 0) return 'R$ 0,00';
+  // If value is too small for 2 decimal places, use enough to show meaningful digits
+  if (Math.abs(value) < 0.01 && value !== 0) {
+    // Find how many decimal places we need to show at least 2 significant digits
+    const decimals = Math.max(2, Math.ceil(-Math.log10(Math.abs(value))) + 2);
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value);
+  }
+  return formatCurrency(value);
+}
+
 export function getCostPerUnit(
   purchasePrice: number,
   packageQuantity: number,
@@ -176,7 +192,7 @@ export function getCostPerUnit(
     return {
       value: costPerBaseUnit,
       displayUnit: info.baseUnit,
-      formatted: `${formatCurrency(costPerBaseUnit)}/${info.baseUnit}`,
+      formatted: `${formatSmallCurrency(costPerBaseUnit)}/${info.baseUnit}`,
     };
   }
 
@@ -184,6 +200,6 @@ export function getCostPerUnit(
   return {
     value: costPerUnit,
     displayUnit: unit,
-    formatted: `${formatCurrency(costPerUnit)}/${unit}`,
+    formatted: `${formatSmallCurrency(costPerUnit)}/${unit}`,
   };
 }
