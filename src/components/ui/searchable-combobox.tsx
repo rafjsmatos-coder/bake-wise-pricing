@@ -72,11 +72,11 @@ export function SearchableCombobox({
               key={item.id}
               value={item.name}
               onSelect={() => handleSelect(item.id)}
-              className="flex flex-col items-start py-3 min-h-[56px] cursor-pointer aria-selected:bg-accent"
+              className="flex flex-col items-start py-3 min-h-[56px] cursor-pointer"
             >
-              <span className="font-medium aria-selected:text-accent-foreground">{item.name}</span>
+              <span className="font-medium">{item.name}</span>
               {item.description && (
-                <span className="text-xs text-muted-foreground aria-selected:text-accent-foreground/90">
+                <span className="text-xs text-muted-foreground">
                   {item.description}
                 </span>
               )}

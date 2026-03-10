@@ -40,7 +40,7 @@ export function BottomNav({ currentPage, onPageChange, onMoreClick, canAccess = 
             <button
               key={item.id}
               onClick={() => handleClick(item.id)}
-              {...(item.id === 'more' ? { 'data-tour': 'bottom-more' } : item.id === 'products' ? { 'data-tour': 'bottom-products' } : item.id === 'orders' ? { 'data-tour': 'bottom-orders' } : item.id === 'cash-flow' ? { 'data-tour': 'bottom-financial' } : {})}
+              {...(item.id === 'more' ? { 'data-tour': 'bottom-more' } : {})}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-0 transition-colors',
                 active ? 'text-accent' : 'text-muted-foreground'

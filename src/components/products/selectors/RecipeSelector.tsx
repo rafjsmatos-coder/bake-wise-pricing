@@ -22,6 +22,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useRecipes } from '@/hooks/useRecipes';
 import { Plus, X, Check, ChevronsUpDown, ChefHat } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -61,7 +63,7 @@ export function RecipeSelector({
 }: RecipeSelectorProps) {
   const hasLinked = linkedIds && linkedIds.length > 0;
   const { recipes } = useRecipes(hasLinked ? { includeInactive: true } : undefined);
-  
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<typeof recipes[0] | null>(null);
   const [quantity, setQuantity] = useState<string>('');
@@ -146,26 +148,26 @@ export function RecipeSelector({
           {availableRecipes.map((recipe) => {
             const cost = recipeCosts[recipe.id];
             return (
-               <CommandItem
-                 key={recipe.id}
-                 value={recipe.name}
-                 onSelect={() => handleSelectRecipe(recipe)}
-                 className="group py-3"
-               >
-                 <Check
-                   className={cn(
-                     "mr-2 h-4 w-4",
-                     selectedRecipe?.id === recipe.id ? "opacity-100" : "opacity-0"
-                   )}
-                 />
-                 <div className="flex flex-col flex-1">
-                   <span className="group-aria-selected:text-accent-foreground">{recipe.name}</span>
-                   <span className="text-xs text-muted-foreground group-aria-selected:text-accent-foreground">
-                     Rende: {recipe.yield_quantity} {recipe.yield_unit}
-                     {cost != null && ` · ${formatCurrency(cost)}`}
-                   </span>
-                 </div>
-               </CommandItem>
+              <CommandItem
+                key={recipe.id}
+                value={recipe.name}
+                onSelect={() => handleSelectRecipe(recipe)}
+                className="py-3"
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    selectedRecipe?.id === recipe.id ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <div className="flex flex-col flex-1">
+                  <span>{recipe.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    Rende: {recipe.yield_quantity} {recipe.yield_unit}
+                    {cost != null && ` · ${formatCurrency(cost)}`}
+                  </span>
+                </div>
+              </CommandItem>
             );
           })}
         </CommandGroup>
@@ -182,26 +184,50 @@ export function RecipeSelector({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Recipe Selector */}
           <div className="sm:col-span-1">
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className="w-full justify-between min-h-[44px]"
-                >
-                  {selectedRecipe ? (
-                    <span className="truncate">{selectedRecipe.name}</span>
-                  ) : (
-                    <span className="text-muted-foreground">Selecionar receita...</span>
-                  )}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[300px] p-0">
-                {CommandContent}
-              </PopoverContent>
-            </Popover>
+            {isMobile ? (
+              <Drawer open={open} onOpenChange={setOpen}>
+                <DrawerTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between min-h-[44px]"
+                  >
+                    {selectedRecipe ? (
+                      <span className="truncate">{selectedRecipe.name}</span>
+                    ) : (
+                      <span className="text-muted-foreground">Selecionar receita...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="p-4">
+                  <div className="mt-4">
+                    {CommandContent}
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            ) : (
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between min-h-[44px]"
+                  >
+                    {selectedRecipe ? (
+                      <span className="truncate">{selectedRecipe.name}</span>
+                    ) : (
+                      <span className="text-muted-foreground">Selecionar receita...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  {CommandContent}
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
 
           {/* Quantity */}

@@ -1,65 +1,73 @@
-# PreciBake
+# Welcome to your Lovable project
 
-Sistema de gestão e precificação para confeiteiros.
+## Project info
 
-## Sobre
+**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
 
-PreciBake é uma plataforma web (PWA) para confeiteiros e doceiros que precisam calcular preços com precisão, gerenciar pedidos, controlar finanças e organizar receitas e ingredientes.
+## How can I edit this code?
 
-## Stack
+There are several ways of editing your application.
 
-- React 18 + TypeScript
-- Vite 5
-- Tailwind CSS + shadcn/ui
-- Supabase (auth, database, edge functions, storage)
-- PWA com vite-plugin-pwa
-- React Router, React Query, React Hook Form, Zod, Recharts
+**Use Lovable**
 
-## Setup local
+Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
 
-```bash
-# 1. Clone o repositório
-git clone <URL_DO_REPOSITORIO>
-cd precibake
+Changes made via Lovable will be committed automatically to this repo.
 
-# 2. Instale as dependências (npm é o gerenciador padrão)
-npm install
+**Use your preferred IDE**
 
-# 3. Configure as variáveis de ambiente
-cp .env.example .env
-# Preencha os valores reais no .env
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-# 4. Inicie o servidor de desenvolvimento
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+Follow these steps:
+
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
+
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
+
+# Step 3: Install the necessary dependencies.
+npm i
+
+# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
 
-## Variáveis de ambiente
+**Edit a file directly in GitHub**
 
-Veja `.env.example` para referência. As variáveis necessárias são:
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
 
-| Variável | Descrição |
-|----------|-----------|
-| `VITE_SUPABASE_PROJECT_ID` | ID do projeto Supabase |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Chave anon/pública do Supabase |
-| `VITE_SUPABASE_URL` | URL do projeto Supabase |
+**Use GitHub Codespaces**
 
-## Scripts disponíveis
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
 
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Servidor de desenvolvimento |
-| `npm run build` | Build de produção |
-| `npm run build:dev` | Build em modo desenvolvimento |
-| `npm run preview` | Preview do build |
-| `npm run lint` | Linting com ESLint |
-| `npm run test` | Testes com Vitest |
-| `npm run test:watch` | Testes em modo watch |
-| `npm run typecheck` | Verificação de tipos (sem emitir) |
+## What technologies are used for this project?
 
-## Deploy
+This project is built with:
 
-O deploy é feito via [Lovable](https://lovable.dev) → Share → Publish.
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
 
-## Gerenciador de pacotes
+## How can I deploy this project?
 
-Este projeto usa **npm**. Não utilize yarn, pnpm ou bun para evitar conflitos de lockfile.
+Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+
+## Can I connect a custom domain to my Lovable project?
+
+Yes, you can!
+
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)

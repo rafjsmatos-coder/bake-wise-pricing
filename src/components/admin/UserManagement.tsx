@@ -356,11 +356,11 @@ export function UserManagement() {
               <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
-                     <TableRow>
+                    <TableRow>
                       <TableHead>Email</TableHead>
-                      <TableHead className="hidden sm:table-cell">Nome</TableHead>
+                      <TableHead>Nome</TableHead>
                       <TableHead>Assinatura</TableHead>
-                      <TableHead className="hidden sm:table-cell">Role</TableHead>
+                      <TableHead>Role</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -374,12 +374,12 @@ export function UserManagement() {
                     ) : (
                       users.map((user) => (
                         <TableRow key={user.id}>
-                          <TableCell className="font-medium max-w-[180px] truncate">{user.email}</TableCell>
-                          <TableCell className="hidden sm:table-cell">{user.fullName || '-'}</TableCell>
+                          <TableCell className="font-medium">{user.email}</TableCell>
+                          <TableCell>{user.fullName || '-'}</TableCell>
                           <TableCell>
                             {getSubscriptionBadge(user.subscription)}
                           </TableCell>
-                          <TableCell className="hidden sm:table-cell">
+                          <TableCell>
                             {user.isAdmin ? (
                               <Badge variant="default" className="bg-primary">
                                 <Shield className="h-3 w-3 mr-1" />
@@ -522,9 +522,9 @@ export function UserManagement() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    {total} usuário{total !== 1 ? 's' : ''}
+                    Mostrando {(page - 1) * perPage + 1} a {Math.min(page * perPage, total)} de {total} usuários
                   </p>
                   <div className="flex items-center gap-2">
                     <Button

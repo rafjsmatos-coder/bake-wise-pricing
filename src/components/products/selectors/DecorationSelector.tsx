@@ -22,6 +22,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useDecorations } from '@/hooks/useDecorations';
 import { Plus, X, Check, ChevronsUpDown, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -60,7 +62,7 @@ export function DecorationSelector({
 }: DecorationSelectorProps) {
   const hasLinked = linkedIds && linkedIds.length > 0;
   const { decorations } = useDecorations(hasLinked ? { includeInactive: true } : undefined);
-  
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [selectedDecoration, setSelectedDecoration] = useState<typeof decorations[0] | null>(null);
   const [quantity, setQuantity] = useState<string>('');
@@ -133,25 +135,25 @@ export function DecorationSelector({
               decoration.unit
             );
             return (
-               <CommandItem
-                 key={decoration.id}
-                 value={decoration.name}
-                 onSelect={() => handleSelectDecoration(decoration)}
-                 className="group py-3"
-               >
-                 <Check
-                   className={cn(
-                     "mr-2 h-4 w-4",
-                     selectedDecoration?.id === decoration.id ? "opacity-100" : "opacity-0"
-                   )}
-                 />
-                 <div className="flex flex-col flex-1">
-                   <span className="group-aria-selected:text-accent-foreground">{decoration.name}</span>
-                   <span className="text-xs text-muted-foreground group-aria-selected:text-accent-foreground">
-                     {decoration.decoration_categories?.name || 'Sem categoria'} · {costInfo.formatted}
-                   </span>
-                 </div>
-               </CommandItem>
+              <CommandItem
+                key={decoration.id}
+                value={decoration.name}
+                onSelect={() => handleSelectDecoration(decoration)}
+                className="py-3"
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    selectedDecoration?.id === decoration.id ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <div className="flex flex-col flex-1">
+                  <span>{decoration.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {decoration.decoration_categories?.name || 'Sem categoria'} · {costInfo.formatted}
+                  </span>
+                </div>
+              </CommandItem>
             );
           })}
         </CommandGroup>
@@ -168,26 +170,50 @@ export function DecorationSelector({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Decoration Selector */}
           <div className="sm:col-span-1">
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className="w-full justify-between min-h-[44px]"
-                >
-                  {selectedDecoration ? (
-                    <span className="truncate">{selectedDecoration.name}</span>
-                  ) : (
-                    <span className="text-muted-foreground">Selecionar decoração...</span>
-                  )}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[300px] p-0">
-                {CommandContent}
-              </PopoverContent>
-            </Popover>
+            {isMobile ? (
+              <Drawer open={open} onOpenChange={setOpen}>
+                <DrawerTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between min-h-[44px]"
+                  >
+                    {selectedDecoration ? (
+                      <span className="truncate">{selectedDecoration.name}</span>
+                    ) : (
+                      <span className="text-muted-foreground">Selecionar decoração...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="p-4">
+                  <div className="mt-4">
+                    {CommandContent}
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            ) : (
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between min-h-[44px]"
+                  >
+                    {selectedDecoration ? (
+                      <span className="truncate">{selectedDecoration.name}</span>
+                    ) : (
+                      <span className="text-muted-foreground">Selecionar decoração...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  {CommandContent}
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
 
           {/* Quantity */}

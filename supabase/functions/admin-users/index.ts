@@ -203,55 +203,9 @@ serve(async (req) => {
           .map(([month, count]) => ({ month, count }))
           .sort((a, b) => a.month.localeCompare(b.month));
 
-        // Advanced stats: conversion rate, churn, retention
-        const { data: allSubscriptions } = await supabaseAdmin
-          .from("subscriptions")
-          .select("user_id, status, trial_ends_at, subscription_ends_at, created_at");
-
-        const totalWithSub = allSubscriptions?.length || 0;
-        const trialCount = allSubscriptions?.filter(s => s.status === 'trial').length || 0;
-        const activeCount = allSubscriptions?.filter(s => s.status === 'active').length || 0;
-        const canceledCount = allSubscriptions?.filter(s => s.status === 'canceled').length || 0;
-        const expiredCount = allSubscriptions?.filter(s => s.status === 'expired').length || 0;
-
-        // Conversion rate: users who went from trial to active
-        const conversionRate = totalWithSub > 0
-          ? Math.round((activeCount / totalWithSub) * 100)
-          : 0;
-
-        // Churn rate: canceled / (active + canceled)
-        const churnBase = activeCount + canceledCount;
-        const churnRate = churnBase > 0
-          ? Math.round((canceledCount / churnBase) * 100)
-          : 0;
-
-        // Retention: users with last_sign_in in last 7/30 days
-        const now = new Date();
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-        const activeIn7Days = authUsers.users.filter(
-          u => u.last_sign_in_at && new Date(u.last_sign_in_at) >= sevenDaysAgo
-        ).length;
-        const activeIn30Days = authUsers.users.filter(
-          u => u.last_sign_in_at && new Date(u.last_sign_in_at) >= thirtyDaysAgo
-        ).length;
-
-        // Funnel data
-        const funnel = [
-          { stage: 'Cadastros', value: totalUsers },
-          { stage: 'Trial', value: trialCount + activeCount + canceledCount + expiredCount },
-          { stage: 'Premium', value: activeCount },
-          { stage: 'Cancelados', value: canceledCount },
-        ];
-
         const stats = {
           total: totalUsers,
           subscriptions: subscriptionStats,
-          conversionRate,
-          churnRate,
-          retention: { last7Days: activeIn7Days, last30Days: activeIn30Days },
-          funnel,
         };
 
         logStep("Stats retrieved", stats);
@@ -723,100 +677,6 @@ serve(async (req) => {
             );
           }
         }
-      }
-
-      case "listLogs": {
-        const { page = 1, perPage = 50, actionFilter, dateFrom, dateTo, search = "" } = params;
-
-        let query = supabaseAdmin
-          .from("admin_action_logs")
-          .select("*", { count: "exact" })
-          .order("created_at", { ascending: false });
-
-        if (actionFilter && actionFilter !== "all") {
-          query = query.eq("action", actionFilter);
-        }
-        if (dateFrom) {
-          query = query.gte("created_at", dateFrom);
-        }
-        if (dateTo) {
-          query = query.lte("created_at", dateTo + "T23:59:59.999Z");
-        }
-
-        const from = (page - 1) * perPage;
-        const to = from + perPage - 1;
-        query = query.range(from, to);
-
-        const { data: logs, error: logsError, count } = await query;
-
-        if (logsError) {
-          throw new Error(`Failed to list logs: ${logsError.message}`);
-        }
-
-        // Resolve admin and target user names
-        const allUserIds = new Set<string>();
-        (logs || []).forEach(log => {
-          allUserIds.add(log.admin_user_id);
-          allUserIds.add(log.target_user_id);
-        });
-
-        const userIdsArr = [...allUserIds];
-        let profileMap: Record<string, string> = {};
-        let emailMap: Record<string, string> = {};
-
-        if (userIdsArr.length > 0) {
-          const { data: profiles } = await supabaseAdmin
-            .from("profiles")
-            .select("user_id, full_name")
-            .in("user_id", userIdsArr);
-
-          profiles?.forEach(p => {
-            profileMap[p.user_id] = p.full_name || "";
-          });
-
-          // Get emails for users
-          for (const uid of userIdsArr) {
-            try {
-              const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(uid);
-              if (authUser?.user?.email) {
-                emailMap[uid] = authUser.user.email;
-              }
-            } catch {
-              // user may have been deleted
-            }
-          }
-        }
-
-        const enrichedLogs = (logs || []).map(log => ({
-          ...log,
-          admin_name: profileMap[log.admin_user_id] || null,
-          admin_email: emailMap[log.admin_user_id] || null,
-          target_name: profileMap[log.target_user_id] || null,
-          target_email: emailMap[log.target_user_id] || null,
-        }));
-
-        // Filter by search (on enriched data)
-        let filteredLogs = enrichedLogs;
-        if (search) {
-          const s = search.toLowerCase();
-          filteredLogs = enrichedLogs.filter(log =>
-            log.admin_email?.toLowerCase().includes(s) ||
-            log.admin_name?.toLowerCase().includes(s) ||
-            log.target_email?.toLowerCase().includes(s) ||
-            log.target_name?.toLowerCase().includes(s) ||
-            log.action.toLowerCase().includes(s)
-          );
-        }
-
-        logStep("Logs listed", { count, page });
-
-        return new Response(
-          JSON.stringify({ logs: filteredLogs, total: count || 0, page, perPage }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
       }
 
       case "deleteUser": {

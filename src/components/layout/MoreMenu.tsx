@@ -21,7 +21,6 @@ import {
   Loader2,
   Lock,
   MessageCircle,
-  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PageType } from './AppLayout';
@@ -39,7 +38,6 @@ interface MoreMenuProps {
   getInitials: () => string;
   unseenCount?: number;
   pendingTicketsCount?: number;
-  isAdmin?: boolean;
 }
 
 const FREE_PAGES: PageType[] = ['dashboard', 'support'];
@@ -64,7 +62,6 @@ export function MoreMenu({
   getInitials,
   unseenCount = 0,
   pendingTicketsCount = 0,
-  isAdmin = false,
 }: MoreMenuProps) {
   const handleNavigate = (page: PageType) => {
     onPageChange(page);
@@ -168,21 +165,6 @@ export function MoreMenu({
               </div>
             </div>
           ))}
-          {isAdmin && (
-            <>
-              <Separator />
-              <button
-                onClick={() => {
-                  onOpenChange(false);
-                  window.location.href = '/admin';
-                }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left min-h-[44px] text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <Shield className="h-5 w-5 shrink-0" />
-                <span className="font-medium flex-1">Painel Admin</span>
-              </button>
-            </>
-          )}
         </div>
 
         <div className="border-t pt-3 px-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]">

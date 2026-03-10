@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, Headphones, Lightbulb, Loader2, Eye, Filter, X, HelpCircle, AlertTriangle } from 'lucide-react';
+import { Search, Headphones, Lightbulb, Loader2, Eye, Filter, X, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AdminTicketModal } from './AdminTicketModal';
@@ -31,8 +31,6 @@ import type { SupportTicket, TicketStatus, TicketPriority, TicketType } from '@/
 interface AdminTicket extends SupportTicket {
   user_email?: string;
   user_name?: string;
-  needsAttention?: boolean;
-  hoursSinceCreation?: number;
 }
 
 const statusConfig: Record<TicketStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -75,43 +73,15 @@ export function SupportManagement() {
         .select('user_id, full_name')
         .in('user_id', userIds);
 
-      // Fetch latest admin replies per ticket to calculate SLA
-      const ticketIds = (data || []).map(t => t.id);
-      const { data: replies } = ticketIds.length > 0
-        ? await supabase
-            .from('support_replies')
-            .select('ticket_id, created_at, is_admin_reply')
-            .in('ticket_id', ticketIds)
-            .order('created_at', { ascending: false })
-        : { data: [] };
-
-      const lastAdminReplyMap = new Map<string, string>();
-      (replies || []).forEach(r => {
-        if (r.is_admin_reply && !lastAdminReplyMap.has(r.ticket_id)) {
-          lastAdminReplyMap.set(r.ticket_id, r.created_at);
-        }
-      });
-
       const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
 
-      const typedTickets: AdminTicket[] = (data || []).map(ticket => {
-        const lastAdminReply = lastAdminReplyMap.get(ticket.id);
-        const createdAt = new Date(ticket.created_at);
-        const now = new Date();
-        const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-        const isOpen = ticket.status === 'open' || ticket.status === 'in_progress';
-        const needsAttention = isOpen && !lastAdminReply && hoursSinceCreation > 24;
-
-        return {
-          ...ticket,
-          type: ticket.type as TicketType,
-          status: ticket.status as TicketStatus,
-          priority: ticket.priority as TicketPriority,
-          user_name: profileMap.get(ticket.user_id) || 'Usuário',
-          needsAttention,
-          hoursSinceCreation: Math.round(hoursSinceCreation),
-        };
-      });
+      const typedTickets: AdminTicket[] = (data || []).map(ticket => ({
+        ...ticket,
+        type: ticket.type as TicketType,
+        status: ticket.status as TicketStatus,
+        priority: ticket.priority as TicketPriority,
+        user_name: profileMap.get(ticket.user_id) || 'Usuário',
+      }));
 
       setTickets(typedTickets);
     } catch (error: any) {
@@ -175,16 +145,16 @@ export function SupportManagement() {
     }
 
     return (
-      <div className="rounded-md border overflow-x-auto">
-        <Table className="min-w-[600px]">
+      <div className="rounded-md border">
+        <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Usuário</TableHead>
               <TableHead>Assunto</TableHead>
               <TableHead>Status</TableHead>
-              {showPriority && <TableHead className="hidden sm:table-cell">Prioridade</TableHead>}
-              <TableHead className="hidden sm:table-cell">Data</TableHead>
-              <TableHead className="w-[60px]">Ações</TableHead>
+              {showPriority && <TableHead>Prioridade</TableHead>}
+              <TableHead>Data</TableHead>
+              <TableHead className="w-[80px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -193,14 +163,9 @@ export function SupportManagement() {
               const priority = priorityConfig[ticket.priority];
 
               return (
-                <TableRow key={ticket.id} className={ticket.needsAttention ? 'bg-destructive/5' : ''}>
+                <TableRow key={ticket.id}>
                   <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {ticket.needsAttention && (
-                        <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
-                      )}
-                      {ticket.user_name || 'Usuário'}
-                    </div>
+                    {ticket.user_name || 'Usuário'}
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate">
                     {ticket.subject}
@@ -209,19 +174,12 @@ export function SupportManagement() {
                     <Badge variant={status.variant}>{status.label}</Badge>
                   </TableCell>
                   {showPriority && (
-                    <TableCell className="hidden sm:table-cell">
+                    <TableCell>
                       <Badge className={priority.className}>{priority.label}</Badge>
                     </TableCell>
                   )}
-                  <TableCell className="text-muted-foreground text-sm hidden sm:table-cell">
-                    <div>
-                      {format(new Date(ticket.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                      {ticket.needsAttention && (
-                        <p className="text-xs text-destructive font-medium">
-                          {ticket.hoursSinceCreation}h sem resposta
-                        </p>
-                      )}
-                    </div>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {format(new Date(ticket.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                   </TableCell>
                   <TableCell>
                     <Button
@@ -265,9 +223,9 @@ export function SupportManagement() {
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2">
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as TicketStatus | 'all')}>
-              <SelectTrigger className="w-full sm:w-[140px]">
+              <SelectTrigger className="w-[140px]">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -281,7 +239,7 @@ export function SupportManagement() {
             </Select>
 
             <Select value={priorityFilter} onValueChange={(v) => setPriorityFilter(v as TicketPriority | 'all')}>
-              <SelectTrigger className="w-full sm:w-[140px]">
+              <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Prioridade" />
               </SelectTrigger>
               <SelectContent>

@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/select';
 import { usePackaging, Packaging } from '@/hooks/usePackaging';
 import { usePackagingCategories } from '@/hooks/usePackagingCategories';
-import { Calculator, ChevronDown, ChevronUp, Loader2, Settings2 } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { UNITS as UNITS_MAP, type MeasurementUnit, getCostPerUnit, getCompatibleUnits, getBestDisplayUnit, convertUnit } from '@/lib/unit-conversion';
 
 const UNITS = [
@@ -359,14 +359,11 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
             {/* Optional Fields Toggle */}
             <Button
               type="button"
-              variant="outline"
-              className="w-full justify-between min-h-[44px] border-dashed text-muted-foreground"
+              variant="ghost"
+              className="w-full justify-between min-h-[44px]"
               onClick={() => setShowOptional(!showOptional)}
             >
-              <span className="flex items-center gap-2">
-                <Settings2 className="h-4 w-4" />
-                Campos opcionais
-              </span>
+              <span>Campos opcionais</span>
               {showOptional ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
 

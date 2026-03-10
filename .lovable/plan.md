@@ -1,32 +1,40 @@
 
 
-# Diagnóstico: App fora do ar em produção
+# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
 
-## Situação
+## ✅ Concluído
 
-- **Preview (Lovable)**: Funcionando normalmente — os logs mostram o app rodando sem erros de `supabaseUrl`.
-- **Produção (precibake.com.br)**: Erro `supabaseUrl is required` — tela branca.
-- **`.env`**: Contém os valores corretos (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`).
-- **`client.ts`**: Não foi modificado — está correto.
+### Migração de Banco
+- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
+- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
+- `client_name TEXT NOT NULL` em orders
+- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
+- Backfill de product_name e client_name para dados existentes
+- Índices parciais para is_active
+- Backfill de `cost_per_unit` em decorations
 
-## Causa raiz
+### Hooks atualizados
+- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
+- Todos têm mutation `deactivate[Entity]` para soft delete
+- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
+- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
+- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
 
-O erro ocorre porque o build publicado em produção não tem as variáveis de ambiente embutidas. Isso provavelmente aconteceu porque a última alteração (fix do import do Resend na edge function) causou uma falha no deploy que impediu as env vars de serem injetadas no build de produção.
+### Bugs corrigidos
+- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
+- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
+- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
 
-## Plano de resolução
+### Componentes criados/integrados
+- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
+- `useDependencyCheck` — verifica dependências em tabelas de vínculo
+- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
+- IngredientsList com aviso de histórico de preços no hard delete
 
-### Ação única: Republicar o projeto
+## 🔲 Pendente (próxima iteração)
 
-1. **Publicar novamente** o projeto pelo Lovable para que o build de produção seja regenerado com as variáveis de ambiente corretas.
-2. Não é necessária nenhuma alteração de código — o preview já funciona.
-
-### Se a republicação não resolver
-
-Podemos adicionar uma proteção no `client.ts` com fallback, mas isso **não deve ser necessário** pois o Lovable Cloud injeta automaticamente as variáveis no build.
-
-### Nota importante
-
-Não é possível editar `src/integrations/supabase/client.ts` (arquivo auto-gerado). A solução correta é garantir que o build de produção receba as env vars, o que acontece automaticamente ao republicar.
-
-**Ação necessária do usuário**: Clicar em "Publish" no Lovable para republicar o projeto.
-
+- Toggle "Mostrar inativos" nas listas
+- Visual diferenciado para itens inativos
+- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
+- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
+- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL

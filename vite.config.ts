@@ -17,10 +17,12 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/, /^\/sitemap\.xml$/, /^\/robots\.txt$/, /^\/llms\.txt$/],
-        globPatterns: ["**/*.{js,css,ico,png,svg}"],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+        skipWaiting: true,
+        clientsClaim: true,
       },
       manifest: {
         name: "PreciBake - Gestão para Confeitaria",

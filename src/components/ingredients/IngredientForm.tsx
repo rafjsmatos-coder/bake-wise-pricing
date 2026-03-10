@@ -27,7 +27,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useIngredients, type Ingredient, type CreateIngredientData } from '@/hooks/useIngredients';
 import { UNITS, type MeasurementUnit, getCostPerUnit, formatCurrency, getCompatibleUnits, getBestDisplayUnit, convertUnit } from '@/lib/unit-conversion';
 import { PriceHistoryChart } from './PriceHistoryChart';
-import { Loader2, Calculator, History, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
+import { Loader2, Calculator, History, ChevronDown } from 'lucide-react';
 
 const ingredientSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100),
@@ -363,15 +363,11 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
           {/* Optional Fields Toggle */}
           <Button
             type="button"
-            variant="outline"
-            className="w-full justify-between min-h-[44px] border-dashed text-muted-foreground"
+            variant="ghost"
+            className="w-full text-muted-foreground min-h-[44px]"
             onClick={() => setShowOptional(!showOptional)}
           >
-            <span className="flex items-center gap-2">
-              <Settings2 className="h-4 w-4" />
-              Campos opcionais
-            </span>
-            {showOptional ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {showOptional ? 'Ocultar campos opcionais' : 'Mostrar campos opcionais'}
           </Button>
 
           {showOptional && (
