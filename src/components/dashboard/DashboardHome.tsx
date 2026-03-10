@@ -159,7 +159,8 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       )}
 
       {/* Summary Cards */}
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none" data-tour="summary-cards">
+      <div className="relative" data-tour="summary-cards">
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
         {summaryCards.map((card) => (
           <Card 
             key={card.title} 
@@ -180,44 +181,48 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
           </Card>
         ))}
       </div>
+      <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none lg:hidden" />
+      </div>
 
       {/* Today's Deliveries - Highlighted */}
-      {(() => {
-        const todayOrders = (orders || [])
-          .filter(o => o.delivery_date && ['pending', 'in_production', 'ready'].includes(o.status) && isToday(new Date(o.delivery_date)))
-          .sort((a, b) => new Date(a.delivery_date!).getTime() - new Date(b.delivery_date!).getTime());
+      <div data-tour="today-deliveries">
+        {(() => {
+          const todayOrders = (orders || [])
+            .filter(o => o.delivery_date && ['pending', 'in_production', 'ready'].includes(o.status) && isToday(new Date(o.delivery_date)))
+            .sort((a, b) => new Date(a.delivery_date!).getTime() - new Date(b.delivery_date!).getTime());
 
-        if (todayOrders.length === 0) return null;
+          if (todayOrders.length === 0) return null;
 
-        return (
-          <Card className="border-destructive/50 bg-destructive/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2 text-destructive">
-                <AlertCircle className="h-5 w-5" />
-                Entregas Hoje ({todayOrders.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {todayOrders.map((o) => (
-                <div
-                  key={o.id}
-                  className="flex items-center justify-between gap-3 p-3 bg-card rounded-lg cursor-pointer hover:bg-muted transition-colors border border-border"
-                  onClick={() => onNavigate('orders')}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{o.client?.name || 'Cliente'}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(o.delivery_date!), "HH:mm", { locale: ptBR })}
-                    </p>
+          return (
+            <Card className="border-destructive/50 bg-destructive/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+                  <AlertCircle className="h-5 w-5" />
+                  Entregas Hoje ({todayOrders.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {todayOrders.map((o) => (
+                  <div
+                    key={o.id}
+                    className="flex items-center justify-between gap-3 p-3 bg-card rounded-lg cursor-pointer hover:bg-muted transition-colors border border-border"
+                    onClick={() => onNavigate('orders')}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{o.client?.name || 'Cliente'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(o.delivery_date!), "HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                    <OrderStatusBadge status={o.status} type="order" />
+                    <span className="text-sm font-medium shrink-0">{formatCurrency(o.total_amount)}</span>
                   </div>
-                  <OrderStatusBadge status={o.status} type="order" />
-                  <span className="text-sm font-medium shrink-0">{formatCurrency(o.total_amount)}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        );
-      })()}
+                ))}
+              </CardContent>
+            </Card>
+          );
+        })()}
+      </div>
 
       {/* Upcoming Deliveries */}
       {(() => {

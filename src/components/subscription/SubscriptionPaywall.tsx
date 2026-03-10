@@ -1,12 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lock, CreditCard, Barcode } from 'lucide-react';
+import { Lock, CreditCard, Barcode, Zap } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
+import { usePromoStatus } from '@/hooks/usePromoStatus';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 export function SubscriptionPaywall() {
   const { startCheckout, status } = useSubscription();
+  const { isActive, slotsRemaining, isLoading: promoLoading } = usePromoStatus();
   const [isLoading, setIsLoading] = useState(false);
 
   const isExpiredPremium = status === 'expired' || status === 'canceled';
@@ -40,15 +42,34 @@ export function SubscriptionPaywall() {
             Continue usando todas as ferramentas do PreciBake para precificar seus produtos com precisão.
           </p>
           
-          <div className="bg-muted/50 rounded-lg p-6">
-            <p className="text-3xl font-bold text-foreground">
-              R$ 49,90
-              <span className="text-base font-normal text-muted-foreground">/mês</span>
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Cancele quando quiser
-            </p>
-          </div>
+           {isActive && !promoLoading ? (
+            <div className="bg-muted/50 rounded-lg p-6 space-y-3">
+              <div className="inline-flex items-center gap-1.5 bg-accent/10 text-accent text-sm font-semibold px-3 py-1.5 rounded-full">
+                <Zap className="w-3.5 h-3.5" />
+                Restam {slotsRemaining} de 35 vagas
+              </div>
+              <p className="text-3xl font-bold text-accent">
+                R$ 29,90
+                <span className="text-base font-normal text-muted-foreground">/1º mês</span>
+              </p>
+              <p className="text-sm text-muted-foreground line-through">
+                R$ 49,90/mês
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Depois R$ 49,90/mês · Cancele quando quiser
+              </p>
+            </div>
+          ) : (
+            <div className="bg-muted/50 rounded-lg p-6">
+              <p className="text-3xl font-bold text-foreground">
+                R$ 49,90
+                <span className="text-base font-normal text-muted-foreground">/mês</span>
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Cancele quando quiser
+              </p>
+            </div>
+          )}
 
           <div className="space-y-3">
             <Button 

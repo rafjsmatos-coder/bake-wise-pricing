@@ -27,7 +27,7 @@ import { IngredientSelector, type RecipeIngredientItem } from './IngredientSelec
 import { CostBreakdown } from './CostBreakdown';
 import { calculateRecipeCost, calculateIngredientCost, type IngredientData } from '@/lib/recipe-cost-calculator';
 import { type MeasurementUnit } from '@/lib/unit-conversion';
-import { Loader2, Clock, Flame, Settings2, Zap } from 'lucide-react';
+import { Loader2, Clock, Flame, Settings2, Zap, ChevronUp, ChevronDown } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const recipeSchema = z.object({
@@ -365,12 +365,15 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
           {/* Optional Fields Toggle */}
           <Button
             type="button"
-            variant="ghost"
-            className="w-full text-muted-foreground min-h-[44px]"
+            variant="outline"
+            className="w-full justify-between min-h-[44px] border-dashed text-muted-foreground"
             onClick={() => setShowOptional(!showOptional)}
           >
-            <Settings2 className="h-4 w-4 mr-2" />
-            {showOptional ? 'Ocultar campos opcionais' : 'Mostrar campos opcionais'}
+            <span className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4" />
+              Campos opcionais
+            </span>
+            {showOptional ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
 
           {showOptional && (
@@ -457,10 +460,13 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                 <Label htmlFor="instructions">Modo de Preparo</Label>
                 <Textarea
                   id="instructions"
-                  placeholder="Descreva o passo a passo da receita..."
+                  placeholder={"Misture os ingredientes secos\nAdicione os líquidos\nLeve ao forno por 30 min"}
                   rows={4}
                   {...register('instructions')}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Cada linha será exibida como um passo numerado (1, 2, 3...)
+                </p>
               </div>
 
               {/* Notas */}

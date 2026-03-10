@@ -15,8 +15,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { usePackaging } from '@/hooks/usePackaging';
 import { Plus, X, Check, ChevronsUpDown, Box } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -41,7 +39,7 @@ export function PackagingSelector({
 }: PackagingSelectorProps) {
   const hasLinked = linkedIds && linkedIds.length > 0;
   const { packagingItems } = usePackaging(hasLinked ? { includeInactive: true } : undefined);
-  const isMobile = useIsMobile();
+  
   const [open, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<typeof packagingItems[0] | null>(null);
   const [quantity, setQuantity] = useState<string>('');
@@ -98,25 +96,25 @@ export function PackagingSelector({
           {availablePackaging.map((pkg) => {
             const costPerUnit = Number(pkg.purchase_price) / Number(pkg.package_quantity);
             return (
-              <CommandItem
-                key={pkg.id}
-                value={pkg.name}
-                onSelect={() => handleSelectPackaging(pkg)}
-                className="py-3"
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    selectedItem?.id === pkg.id ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <div className="flex flex-col flex-1">
-                  <span>{pkg.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {pkg.dimensions || pkg.category?.name || 'Sem categoria'} · {formatCurrency(costPerUnit)}/un
-                  </span>
-                </div>
-              </CommandItem>
+               <CommandItem
+                 key={pkg.id}
+                 value={pkg.name}
+                 onSelect={() => handleSelectPackaging(pkg)}
+                 className="group py-3"
+               >
+                 <Check
+                   className={cn(
+                     "mr-2 h-4 w-4",
+                     selectedItem?.id === pkg.id ? "opacity-100" : "opacity-0"
+                   )}
+                 />
+                 <div className="flex flex-col flex-1">
+                   <span className="group-aria-selected:text-accent-foreground">{pkg.name}</span>
+                   <span className="text-xs text-muted-foreground group-aria-selected:text-accent-foreground">
+                     {pkg.dimensions || pkg.category?.name || 'Sem categoria'} · {formatCurrency(costPerUnit)}/un
+                   </span>
+                 </div>
+               </CommandItem>
             );
           })}
         </CommandGroup>
@@ -133,50 +131,26 @@ export function PackagingSelector({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Packaging Selector */}
           <div className="sm:col-span-1">
-            {isMobile ? (
-              <Drawer open={open} onOpenChange={setOpen}>
-                <DrawerTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-between min-h-[44px]"
-                  >
-                    {selectedItem ? (
-                      <span className="truncate">{selectedItem.name}</span>
-                    ) : (
-                      <span className="text-muted-foreground">Selecionar embalagem...</span>
-                    )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </DrawerTrigger>
-                <DrawerContent className="p-4">
-                  <div className="mt-4">
-                    {CommandContent}
-                  </div>
-                </DrawerContent>
-              </Drawer>
-            ) : (
-              <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={open}
-                    className="w-full justify-between min-h-[44px]"
-                  >
-                    {selectedItem ? (
-                      <span className="truncate">{selectedItem.name}</span>
-                    ) : (
-                      <span className="text-muted-foreground">Selecionar embalagem...</span>
-                    )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[300px] p-0">
-                  {CommandContent}
-                </PopoverContent>
-              </Popover>
-            )}
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full justify-between min-h-[44px]"
+                >
+                  {selectedItem ? (
+                    <span className="truncate">{selectedItem.name}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Selecionar embalagem...</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[300px] p-0">
+                {CommandContent}
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Quantity */}

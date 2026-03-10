@@ -192,6 +192,7 @@ export function IngredientSelector({
                           key={ingredient.id}
                           value={ingredient.name}
                           onSelect={() => handleSelectIngredient(ingredient)}
+                          className="group"
                         >
                           <Check
                             className={cn(
@@ -202,8 +203,8 @@ export function IngredientSelector({
                             )}
                           />
                           <div className="flex flex-col">
-                            <span>{ingredient.name}</span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="group-aria-selected:text-accent-foreground">{ingredient.name}</span>
+                            <span className="text-xs text-muted-foreground group-aria-selected:text-accent-foreground">
                               {formatCurrency(Number(ingredient.cost_per_unit))}/{UNITS[ingredient.unit].baseUnit}
                             </span>
                           </div>

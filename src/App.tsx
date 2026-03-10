@@ -14,6 +14,7 @@ import ResetPassword from "./pages/ResetPassword";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import { SubscriptionSuccess } from "@/components/subscription/SubscriptionSuccess";
+import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +32,7 @@ function AppContent() {
     <TourWrapper onSidebarToggle={setSidebarOpen}>
       <TooltipProvider>
         <Sonner />
+        <UpdatePrompt />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />

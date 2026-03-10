@@ -990,6 +990,45 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          endpoint: string
+          id: string
+          notify_deliveries: boolean
+          notify_payments: boolean
+          notify_stock: boolean
+          p256dh: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          notify_deliveries?: boolean
+          notify_payments?: boolean
+          notify_stock?: boolean
+          p256dh: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          notify_deliveries?: boolean
+          notify_payments?: boolean
+          notify_stock?: boolean
+          p256dh?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       recipe_categories: {
         Row: {
           color: string | null

@@ -6,14 +6,18 @@ import {
   Sparkles,
   CreditCard,
   Barcode,
-  Flame
+  Flame,
+  Zap
 } from 'lucide-react';
+import { usePromoStatus } from '@/hooks/usePromoStatus';
 
 interface PricingSectionProps {
   onGetStarted: () => void;
 }
 
 export function PricingSection({ onGetStarted }: PricingSectionProps) {
+  const { isActive, slotsRemaining, isLoading } = usePromoStatus();
+
   const features = [
     '7 dias grátis para testar tudo',
     'Ingredientes, receitas e produtos ilimitados',
@@ -32,10 +36,12 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Preço de lançamento por tempo limitado
+            {isActive ? 'Oferta especial de lançamento' : 'Preço de lançamento por tempo limitado'}
           </h2>
           <p className="text-lg text-muted-foreground">
-            Quem assinar agora garante esse valor para sempre
+            {isActive 
+              ? `Apenas para os primeiros 35 assinantes — restam ${slotsRemaining} vagas`
+              : 'Quem assinar agora garante esse valor para sempre'}
           </p>
         </div>
 
@@ -43,7 +49,7 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
           <Card className="border-accent/30 relative overflow-hidden shadow-xl">
             <div className="absolute top-0 right-0 bg-accent text-accent-foreground text-xs font-bold px-3 py-1.5 rounded-bl-lg flex items-center gap-1">
               <Flame className="w-3.5 h-3.5" />
-              PREÇO DE LANÇAMENTO
+              {isActive ? 'OFERTA DE LANÇAMENTO' : 'PREÇO DE LANÇAMENTO'}
             </div>
             
             <CardHeader className="text-center pb-2 pt-8">
@@ -51,14 +57,32 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
                 <Sparkles className="w-6 h-6 text-accent" />
                 <CardTitle className="text-2xl">PreciBake Premium</CardTitle>
               </div>
-              <div className="mt-4">
-                <span className="text-xl text-muted-foreground line-through mr-2">R$ 79,90</span>
-                <span className="text-4xl font-bold">R$ 49,90</span>
-                <span className="text-muted-foreground">/mês</span>
-              </div>
-              <p className="text-sm text-accent font-medium mt-2">
-                Preço promocional por tempo limitado
-              </p>
+
+              {isActive && !isLoading ? (
+                <div className="mt-4 space-y-2">
+                  <div>
+                    <span className="text-lg text-muted-foreground line-through mr-2">R$ 49,90</span>
+                    <span className="text-4xl font-bold text-accent">R$ 29,90</span>
+                    <span className="text-muted-foreground">/1º mês</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Depois R$ 49,90/mês · Cancele quando quiser
+                  </p>
+                  <div className="inline-flex items-center gap-1.5 bg-accent/10 text-accent text-sm font-semibold px-3 py-1.5 rounded-full">
+                    <Zap className="w-3.5 h-3.5" />
+                    Restam {slotsRemaining} de 35 vagas
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <span className="text-xl text-muted-foreground line-through mr-2">R$ 79,90</span>
+                  <span className="text-4xl font-bold">R$ 49,90</span>
+                  <span className="text-muted-foreground">/mês</span>
+                  <p className="text-sm text-accent font-medium mt-2">
+                    Preço promocional por tempo limitado
+                  </p>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="pt-6">
               <ul className="space-y-3 mb-6">
