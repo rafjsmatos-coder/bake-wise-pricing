@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
       registerType: "prompt",
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/, /^\/sitemap\.xml$/, /^\/robots\.txt$/, /^\/llms\.txt$/],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+        globPatterns: ["**/*.{js,css,ico,png,svg}"],
       },
       manifest: {
         name: "PreciBake - Gestão para Confeitaria",
