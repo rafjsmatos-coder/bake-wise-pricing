@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils';
 
 interface StickyHeaderProps {
   onGetStarted: () => void;
+  onLogin: () => void;
 }
 
-export function StickyHeader({ onGetStarted }: StickyHeaderProps) {
+export function StickyHeader({ onGetStarted, onLogin }: StickyHeaderProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   const handleClick = (e: React.MouseEvent) => {
