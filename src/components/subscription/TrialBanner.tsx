@@ -1,11 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Clock, X } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
+import { usePromoStatus } from '@/hooks/usePromoStatus';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 export function TrialBanner() {
   const { status, daysRemaining, startCheckout } = useSubscription();
+  const { isActive: isPromoActive } = usePromoStatus();
   const [isLoading, setIsLoading] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
@@ -57,7 +59,7 @@ export function TrialBanner() {
           disabled={isLoading}
           className="min-h-[44px] w-full sm:w-auto flex-1 sm:flex-initial"
         >
-          {isLoading ? 'Carregando...' : 'Assinar por R$ 49,90'}
+          {isLoading ? 'Carregando...' : `Assinar por R$ ${isPromoActive ? '29,90' : '49,90'}`}
         </Button>
         <button 
           onClick={() => setIsDismissed(true)}

@@ -16,9 +16,10 @@ import { PasswordRequirements } from './PasswordRequirements';
 
 interface AuthFormProps {
   onBack?: () => void;
+  defaultTab?: 'signin' | 'signup';
 }
 
-export function AuthForm({ onBack }: AuthFormProps) {
+export function AuthForm({ onBack, defaultTab = 'signin' }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -105,7 +106,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Entrar</TabsTrigger>
               <TabsTrigger value="signup">Criar Conta</TabsTrigger>
