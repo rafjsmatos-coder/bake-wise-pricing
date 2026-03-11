@@ -106,7 +106,7 @@ export function AuthForm({ onBack, defaultTab = 'signin' }: AuthFormProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Entrar</TabsTrigger>
               <TabsTrigger value="signup">Criar Conta</TabsTrigger>

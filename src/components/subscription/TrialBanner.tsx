@@ -59,7 +59,7 @@ export function TrialBanner() {
           disabled={isLoading}
           className="min-h-[44px] w-full sm:w-auto flex-1 sm:flex-initial"
         >
-          {isLoading ? 'Carregando...' : 'Assinar por R$ 49,90'}
+          {isLoading ? 'Carregando...' : `Assinar por R$ ${isPromoActive ? '29,90' : '49,90'}`}
         </Button>
         <button 
           onClick={() => setIsDismissed(true)}

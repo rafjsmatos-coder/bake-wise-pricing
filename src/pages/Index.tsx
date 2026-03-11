@@ -21,7 +21,7 @@ const Index = () => {
   // Show landing page for non-authenticated users
   if (!user) {
     if (showAuthForm) {
-      return <AuthForm onBack={() => setShowAuthForm(false)} />;
+      return <AuthForm onBack={() => setShowAuthForm(false)} defaultTab="signup" />;
     }
     return <LandingPage onGetStarted={() => setShowAuthForm(true)} />;
   }
