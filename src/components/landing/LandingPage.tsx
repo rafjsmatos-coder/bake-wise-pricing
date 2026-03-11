@@ -3,7 +3,6 @@ import { TargetAudienceSection } from './TargetAudienceSection';
 import { PainPointsSection } from './PainPointsSection';
 import { BeforeAfterSection } from './BeforeAfterSection';
 import { BenefitsSection } from './BenefitsSection';
-import { VideoSection } from './VideoSection';
 import { ExampleSection } from './ExampleSection';
 import { ComparisonSection } from './ComparisonSection';
 import { ScreenshotsSection } from './ScreenshotsSection';
@@ -28,7 +27,6 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       <PainPointsSection />
       <BeforeAfterSection />
       <BenefitsSection />
-      <VideoSection />
       <ExampleSection />
       <ComparisonSection />
       <ScreenshotsSection />
