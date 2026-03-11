@@ -12,7 +12,7 @@ interface HeroSectionProps {
   onLogin: () => void;
 }
 
-export function HeroSection({ onGetStarted }: HeroSectionProps) {
+export function HeroSection({ onGetStarted, onLogin }: HeroSectionProps) {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
