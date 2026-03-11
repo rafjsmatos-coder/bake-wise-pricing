@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils';
 
 interface StickyHeaderProps {
   onGetStarted: () => void;
+  onLogin: () => void;
 }
 
-export function StickyHeader({ onGetStarted }: StickyHeaderProps) {
+export function StickyHeader({ onGetStarted, onLogin }: StickyHeaderProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   const handleClick = (e: React.MouseEvent) => {
@@ -47,7 +48,7 @@ export function StickyHeader({ onGetStarted }: StickyHeaderProps) {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={handleClick}
+              onClick={onLogin}
               className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
               type="button"
             >

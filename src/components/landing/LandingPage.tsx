@@ -16,13 +16,14 @@ import { StickyHeader } from './StickyHeader';
 
 interface LandingPageProps {
   onGetStarted: () => void;
+  onLogin: () => void;
 }
 
-export function LandingPage({ onGetStarted }: LandingPageProps) {
+export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-background">
-      <StickyHeader onGetStarted={onGetStarted} />
-      <HeroSection onGetStarted={onGetStarted} />
+      <StickyHeader onGetStarted={onGetStarted} onLogin={onLogin} />
+      <HeroSection onGetStarted={onGetStarted} onLogin={onLogin} />
       <TargetAudienceSection />
       <PainPointsSection />
       <BeforeAfterSection />

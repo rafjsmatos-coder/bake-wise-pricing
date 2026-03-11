@@ -9,9 +9,10 @@ import { ThemeLogo } from '@/components/layout/ThemeLogo';
 
 interface HeroSectionProps {
   onGetStarted: () => void;
+  onLogin: () => void;
 }
 
-export function HeroSection({ onGetStarted }: HeroSectionProps) {
+export function HeroSection({ onGetStarted, onLogin }: HeroSectionProps) {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -62,7 +63,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             <Button 
               variant="ghost" 
               size="lg" 
-              onClick={handleClick} 
+              onClick={onLogin} 
               className="text-muted-foreground hover:text-foreground"
               type="button"
             >
