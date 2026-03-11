@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Clock, X } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
+import { usePromoStatus } from '@/hooks/usePromoStatus';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
