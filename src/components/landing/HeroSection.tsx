@@ -63,7 +63,7 @@ export function HeroSection({ onGetStarted, onLogin }: HeroSectionProps) {
             <Button 
               variant="ghost" 
               size="lg" 
-              onClick={handleClick} 
+              onClick={onLogin} 
               className="text-muted-foreground hover:text-foreground"
               type="button"
             >
