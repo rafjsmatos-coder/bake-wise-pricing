@@ -48,7 +48,7 @@ export function StickyHeader({ onGetStarted, onLogin }: StickyHeaderProps) {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={handleClick}
+              onClick={onLogin}
               className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
               type="button"
             >

@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 const Index = () => {
   const { user, loading } = useAuth();
   const [showAuthForm, setShowAuthForm] = useState(false);
+  const [authTab, setAuthTab] = useState<'signin' | 'signup'>('signup');
 
   // Show loading while auth is being checked
   if (loading) {
@@ -21,9 +22,14 @@ const Index = () => {
   // Show landing page for non-authenticated users
   if (!user) {
     if (showAuthForm) {
-      return <AuthForm onBack={() => setShowAuthForm(false)} defaultTab="signup" />;
+      return <AuthForm onBack={() => setShowAuthForm(false)} defaultTab={authTab} />;
     }
-    return <LandingPage onGetStarted={() => setShowAuthForm(true)} />;
+    return (
+      <LandingPage 
+        onGetStarted={() => { setAuthTab('signup'); setShowAuthForm(true); }} 
+        onLogin={() => { setAuthTab('signin'); setShowAuthForm(true); }} 
+      />
+    );
   }
 
   // All authenticated users see the pricing dashboard
