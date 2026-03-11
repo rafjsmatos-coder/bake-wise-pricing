@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 export function TrialBanner() {
   const { status, daysRemaining, startCheckout } = useSubscription();
+  const { isActive: isPromoActive } = usePromoStatus();
   const [isLoading, setIsLoading] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
