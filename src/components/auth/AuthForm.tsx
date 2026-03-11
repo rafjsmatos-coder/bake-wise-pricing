@@ -16,9 +16,10 @@ import { PasswordRequirements } from './PasswordRequirements';
 
 interface AuthFormProps {
   onBack?: () => void;
+  defaultTab?: 'signin' | 'signup';
 }
 
-export function AuthForm({ onBack }: AuthFormProps) {
+export function AuthForm({ onBack, defaultTab = 'signin' }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
