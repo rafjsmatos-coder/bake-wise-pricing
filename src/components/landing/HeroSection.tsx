@@ -9,6 +9,7 @@ import { ThemeLogo } from '@/components/layout/ThemeLogo';
 
 interface HeroSectionProps {
   onGetStarted: () => void;
+  onLogin: () => void;
 }
 
 export function HeroSection({ onGetStarted }: HeroSectionProps) {
