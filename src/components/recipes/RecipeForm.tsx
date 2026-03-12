@@ -32,7 +32,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const recipeSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(200),
-  category_id: z.string().min(1, 'Categoria é obrigatória'),
+  category_id: z.string().optional().nullable(),
   yield_quantity: z.number().positive('Rendimento deve ser maior que zero'),
   yield_unit: z.string().min(1, 'Unidade de rendimento é obrigatória'),
   prep_time_minutes: z.number().int().positive('Tempo de preparo deve ser maior que zero'),
