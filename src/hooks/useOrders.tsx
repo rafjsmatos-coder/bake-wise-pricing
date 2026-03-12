@@ -100,7 +100,7 @@ export function useOrders() {
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-          user_id: userId, client_id: data.client_id, client_name: data.client_name,
+          user_id: userId, client_id: data.client_id || null, client_name: data.client_name,
           status: data.status, payment_status: paymentStatus,
           delivery_date: data.delivery_date || null, total_amount: totalAmount,
           paid_amount: data.paid_amount, discount: data.discount || 0, notes: data.notes || null,
