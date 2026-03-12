@@ -357,7 +357,8 @@ export function RevenueReport() {
                 {(productMargins.reduce((s, p) => s + p.margin, 0) / productMargins.length).toFixed(1)}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Média de {productMargins.length} produto{productMargins.length !== 1 ? 's' : ''} com custo
+                Quanto do valor de venda é lucro ({productMargins.length} produto{productMargins.length !== 1 ? 's' : ''})
+              </p>
               </p>
             </>
           ) : (

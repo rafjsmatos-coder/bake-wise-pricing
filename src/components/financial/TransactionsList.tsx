@@ -102,7 +102,7 @@ export function TransactionsList() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground truncate">Fluxo de Caixa</h1>
-          <p className="text-muted-foreground">Gerencie suas entradas e saídas</p>
+          <p className="text-muted-foreground">Registre o dinheiro que entra e sai do seu negócio</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => handleNew('income')} className="gap-2 bg-green-600 hover:bg-green-700">
