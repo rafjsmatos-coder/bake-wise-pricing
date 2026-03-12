@@ -313,7 +313,7 @@ export function RevenueReport() {
             </div>
           )}
           {!grossProfitData.hasEstimated && grossProfitData.snapshotRevenue > 0 && (
-            <p className="text-xs text-muted-foreground mt-1">Baseado em custos congelados</p>
+            <p className="text-xs text-muted-foreground mt-1">Calculado com base no custo registrado na venda</p>
           )}
         </div>
       </div>
