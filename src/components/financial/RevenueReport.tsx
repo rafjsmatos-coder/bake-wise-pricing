@@ -300,6 +300,7 @@ export function RevenueReport() {
             <DollarSign className="h-4 w-4" />
             Lucro Bruto de Vendas
           </div>
+          <p className="text-xs text-muted-foreground -mt-0.5 mb-1">Quanto você ganhou acima do custo dos produtos</p>
           <p className={`text-xl font-bold ${grossProfitData.snapshotProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
             {formatCurrency(grossProfitData.snapshotProfit)}
           </p>
