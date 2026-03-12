@@ -359,7 +359,6 @@ export function RevenueReport() {
               <p className="text-xs text-muted-foreground mt-1">
                 Quanto do valor de venda é lucro ({productMargins.length} produto{productMargins.length !== 1 ? 's' : ''})
               </p>
-              </p>
             </>
           ) : (
             <>
