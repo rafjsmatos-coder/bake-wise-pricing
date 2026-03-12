@@ -293,7 +293,7 @@ export function RevenueReport() {
           <p className={`text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
             {formatCurrency(profit)}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">Faturamento − Despesas</p>
+          <p className="text-xs text-muted-foreground mt-1">Quanto sobrou: faturamento menos despesas</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
