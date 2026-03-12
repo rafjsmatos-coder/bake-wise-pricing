@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { useOrders } from '@/hooks/useOrders';
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
 import { Input } from '@/components/ui/input';
-import { Loader2, AlertTriangle, DollarSign, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, AlertTriangle, DollarSign, Search, ExternalLink } from 'lucide-react';
 import { formatCurrency } from '@/lib/product-cost-calculator';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -86,7 +87,7 @@ export function ReceivablesList() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       {isOverdue && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
-                      <span className="font-semibold text-sm truncate">{order.client?.name || 'Cliente removido'}</span>
+                      <span className="font-semibold text-sm truncate">{order.client?.name || order.client_name || 'Cliente'}</span>
                     </div>
                     {order.delivery_date && (
                       <p className="text-xs text-muted-foreground mt-0.5">

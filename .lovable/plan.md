@@ -1,40 +1,25 @@
 
+# Plano Completo de Melhorias UX — Status
 
-# Plano Revisado: Soft Delete + Snapshots — Status de Implementação
+## ✅ P1 — Desbloqueio da primeira ação útil
+- [x] 1.1 Item avulso no pedido (OrderProductSelector)
+- [x] 1.2 Cliente digitado no pedido (OrderForm)
+- [x] 1.3 Categoria de receita opcional (RecipeForm)
 
-## ✅ Concluído
+## ✅ P2 — Redução de medo e insegurança
+- [x] 2.1 Reordenar tour guiado
+- [x] 2.2 Renomear label "Quantidade" → "Qtd. na embalagem"
+- [x] 2.3 Texto explicativo na Baixa de Estoque
+- [x] 2.4 Melhorar mensagem de confirmação de cadastro
 
-### Migração de Banco
-- `is_active BOOLEAN NOT NULL DEFAULT true` em: ingredients, recipes, products, packaging, decorations, clients
-- `product_name TEXT NOT NULL`, `cost_at_sale NUMERIC`, `profit_at_sale NUMERIC` em order_items
-- `client_name TEXT NOT NULL` em orders
-- FKs `order_items.product_id` e `orders.client_id` alteradas de CASCADE para SET NULL (nullable)
-- Backfill de product_name e client_name para dados existentes
-- Índices parciais para is_active
-- Backfill de `cost_per_unit` em decorations
+## ✅ P3 — Clareza, conforto e valor percebido
+- [x] 3.1 Campos colapsáveis no ClientForm
+- [x] 3.2 Subtextos descritivos nos status de pedido
+- [x] 3.3 Estado vazio explicativo na Lista de Compras
+- [x] 3.4 Texto tranquilizador no WhatsApp Templates
+- [x] 3.5 Dica de WhatsApp ausente nos detalhes do pedido
 
-### Hooks atualizados
-- Todos os hooks (useIngredients, useRecipes, useProducts, usePackaging, useDecorations, useClients) filtram `is_active = true`
-- Todos têm mutation `deactivate[Entity]` para soft delete
-- useDecorations agora calcula `cost_per_unit` no create/update/duplicate
-- useOrders salva `product_name`, `client_name`, `cost_at_sale`, `profit_at_sale`
-- Snapshot de custo congelado quando status != 'quote' (ao sair de orçamento)
-
-### Bugs corrigidos
-- **CRÍTICO**: `ri.ingredient` → `ri.ingredients` em ProductsList.tsx (custo de receitas era zero no produto)
-- **CRÍTICO**: Decorações com `cost_per_unit = NULL` — corrigido no hook + fallback no calculator
-- Fallback no `product-cost-calculator.ts` para calcular cost_per_unit on-the-fly
-
-### Componentes criados/integrados
-- `DeleteOrDeactivateDialog` — verifica dependências e oferece desativar vs excluir
-- `useDependencyCheck` — verifica dependências em tabelas de vínculo
-- Integrado em TODAS as listas: IngredientsList, ProductsList, RecipesList, ClientsList, PackagingList, DecorationsList
-- IngredientsList com aviso de histórico de preços no hard delete
-
-## 🔲 Pendente (próxima iteração)
-
-- Toggle "Mostrar inativos" nas listas
-- Visual diferenciado para itens inativos
-- Ajustar relatórios financeiros para usar cost_at_sale quando disponível
-- Remover botão "Excluir" de pedidos (usar apenas Cancelar)
-- Ajustar exibição de order_items/orders para usar snapshots quando FK for NULL
+## ✅ P4 — Refinamentos secundários
+- [x] 4.1 Subtítulo do Financeiro
+- [x] 4.2 Subtextos explicativos nos Relatórios
+- [x] 4.3 Link "Ver pedido" em Contas a Receber

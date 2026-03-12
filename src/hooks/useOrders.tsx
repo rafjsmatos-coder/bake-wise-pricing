@@ -38,7 +38,7 @@ export interface Order {
 }
 
 export interface OrderItemFormData {
-  product_id: string;
+  product_id: string; // empty string for custom items
   product_name: string;
   quantity: number;
   unit_price: number;
@@ -49,7 +49,7 @@ export interface OrderItemFormData {
 }
 
 export interface OrderFormData {
-  client_id: string;
+  client_id: string; // empty string for manual client name
   client_name: string;
   status: string;
   delivery_date?: string | null;
@@ -100,7 +100,7 @@ export function useOrders() {
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-          user_id: userId, client_id: data.client_id, client_name: data.client_name,
+          user_id: userId, client_id: data.client_id || null, client_name: data.client_name,
           status: data.status, payment_status: paymentStatus,
           delivery_date: data.delivery_date || null, total_amount: totalAmount,
           paid_amount: data.paid_amount, discount: data.discount || 0, notes: data.notes || null,
@@ -112,7 +112,7 @@ export function useOrders() {
       if (data.items.length > 0) {
         const { error: itemsError } = await supabase.from('order_items').insert(
           data.items.map((item) => ({
-            order_id: order.id, product_id: item.product_id,
+            order_id: order.id, product_id: item.product_id || null,
             product_name: item.product_name,
             quantity: item.quantity, unit_price: item.unit_price, total_price: item.total_price,
             cost_at_sale: confirmed ? (item.cost_at_sale ?? null) : null,
@@ -154,7 +154,7 @@ export function useOrders() {
       // Step 1: Update order + check existing transaction in parallel
       const [orderResult, txResult] = await Promise.all([
         supabase.from('orders').update({
-          client_id: data.client_id, client_name: data.client_name,
+          client_id: data.client_id || null, client_name: data.client_name,
           status: data.status, payment_status: paymentStatus,
           delivery_date: data.delivery_date || null, total_amount: totalAmount,
           paid_amount: data.paid_amount, discount: data.discount || 0, notes: data.notes || null,
@@ -173,7 +173,7 @@ export function useOrders() {
         parallelOps.push((async () => {
           const { error } = await supabase.from('order_items').insert(
             data.items.map((item) => ({
-              order_id: id, product_id: item.product_id,
+              order_id: id, product_id: item.product_id || null,
               product_name: item.product_name,
               quantity: item.quantity, unit_price: item.unit_price, total_price: item.total_price,
               // If freezing now, save snapshot. If already confirmed, preserve existing snapshot.

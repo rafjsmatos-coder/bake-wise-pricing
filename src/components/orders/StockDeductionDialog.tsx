@@ -250,6 +250,9 @@ export function StockDeductionDialog({ open, onOpenChange, order, onComplete }: 
       <DialogContent className="max-w-md max-h-[100dvh] overflow-y-auto overflow-x-hidden sm:max-h-[85vh]" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
         <DialogHeader>
           <DialogTitle>Baixa de Estoque</DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            Descontar do estoque os materiais usados neste pedido. Se você não controla estoque, pode pular tranquilamente.
+          </p>
         </DialogHeader>
 
         {loading ? (

@@ -293,13 +293,14 @@ export function RevenueReport() {
           <p className={`text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
             {formatCurrency(profit)}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">Faturamento − Despesas</p>
+          <p className="text-xs text-muted-foreground mt-1">Quanto sobrou: faturamento menos despesas</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <DollarSign className="h-4 w-4" />
             Lucro Bruto de Vendas
           </div>
+          <p className="text-xs text-muted-foreground -mt-0.5 mb-1">Quanto você ganhou acima do custo dos produtos</p>
           <p className={`text-xl font-bold ${grossProfitData.snapshotProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
             {formatCurrency(grossProfitData.snapshotProfit)}
           </p>
@@ -312,7 +313,7 @@ export function RevenueReport() {
             </div>
           )}
           {!grossProfitData.hasEstimated && grossProfitData.snapshotRevenue > 0 && (
-            <p className="text-xs text-muted-foreground mt-1">Baseado em custos congelados</p>
+            <p className="text-xs text-muted-foreground mt-1">Calculado com base no custo registrado na venda</p>
           )}
         </div>
       </div>
@@ -329,7 +330,7 @@ export function RevenueReport() {
           </div>
           <p className="text-xl font-bold text-foreground">{formatCurrency(avgTicket)}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            {confirmedOrders.length} pedido{confirmedOrders.length !== 1 ? 's' : ''} no período
+            Valor médio por pedido ({confirmedOrders.length} pedido{confirmedOrders.length !== 1 ? 's' : ''})
           </p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
@@ -337,6 +338,7 @@ export function RevenueReport() {
             <Target className="h-4 w-4" />
             Conversão Orçamento → Pedido
           </div>
+          <p className="text-xs text-muted-foreground -mt-0.5 mb-1">De cada orçamento, quantos viraram pedido</p>
           <p className="text-xl font-bold text-foreground">
             {conversionData.rate.toFixed(0)}%
           </p>
@@ -355,7 +357,7 @@ export function RevenueReport() {
                 {(productMargins.reduce((s, p) => s + p.margin, 0) / productMargins.length).toFixed(1)}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Média de {productMargins.length} produto{productMargins.length !== 1 ? 's' : ''} com custo
+                Quanto do valor de venda é lucro ({productMargins.length} produto{productMargins.length !== 1 ? 's' : ''})
               </p>
             </>
           ) : (

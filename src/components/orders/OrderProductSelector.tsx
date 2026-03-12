@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SearchableCombobox } from '@/components/ui/searchable-combobox';
-import { Plus, Trash2 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Trash2, Package, PenLine } from 'lucide-react';
 
 interface OrderProductSelectorProps {
   items: OrderItemFormData[];
@@ -23,9 +24,15 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
   const { recipes } = useRecipes();
   const { ingredients } = useIngredients();
 
+  const [mode, setMode] = useState<'catalog' | 'custom'>('catalog');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [unitPriceStr, setUnitPriceStr] = useState('');
+
+  // Custom item fields
+  const [customName, setCustomName] = useState('');
+  const [customPriceStr, setCustomPriceStr] = useState('');
+  const [customQty, setCustomQty] = useState(1);
 
   const getProductBreakdown = (product: Product) => {
     if (!product || !settings) return null;
@@ -128,6 +135,26 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
     setUnitPriceStr('');
   };
 
+  const handleAddCustom = () => {
+    const parsedPrice = parseFloat(customPriceStr.replace(',', '.')) || 0;
+    if (!customName.trim() || customQty <= 0 || parsedPrice <= 0) return;
+
+    const newItem: OrderItemFormData = {
+      product_id: '',
+      product_name: customName.trim(),
+      quantity: customQty,
+      unit_price: parsedPrice,
+      total_price: Math.round(customQty * parsedPrice * 100) / 100,
+      cost_at_sale: null,
+      profit_at_sale: null,
+    };
+
+    onChange([...items, newItem]);
+    setCustomName('');
+    setCustomPriceStr('');
+    setCustomQty(1);
+  };
+
   const handleRemove = (index: number) => {
     onChange(items.filter((_, i) => i !== index));
   };
@@ -137,8 +164,14 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
     name: p.name,
   }));
 
-  const getProductName = (productId: string) =>
-    products.find((p) => p.id === productId)?.name || 'Produto';
+  const getItemDisplayName = (item: OrderItemFormData) => {
+    if (item.product_id) {
+      return products.find((p) => p.id === item.product_id)?.name || item.product_name;
+    }
+    return item.product_name;
+  };
+
+  const hasProducts = productItems.length > 0;
 
   return (
     <div className="space-y-4">
@@ -146,44 +179,116 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
 
       {/* Add product */}
       <div className="space-y-3 p-3 border border-border rounded-lg">
-        <SearchableCombobox
-          items={productItems}
-          onSelect={handleProductSelect}
-          placeholder="Selecionar produto..."
-          searchPlaceholder="Buscar produto..."
-          emptyMessage="Nenhum produto encontrado"
-          title="Selecionar Produto"
-        />
+        {hasProducts ? (
+          <Tabs value={mode} onValueChange={(v) => setMode(v as 'catalog' | 'custom')} className="w-full">
+            <TabsList className="w-full grid grid-cols-2">
+              <TabsTrigger value="catalog" className="gap-1.5 text-xs">
+                <Package className="h-3.5 w-3.5" />
+                Produto cadastrado
+              </TabsTrigger>
+              <TabsTrigger value="custom" className="gap-1.5 text-xs">
+                <PenLine className="h-3.5 w-3.5" />
+                Item avulso
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Adicione itens digitando o nome e o preço. Quando tiver produtos cadastrados, poderá selecioná-los aqui.
+            </p>
+          </div>
+        )}
 
-        {selectedProductId && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {/* Catalog mode */}
+        {mode === 'catalog' && hasProducts && (
+          <>
+            <SearchableCombobox
+              items={productItems}
+              onSelect={handleProductSelect}
+              placeholder="Selecionar produto..."
+              searchPlaceholder="Buscar produto..."
+              emptyMessage="Nenhum produto encontrado"
+              title="Selecionar Produto"
+            />
+
+            {selectedProductId && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Qtd</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Number(e.target.value) || 1)}
+                    className="text-base"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Preço un. (R$)</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    value={unitPriceStr}
+                    onChange={(e) => setUnitPriceStr(e.target.value)}
+                    placeholder="0,00"
+                    className="text-base"
+                  />
+                </div>
+                <div className="flex items-end col-span-2 sm:col-span-1">
+                  <Button onClick={handleAdd} className="w-full gap-2" size="default">
+                    <Plus className="h-4 w-4" />
+                    Adicionar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Custom mode (or only mode when no products) */}
+        {(mode === 'custom' || !hasProducts) && (
+          <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs">Qtd</Label>
-              <Input
-                type="number"
-                min="1"
-                step="1"
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value) || 1)}
-                className="text-base"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Preço un. (R$)</Label>
+              <Label className="text-xs">Nome do item</Label>
               <Input
                 type="text"
-                inputMode="decimal"
-                value={unitPriceStr}
-                onChange={(e) => setUnitPriceStr(e.target.value)}
-                placeholder="0,00"
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder="Ex: Bolo de chocolate"
                 className="text-base"
               />
             </div>
-            <div className="flex items-end col-span-2 sm:col-span-1">
-              <Button onClick={handleAdd} className="w-full gap-2" size="default">
-                <Plus className="h-4 w-4" />
-                Adicionar
-              </Button>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Qtd</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={customQty}
+                  onChange={(e) => setCustomQty(Number(e.target.value) || 1)}
+                  className="text-base"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Preço un. (R$)</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={customPriceStr}
+                  onChange={(e) => setCustomPriceStr(e.target.value)}
+                  placeholder="0,00"
+                  className="text-base"
+                />
+              </div>
+              <div className="flex items-end col-span-2 sm:col-span-1">
+                <Button onClick={handleAddCustom} className="w-full gap-2" size="default" disabled={!customName.trim()}>
+                  <Plus className="h-4 w-4" />
+                  Adicionar
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -198,7 +303,7 @@ export function OrderProductSelector({ items, onChange }: OrderProductSelectorPr
               className="flex items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{getProductName(item.product_id)}</p>
+                <p className="text-sm font-medium truncate">{getItemDisplayName(item)}</p>
                 <p className="text-xs text-muted-foreground">
                   {item.quantity}x {formatCurrency(item.unit_price)} = {formatCurrency(item.total_price)}
                 </p>

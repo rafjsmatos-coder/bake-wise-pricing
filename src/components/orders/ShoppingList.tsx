@@ -272,12 +272,12 @@ export function ShoppingList() {
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
             <ShoppingCart className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">
+           <h3 className="text-lg font-semibold mb-2">
             {shoppingItems.length === 0 ? 'Nenhum pedido no período' : 'Estoque suficiente!'}
           </h3>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground max-w-sm">
             {shoppingItems.length === 0
-              ? 'Não há pedidos pendentes para o período selecionado.'
+              ? 'Para gerar sua lista de compras, crie pedidos com status Pendente ou Em Produção e vincule produtos cadastrados. O sistema calcula tudo pra você!'
               : 'Todos os materiais necessários estão em estoque.'}
           </p>
         </div>

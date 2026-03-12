@@ -267,8 +267,8 @@ export function PackagingForm({ open, onOpenChange, packaging }: PackagingFormPr
                   name="package_quantity"
                   render={({ field }) => (
                     <FormItem>
-                      <Label htmlFor="package_quantity">
-                        Quantidade <span className="text-destructive">*</span>
+                       <Label htmlFor="package_quantity">
+                        Qtd. na embalagem <span className="text-destructive">*</span>
                       </Label>
                       <FormControl>
                         <Input 

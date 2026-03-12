@@ -32,7 +32,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const recipeSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(200),
-  category_id: z.string().min(1, 'Categoria é obrigatória'),
+  category_id: z.string().optional().nullable(),
   yield_quantity: z.number().positive('Rendimento deve ser maior que zero'),
   yield_unit: z.string().min(1, 'Unidade de rendimento é obrigatória'),
   prep_time_minutes: z.number().int().positive('Tempo de preparo deve ser maior que zero'),
@@ -205,7 +205,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
 
     const submitData: CreateRecipeData = {
       name: data.name.trim(),
-      category_id: data.category_id,
+      category_id: data.category_id || null,
       yield_quantity: data.yield_quantity,
       yield_unit: data.yield_unit,
       prep_time_minutes: data.prep_time_minutes,
@@ -259,14 +259,14 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
           {/* Categoria */}
           <div className="space-y-2">
             <Label>
-              Categoria <span className="text-destructive">*</span>
+              Categoria
             </Label>
             <Select
-              value={watch('category_id')}
-              onValueChange={(value) => setValue('category_id', value)}
+              value={watch('category_id') || ''}
+              onValueChange={(value) => setValue('category_id', value || null)}
             >
               <SelectTrigger className="min-h-[44px]">
-                <SelectValue placeholder="Selecione uma categoria..." />
+                <SelectValue placeholder="Selecione uma categoria (opcional)" />
               </SelectTrigger>
               <SelectContent className="max-h-[40vh]">
                 {categories.map((cat) => (
@@ -282,8 +282,8 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                 ))}
               </SelectContent>
             </Select>
-            {errors.category_id && (
-              <p className="text-sm text-destructive">{errors.category_id.message}</p>
+            {categories.length === 0 && (
+              <p className="text-xs text-muted-foreground">Você pode criar categorias depois em Categorias de Receitas.</p>
             )}
           </div>
 
