@@ -38,7 +38,7 @@ export interface Order {
 }
 
 export interface OrderItemFormData {
-  product_id: string;
+  product_id: string; // empty string for custom items
   product_name: string;
   quantity: number;
   unit_price: number;
