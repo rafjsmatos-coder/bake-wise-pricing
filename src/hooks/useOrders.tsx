@@ -112,7 +112,7 @@ export function useOrders() {
       if (data.items.length > 0) {
         const { error: itemsError } = await supabase.from('order_items').insert(
           data.items.map((item) => ({
-            order_id: order.id, product_id: item.product_id,
+            order_id: order.id, product_id: item.product_id || null,
             product_name: item.product_name,
             quantity: item.quantity, unit_price: item.unit_price, total_price: item.total_price,
             cost_at_sale: confirmed ? (item.cost_at_sale ?? null) : null,
