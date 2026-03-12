@@ -72,8 +72,8 @@ export function AuthForm({ onBack, defaultTab = 'signin' }: AuthFormProps) {
     if (error) {
       toast.error('Erro ao processar solicitação', { description: error.message });
     } else {
-      toast.success('Solicitação recebida! 📧', {
-        description: 'Se esse e-mail estiver apto, você receberá as instruções de confirmação. Verifique sua caixa de entrada e a pasta de spam. Se já tiver conta, faça login ou recupere sua senha.',
+      toast.success('Cadastro realizado! 📧', {
+        description: 'Enviamos um link de confirmação para o seu e-mail. Confira sua caixa de entrada (e a pasta de spam) e clique no link para ativar sua conta.',
         duration: 8000,
       });
     }

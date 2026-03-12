@@ -259,14 +259,14 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
           {/* Categoria */}
           <div className="space-y-2">
             <Label>
-              Categoria <span className="text-destructive">*</span>
+              Categoria
             </Label>
             <Select
-              value={watch('category_id')}
-              onValueChange={(value) => setValue('category_id', value)}
+              value={watch('category_id') || ''}
+              onValueChange={(value) => setValue('category_id', value || null)}
             >
               <SelectTrigger className="min-h-[44px]">
-                <SelectValue placeholder="Selecione uma categoria..." />
+                <SelectValue placeholder="Selecione uma categoria (opcional)" />
               </SelectTrigger>
               <SelectContent className="max-h-[40vh]">
                 {categories.map((cat) => (
@@ -282,8 +282,8 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
                 ))}
               </SelectContent>
             </Select>
-            {errors.category_id && (
-              <p className="text-sm text-destructive">{errors.category_id.message}</p>
+            {categories.length === 0 && (
+              <p className="text-xs text-muted-foreground">Você pode criar categorias depois em Categorias de Receitas.</p>
             )}
           </div>
 

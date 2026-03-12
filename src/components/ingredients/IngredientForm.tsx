@@ -252,14 +252,14 @@ export function IngredientForm({ open, onOpenChange, ingredient }: IngredientFor
 
             <div className="space-y-2">
               <Label htmlFor="package_quantity">
-                Quantidade <span className="text-destructive">*</span>
+                Qtd. na embalagem <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="package_quantity"
                 type="number"
                 step="0.001"
                 min="0"
-                placeholder="0"
+                placeholder="Ex: 5 para 5kg"
                 className="min-h-[44px]"
                 {...register('package_quantity', { valueAsNumber: true })}
               />

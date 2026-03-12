@@ -102,10 +102,10 @@ export function getMobileSteps(): StepType[] {
           <h3 className="font-bold text-lg">Pronto para começar! 🚀</h3>
           <p>Agora você já sabe o básico! Siga este fluxo para começar:</p>
           <ol className="text-sm text-muted-foreground list-decimal list-inside mt-1 space-y-0.5">
-            <li>Configure custos operacionais</li>
-            <li>Cadastre ingredientes</li>
-            <li>Crie receitas</li>
+            <li>Cadastre seus ingredientes com preços</li>
+            <li>Crie receitas usando os ingredientes</li>
             <li>Monte seus produtos</li>
+            <li>Ajuste as configurações quando quiser</li>
           </ol>
           <p className="text-sm text-muted-foreground mt-2">Você pode acessar este tour novamente clicando em "Tour Guiado" no Dashboard.</p>
         </div>
@@ -251,13 +251,14 @@ export function getDesktopSteps(): StepType[] {
       content: (
         <div className="space-y-2">
           <h3 className="font-bold text-lg">Configurações ⚙️</h3>
-          <p>Defina seus custos operacionais para cálculos mais precisos:</p>
+          <p>Quando quiser refinar seus cálculos, configure aqui:</p>
           <ul className="text-sm text-muted-foreground list-disc list-inside mt-2 space-y-1">
             <li>Custo da mão de obra por hora</li>
             <li>Custo de gás e energia</li>
             <li>Margem de segurança padrão</li>
             <li>Mensagens de WhatsApp personalizadas</li>
           </ul>
+          <p className="text-xs text-muted-foreground mt-2 italic">Não precisa configurar agora — o sistema já funciona com valores padrão.</p>
         </div>
       ),
     },
@@ -268,11 +269,11 @@ export function getDesktopSteps(): StepType[] {
           <h3 className="font-bold text-lg">Pronto para começar! 🚀</h3>
           <p>Agora você já sabe o básico! Siga este fluxo para começar:</p>
           <ol className="text-sm text-muted-foreground list-decimal list-inside mt-1 space-y-0.5">
-            <li>Configure custos operacionais em Configurações</li>
             <li>Cadastre seus ingredientes com preços</li>
             <li>Crie receitas usando os ingredientes</li>
             <li>Monte produtos com receitas + decorações + embalagens</li>
             <li>Registre pedidos e acompanhe entregas</li>
+            <li>Ajuste as configurações quando quiser</li>
           </ol>
           <p className="text-sm text-muted-foreground mt-2">Você pode acessar este tour novamente clicando em "Tour Guiado" no Dashboard.</p>
         </div>
