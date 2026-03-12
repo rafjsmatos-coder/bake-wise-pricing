@@ -49,7 +49,7 @@ export interface OrderItemFormData {
 }
 
 export interface OrderFormData {
-  client_id: string;
+  client_id: string; // empty string for manual client name
   client_name: string;
   status: string;
   delivery_date?: string | null;
