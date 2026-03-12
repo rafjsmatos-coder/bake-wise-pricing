@@ -173,7 +173,7 @@ export function useOrders() {
         parallelOps.push((async () => {
           const { error } = await supabase.from('order_items').insert(
             data.items.map((item) => ({
-              order_id: id, product_id: item.product_id,
+              order_id: id, product_id: item.product_id || null,
               product_name: item.product_name,
               quantity: item.quantity, unit_price: item.unit_price, total_price: item.total_price,
               // If freezing now, save snapshot. If already confirmed, preserve existing snapshot.

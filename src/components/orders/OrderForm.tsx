@@ -40,6 +40,7 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
   const { clients } = useClients();
 
   const [clientId, setClientId] = useState('');
+  const [clientNameManual, setClientNameManual] = useState('');
   const [status, setStatus] = useState('pending');
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>();
   const [deliveryTime, setDeliveryTime] = useState('');
@@ -48,9 +49,12 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<OrderItemFormData[]>([]);
 
+  const hasClients = clients.length > 0;
+
   useEffect(() => {
     if (order) {
-      setClientId(order.client_id);
+      setClientId(order.client_id || '');
+      setClientNameManual(order.client_id ? '' : (order.client_name || ''));
       setStatus(order.status);
       if (order.delivery_date) {
         const d = new Date(order.delivery_date);
@@ -77,6 +81,7 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
       );
     } else {
       setClientId('');
+      setClientNameManual('');
       setStatus('pending');
       setDeliveryDate(undefined);
       setDeliveryTime('');
@@ -91,9 +96,13 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
   const discount = parseFloat(discountStr.replace(',', '.')) || 0;
   const effectiveTotal = Math.max(0, totalItems - discount);
 
+  const selectedClientName = clients.find((c) => c.id === clientId)?.name;
+  const resolvedClientName = clientId ? (selectedClientName || 'Cliente') : clientNameManual.trim();
+  const hasValidClient = !!clientId || clientNameManual.trim().length > 0;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientId) return;
+    if (!hasValidClient) return;
 
     let deliveryDateISO: string | null = null;
     if (deliveryDate) {
@@ -106,8 +115,8 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
     }
 
     onSubmit({
-      client_id: clientId,
-      client_name: selectedClientName || 'Cliente',
+      client_id: clientId || '',
+      client_name: resolvedClientName,
       status,
       delivery_date: deliveryDateISO,
       paid_amount: parseFloat(paidAmountStr.replace(',', '.')) || 0,
@@ -117,8 +126,19 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
     });
   };
 
+  const handleClientSelect = (id: string) => {
+    setClientId(id);
+    setClientNameManual('');
+  };
+
+  const handleClientNameChange = (value: string) => {
+    setClientNameManual(value);
+    if (value.trim()) {
+      setClientId('');
+    }
+  };
+
   const clientItems = clients.map((c) => ({ id: c.id, name: c.name }));
-  const selectedClientName = clients.find((c) => c.id === clientId)?.name;
   const isEditing = !!order;
 
   return (
@@ -132,15 +152,45 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
           {/* Cliente */}
           <div className="space-y-2">
             <Label>Cliente * {selectedClientName && <span className="text-muted-foreground font-normal">({selectedClientName})</span>}</Label>
-            <SearchableCombobox
-              items={clientItems}
-              selectedIds={clientId ? [clientId] : []}
-              onSelect={(id) => setClientId(id)}
-              placeholder="Selecionar cliente..."
-              searchPlaceholder="Buscar cliente..."
-              emptyMessage="Nenhum cliente encontrado"
-              title="Selecionar Cliente"
-            />
+            
+            {hasClients ? (
+              <div className="space-y-2">
+                <SearchableCombobox
+                  items={clientItems}
+                  selectedIds={clientId ? [clientId] : []}
+                  onSelect={handleClientSelect}
+                  placeholder="Selecionar cliente..."
+                  searchPlaceholder="Buscar cliente..."
+                  emptyMessage="Nenhum cliente encontrado"
+                  title="Selecionar Cliente"
+                />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 border-t border-border" />
+                  <span className="text-xs text-muted-foreground">ou digite o nome</span>
+                  <div className="flex-1 border-t border-border" />
+                </div>
+                <Input
+                  type="text"
+                  value={clientNameManual}
+                  onChange={(e) => handleClientNameChange(e.target.value)}
+                  placeholder="Nome do cliente"
+                  className="text-base"
+                />
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <Input
+                  type="text"
+                  value={clientNameManual}
+                  onChange={(e) => setClientNameManual(e.target.value)}
+                  placeholder="Nome do cliente"
+                  className="text-base"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Você pode cadastrar clientes depois em Clientes.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Produtos */}
@@ -226,7 +276,7 @@ export function OrderForm({ open, onOpenChange, order, onSubmit, isLoading }: Or
           {/* Actions */}
           <div className="flex gap-3 justify-end pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={isLoading || !clientId || items.length === 0}>
+            <Button type="submit" disabled={isLoading || !hasValidClient || items.length === 0}>
               {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {isEditing ? 'Salvar' : 'Criar Pedido'}
             </Button>
