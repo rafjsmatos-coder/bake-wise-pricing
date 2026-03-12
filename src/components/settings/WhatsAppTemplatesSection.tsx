@@ -143,6 +143,9 @@ export function WhatsAppTemplatesSection() {
         <p className="text-muted-foreground">
           Personalize os textos enviados aos seus clientes pelo WhatsApp.
         </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Edite tranquilamente! Se algo der errado, use o botão "Padrão" para restaurar o texto original.
+        </p>
       </div>
 
       <div className="max-w-2xl space-y-6">

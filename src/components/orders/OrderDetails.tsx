@@ -161,7 +161,7 @@ export function OrderDetails({ open, onOpenChange, order, onEdit, onStatusChange
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{order.client?.name || 'Cliente removido'}</span>
+              <span className="font-medium">{order.client?.name || order.client_name || 'Cliente'}</span>
             </div>
             {order.delivery_date && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">

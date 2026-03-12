@@ -10,7 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Loader2 } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatPhone, formatCEP } from '@/lib/format-utils';
 
 interface ClientFormProps {
@@ -36,6 +41,9 @@ export function ClientForm({ open, onOpenChange, client, onSubmit, isLoading }: 
     notes: '',
   });
 
+  const [showAddress, setShowAddress] = useState(false);
+  const [showExtra, setShowExtra] = useState(false);
+
   useEffect(() => {
     if (client) {
       setFormData({
@@ -51,6 +59,9 @@ export function ClientForm({ open, onOpenChange, client, onSubmit, isLoading }: 
         whatsapp: client.whatsapp || '',
         notes: client.notes || '',
       });
+      // Auto-expand sections if they have data
+      setShowAddress(!!(client.address || client.neighborhood || client.city || client.state || client.zip_code));
+      setShowExtra(!!(client.email || client.instagram));
     } else {
       setFormData({
         name: '',
@@ -65,6 +76,8 @@ export function ClientForm({ open, onOpenChange, client, onSubmit, isLoading }: 
         whatsapp: '',
         notes: '',
       });
+      setShowAddress(false);
+      setShowExtra(false);
     }
   }, [client, open]);
 
@@ -97,7 +110,7 @@ export function ClientForm({ open, onOpenChange, client, onSubmit, isLoading }: 
             />
           </div>
 
-          {/* Contato */}
+          {/* Contato principal */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
@@ -123,89 +136,6 @@ export function ClientForm({ open, onOpenChange, client, onSubmit, isLoading }: 
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email || ''}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="email@exemplo.com"
-              className="text-base"
-            />
-          </div>
-
-          {/* Redes sociais */}
-          <div className="space-y-2">
-            <Label htmlFor="instagram">Instagram</Label>
-            <Input
-              id="instagram"
-              value={formData.instagram || ''}
-              onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
-              placeholder="@perfil"
-              className="text-base"
-            />
-          </div>
-
-          {/* Endereço */}
-          <div className="space-y-2">
-            <Label htmlFor="address">Endereço</Label>
-            <Input
-              id="address"
-              value={formData.address || ''}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="Rua, número"
-              className="text-base"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="neighborhood">Bairro</Label>
-              <Input
-                id="neighborhood"
-                value={formData.neighborhood || ''}
-                onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
-                placeholder="Bairro"
-                className="text-base"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="zip_code">CEP</Label>
-              <Input
-                id="zip_code"
-                value={formData.zip_code || ''}
-                onChange={(e) => setFormData({ ...formData, zip_code: formatCEP(e.target.value) })}
-                placeholder="00000-000"
-                className="text-base"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="city">Cidade</Label>
-              <Input
-                id="city"
-                value={formData.city || ''}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                placeholder="Cidade"
-                className="text-base"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="state">Estado</Label>
-              <Input
-                id="state"
-                value={formData.state || ''}
-                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                placeholder="UF"
-                maxLength={2}
-                className="text-base"
-              />
-            </div>
-          </div>
-
           {/* Observações */}
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
@@ -217,6 +147,108 @@ export function ClientForm({ open, onOpenChange, client, onSubmit, isLoading }: 
               rows={3}
             />
           </div>
+
+          {/* Email e Instagram - colapsável */}
+          <Collapsible open={showExtra} onOpenChange={setShowExtra}>
+            <CollapsibleTrigger asChild>
+              <Button type="button" variant="ghost" size="sm" className="w-full justify-between text-muted-foreground hover:text-foreground">
+                <span className="text-sm">E-mail e Instagram (opcional)</span>
+                {showExtra ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email || ''}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="email@exemplo.com"
+                  className="text-base"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="instagram">Instagram</Label>
+                <Input
+                  id="instagram"
+                  value={formData.instagram || ''}
+                  onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                  placeholder="@perfil"
+                  className="text-base"
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Endereço - colapsável */}
+          <Collapsible open={showAddress} onOpenChange={setShowAddress}>
+            <CollapsibleTrigger asChild>
+              <Button type="button" variant="ghost" size="sm" className="w-full justify-between text-muted-foreground hover:text-foreground">
+                <span className="text-sm">Endereço (opcional)</span>
+                {showAddress ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="address">Endereço</Label>
+                <Input
+                  id="address"
+                  value={formData.address || ''}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Rua, número"
+                  className="text-base"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="neighborhood">Bairro</Label>
+                  <Input
+                    id="neighborhood"
+                    value={formData.neighborhood || ''}
+                    onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
+                    placeholder="Bairro"
+                    className="text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="zip_code">CEP</Label>
+                  <Input
+                    id="zip_code"
+                    value={formData.zip_code || ''}
+                    onChange={(e) => setFormData({ ...formData, zip_code: formatCEP(e.target.value) })}
+                    placeholder="00000-000"
+                    className="text-base"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city">Cidade</Label>
+                  <Input
+                    id="city"
+                    value={formData.city || ''}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="Cidade"
+                    className="text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state">Estado</Label>
+                  <Input
+                    id="state"
+                    value={formData.state || ''}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    placeholder="UF"
+                    maxLength={2}
+                    className="text-base"
+                  />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Actions */}
           <div className="flex gap-3 justify-end pt-2">
