@@ -138,6 +138,11 @@ export function OrderDetails({ open, onOpenChange, order, onEdit, onStatusChange
                 Lembrete
               </Button>
             )}
+            {!hasWhatsapp && order.client_id && (
+              <p className="text-xs text-muted-foreground italic py-1">
+                Cadastre o WhatsApp do cliente para enviar mensagens.
+              </p>
+            )}
             {onDuplicate && (
               <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); onDuplicate(order); }}>
                 <Copy className="h-4 w-4 mr-1" />
