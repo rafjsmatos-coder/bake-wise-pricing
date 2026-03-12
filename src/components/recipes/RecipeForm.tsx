@@ -205,7 +205,7 @@ export function RecipeForm({ open, onOpenChange, recipe }: RecipeFormProps) {
 
     const submitData: CreateRecipeData = {
       name: data.name.trim(),
-      category_id: data.category_id,
+      category_id: data.category_id || null,
       yield_quantity: data.yield_quantity,
       yield_unit: data.yield_unit,
       prep_time_minutes: data.prep_time_minutes,
