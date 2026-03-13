@@ -240,7 +240,7 @@ export function UserSettings() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-semibold">Equipamentos Elétricos</h2>
+                  <h2 className="font-semibold">Gasto com Equipamentos</h2>
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <button type="button" className="text-muted-foreground hover:text-foreground">
@@ -249,14 +249,14 @@ export function UserSettings() {
                     </HoverCardTrigger>
                     <HoverCardContent className="w-80">
                       <p className="text-sm">
-                        Custo de energia de equipamentos como batedeira, mixer e processador.
-                        Aplicado sobre o tempo de preparo de cada receita (não inclui forno).
+                        Quanto custa usar sua batedeira, mixer, processador e outros equipamentos por hora.
+                        O sistema calcula automaticamente com base no tempo de preparo de cada receita (o forno é calculado separadamente).
                       </p>
                     </HoverCardContent>
                   </HoverCard>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Batedeira, mixer, processador e outros equipamentos.
+                  Batedeira, mixer, processador e outros que usam energia.
                 </p>
               </div>
             </div>
