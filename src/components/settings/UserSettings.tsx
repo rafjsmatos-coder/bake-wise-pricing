@@ -146,9 +146,9 @@ export function UserSettings() {
     <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Configurações de Custos</h1>
+      <h1 className="text-2xl font-bold text-foreground">Meus Custos</h1>
         <p className="text-muted-foreground">
-          Configure os valores que serão aplicados automaticamente no cálculo de suas receitas e produtos.
+          Preencha com os valores do seu dia a dia. O sistema usa essas informações para calcular o preço justo dos seus produtos.
         </p>
       </div>
 
