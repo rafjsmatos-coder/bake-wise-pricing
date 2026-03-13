@@ -340,7 +340,7 @@ export function UserSettings() {
           {includeLaborCost && (
             <div className="space-y-3 animate-fade-in">
               <div className="space-y-2">
-                <Label htmlFor="labor_cost_per_hour">Valor por hora (R$)</Label>
+                <Label htmlFor="labor_cost_per_hour">Quanto quer receber por hora? (R$)</Label>
                 <Input
                   id="labor_cost_per_hour"
                   type="number"
