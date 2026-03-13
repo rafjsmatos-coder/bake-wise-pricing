@@ -310,7 +310,7 @@ export function UserSettings() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-semibold">Valor da Hora de Trabalho</h2>
+                  <h2 className="font-semibold">Seu Tempo Vale Dinheiro</h2>
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <button type="button" className="text-muted-foreground hover:text-foreground">
@@ -319,14 +319,15 @@ export function UserSettings() {
                     </HoverCardTrigger>
                     <HoverCardContent className="w-80">
                       <p className="text-sm">
-                        Fundamental para quem trabalha sob encomenda. Este valor remunera 
-                        seu tempo de preparo e decoração em cada receita e produto.
+                        Cada hora que você passa preparando e decorando tem um valor. 
+                        Se você não cobrar pelo seu tempo, acaba trabalhando de graça! 
+                        O sistema inclui esse valor no preço dos seus produtos automaticamente.
                       </p>
                     </HoverCardContent>
                   </HoverCard>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Quanto você quer ganhar por hora trabalhada.
+                  Quanto você quer receber por cada hora trabalhada.
                 </p>
               </div>
             </div>
