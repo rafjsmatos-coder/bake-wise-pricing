@@ -34,7 +34,7 @@ export function ProductCostBreakdown({ breakdown }: ProductCostBreakdownProps) {
       show: breakdown.packagingCost > 0 
     },
     { 
-      label: 'Mão de Obra (Decoração)', 
+      label: 'Seu Tempo (Decoração)', 
       value: breakdown.laborCost, 
       icon: Clock,
       show: breakdown.laborCost > 0 
