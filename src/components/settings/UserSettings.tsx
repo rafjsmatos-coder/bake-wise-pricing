@@ -269,7 +269,7 @@ export function UserSettings() {
           {includeEnergyCost && (
             <div className="space-y-3 animate-fade-in">
               <div className="space-y-2">
-                <Label htmlFor="energy_cost_per_hour">Valor por hora (R$)</Label>
+                <Label htmlFor="energy_cost_per_hour">Quanto gasta por hora? (R$)</Label>
                 <Input
                   id="energy_cost_per_hour"
                   type="number"
