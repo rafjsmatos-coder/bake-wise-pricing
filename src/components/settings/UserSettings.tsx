@@ -185,7 +185,7 @@ export function UserSettings() {
 
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="default_safety_margin">Percentual padrão (%)</Label>
+              <Label htmlFor="default_safety_margin">Quanto reservar? (%)</Label>
               <Input
                 id="default_safety_margin"
                 type="number"
