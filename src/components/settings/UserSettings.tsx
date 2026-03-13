@@ -146,9 +146,9 @@ export function UserSettings() {
     <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Configurações de Custos</h1>
+      <h1 className="text-2xl font-bold text-foreground">Meus Custos</h1>
         <p className="text-muted-foreground">
-          Configure os valores que serão aplicados automaticamente no cálculo de suas receitas e produtos.
+          Preencha com os valores do seu dia a dia. O sistema usa essas informações para calcular o preço justo dos seus produtos.
         </p>
       </div>
 
@@ -161,7 +161,7 @@ export function UserSettings() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="font-semibold">Perdas e Desperdícios</h2>
+                <h2 className="font-semibold">Reserva para Imprevistos</h2>
                 <HoverCard>
                   <HoverCardTrigger asChild>
                     <button type="button" className="text-muted-foreground hover:text-foreground">
@@ -170,21 +170,22 @@ export function UserSettings() {
                   </HoverCardTrigger>
                   <HoverCardContent className="w-80">
                     <p className="text-sm">
-                      Reduz o risco de prejuízo causado por erros de preparo, ingredientes que sobram, 
-                      testes de receita e ajustes durante a produção.
+                      Uma pequena porcentagem a mais sobre os ingredientes para você não sair no prejuízo 
+                      quando algo dá errado: uma receita que não deu certo, um ingrediente que estragou, 
+                      sobras que não podem ser reaproveitadas...
                     </p>
                   </HoverCardContent>
                 </HoverCard>
               </div>
               <p className="text-sm text-muted-foreground">
-                Percentual sobre os ingredientes para cobrir perdas durante o preparo, ajustes e sobras.
+                Um valor a mais sobre os ingredientes para cobrir erros, sobras e ajustes do dia a dia.
               </p>
             </div>
           </div>
 
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="default_safety_margin">Percentual padrão (%)</Label>
+              <Label htmlFor="default_safety_margin">Quanto reservar? (%)</Label>
               <Input
                 id="default_safety_margin"
                 type="number"
@@ -239,7 +240,7 @@ export function UserSettings() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-semibold">Equipamentos Elétricos</h2>
+                  <h2 className="font-semibold">Gasto com Equipamentos</h2>
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <button type="button" className="text-muted-foreground hover:text-foreground">
@@ -248,14 +249,14 @@ export function UserSettings() {
                     </HoverCardTrigger>
                     <HoverCardContent className="w-80">
                       <p className="text-sm">
-                        Custo de energia de equipamentos como batedeira, mixer e processador.
-                        Aplicado sobre o tempo de preparo de cada receita (não inclui forno).
+                        Quanto custa usar sua batedeira, mixer, processador e outros equipamentos por hora.
+                        O sistema calcula automaticamente com base no tempo de preparo de cada receita (o forno é calculado separadamente).
                       </p>
                     </HoverCardContent>
                   </HoverCard>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Batedeira, mixer, processador e outros equipamentos.
+                  Batedeira, mixer, processador e outros que usam energia.
                 </p>
               </div>
             </div>
@@ -268,7 +269,7 @@ export function UserSettings() {
           {includeEnergyCost && (
             <div className="space-y-3 animate-fade-in">
               <div className="space-y-2">
-                <Label htmlFor="energy_cost_per_hour">Valor por hora (R$)</Label>
+                <Label htmlFor="energy_cost_per_hour">Quanto gasta por hora? (R$)</Label>
                 <Input
                   id="energy_cost_per_hour"
                   type="number"
@@ -309,7 +310,7 @@ export function UserSettings() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-semibold">Valor da Hora de Trabalho</h2>
+                  <h2 className="font-semibold">Seu Tempo Vale Dinheiro</h2>
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <button type="button" className="text-muted-foreground hover:text-foreground">
@@ -318,14 +319,15 @@ export function UserSettings() {
                     </HoverCardTrigger>
                     <HoverCardContent className="w-80">
                       <p className="text-sm">
-                        Fundamental para quem trabalha sob encomenda. Este valor remunera 
-                        seu tempo de preparo e decoração em cada receita e produto.
+                        Cada hora que você passa preparando e decorando tem um valor. 
+                        Se você não cobrar pelo seu tempo, acaba trabalhando de graça! 
+                        O sistema inclui esse valor no preço dos seus produtos automaticamente.
                       </p>
                     </HoverCardContent>
                   </HoverCard>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Quanto você quer ganhar por hora trabalhada.
+                  Quanto você quer receber por cada hora trabalhada.
                 </p>
               </div>
             </div>
@@ -338,7 +340,7 @@ export function UserSettings() {
           {includeLaborCost && (
             <div className="space-y-3 animate-fade-in">
               <div className="space-y-2">
-                <Label htmlFor="labor_cost_per_hour">Valor por hora (R$)</Label>
+                <Label htmlFor="labor_cost_per_hour">Quanto quer receber por hora? (R$)</Label>
                 <Input
                   id="labor_cost_per_hour"
                   type="number"
@@ -379,7 +381,7 @@ export function UserSettings() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="font-semibold">Custo Operacional Indireto</h2>
+                <h2 className="font-semibold">Outros Gastos do Negócio</h2>
                 <HoverCard>
                   <HoverCardTrigger asChild>
                     <button type="button" className="text-muted-foreground hover:text-foreground">
@@ -388,22 +390,22 @@ export function UserSettings() {
                   </HoverCardTrigger>
                   <HoverCardContent className="w-80">
                     <p className="text-sm">
-                      Aplicado sobre o subtotal do produto para cobrir custos fixos e variáveis 
-                      que não são cadastrados individualmente, como: conta de luz, água, aluguel, 
-                      internet, luvas, toucas, produtos de limpeza e utensílios descartáveis.
+                      São aqueles gastos que você tem todo mês, mas que não entram direto na receita: 
+                      conta de luz, água, aluguel, internet, luvas, toucas, produtos de limpeza, 
+                      papel toalha, gás de cozinha e outros itens do dia a dia.
                     </p>
                   </HoverCardContent>
                 </HoverCard>
               </div>
               <p className="text-sm text-muted-foreground">
-                Percentual para cobrir luz, água, aluguel, EPIs, limpeza e consumíveis.
+                Água, luz, aluguel, internet, limpeza, luvas e outros gastos fixos do dia a dia.
               </p>
             </div>
           </div>
 
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="indirect_operational_cost_percent">Percentual (%)</Label>
+              <Label htmlFor="indirect_operational_cost_percent">Quanto incluir no preço? (%)</Label>
               <Input
                 id="indirect_operational_cost_percent"
                 type="number"
@@ -422,9 +424,9 @@ export function UserSettings() {
 
             <MarketReference
               items={[
-                { label: 'Produção caseira', range: '5% a 8%' },
-                { label: 'Confeitaria estruturada', range: '8% a 12%' },
-                { label: 'Alta complexidade', range: '12% a 18%' },
+                { label: 'Produção em casa', range: '5% a 8%' },
+                { label: 'Ateliê ou cozinha própria', range: '8% a 12%' },
+                { label: 'Muitos equipamentos e espaço alugado', range: '12% a 18%' },
               ]}
             />
           </div>

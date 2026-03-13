@@ -49,7 +49,7 @@ export function CostConfigCard({ onNavigate }: CostConfigCardProps) {
       configured: getOvenConfigured()
     },
     { 
-      label: 'Custo operacional', 
+      label: 'Outros gastos', 
       icon: TrendingUp,
       configured: settings.indirect_operational_cost_percent > 0 
     },

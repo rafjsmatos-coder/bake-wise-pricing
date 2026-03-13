@@ -229,10 +229,13 @@ export function ProductForm({ open, onOpenChange, product, recipeCosts = {} }: P
                 name="profit_margin_percent"
                 render={({ field }) => (
                   <FormItem>
-                    <Label htmlFor="profit_margin_percent">Margem de Lucro (%)</Label>
+                    <Label htmlFor="profit_margin_percent">Quanto quer lucrar? (%)</Label>
                     <FormControl>
                       <Input type="number" step="1" placeholder="30" className="min-h-[44px]" {...field} value={field.value ?? ''} />
                     </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      É o seu ganho real. Ex: com 30%, um produto que custa R$ 50 será sugerido a R$ 65.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -275,7 +278,7 @@ export function ProductForm({ open, onOpenChange, product, recipeCosts = {} }: P
                 name="decoration_time_minutes"
                 render={({ field }) => (
                   <FormItem>
-                    <Label htmlFor="decoration_time_minutes">Tempo de Decoração (min)</Label>
+                    <Label htmlFor="decoration_time_minutes">Tempo de montagem e decoração (min)</Label>
                     <FormControl>
                       <Input type="number" step="1" placeholder="Ex: 30" className="min-h-[44px]" {...field} value={field.value ?? ''} />
                     </FormControl>
@@ -289,7 +292,7 @@ export function ProductForm({ open, onOpenChange, product, recipeCosts = {} }: P
                 name="additional_costs"
                 render={({ field }) => (
                   <FormItem>
-                    <Label htmlFor="additional_costs">Custos Adicionais (R$)</Label>
+                    <Label htmlFor="additional_costs">Outros Custos (R$)</Label>
                     <FormControl>
                       <Input type="number" step="0.01" placeholder="Ex: 5,00" className="min-h-[44px]" {...field} value={field.value ?? ''} />
                     </FormControl>
