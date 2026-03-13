@@ -103,7 +103,7 @@ export function ProductCostBreakdown({ breakdown }: ProductCostBreakdownProps) {
 
         {/* Total production cost */}
         <div className="flex items-center justify-between">
-          <span className="font-medium">Custo Total de Produção</span>
+          <span className="font-medium">Quanto custa produzir</span>
           <span className="font-bold">{formatCurrency(breakdown.totalProductionCost)}</span>
         </div>
 
