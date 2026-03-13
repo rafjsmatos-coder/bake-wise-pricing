@@ -161,7 +161,7 @@ export function UserSettings() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="font-semibold">Perdas e Desperdícios</h2>
+                <h2 className="font-semibold">Reserva para Imprevistos</h2>
                 <HoverCard>
                   <HoverCardTrigger asChild>
                     <button type="button" className="text-muted-foreground hover:text-foreground">
@@ -170,14 +170,15 @@ export function UserSettings() {
                   </HoverCardTrigger>
                   <HoverCardContent className="w-80">
                     <p className="text-sm">
-                      Reduz o risco de prejuízo causado por erros de preparo, ingredientes que sobram, 
-                      testes de receita e ajustes durante a produção.
+                      Uma pequena porcentagem a mais sobre os ingredientes para você não sair no prejuízo 
+                      quando algo dá errado: uma receita que não deu certo, um ingrediente que estragou, 
+                      sobras que não podem ser reaproveitadas...
                     </p>
                   </HoverCardContent>
                 </HoverCard>
               </div>
               <p className="text-sm text-muted-foreground">
-                Percentual sobre os ingredientes para cobrir perdas durante o preparo, ajustes e sobras.
+                Um valor a mais sobre os ingredientes para cobrir erros, sobras e ajustes do dia a dia.
               </p>
             </div>
           </div>
