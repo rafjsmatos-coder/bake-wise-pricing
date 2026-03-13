@@ -405,7 +405,7 @@ export function UserSettings() {
 
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="indirect_operational_cost_percent">Percentual (%)</Label>
+              <Label htmlFor="indirect_operational_cost_percent">Quanto incluir no preço? (%)</Label>
               <Input
                 id="indirect_operational_cost_percent"
                 type="number"
