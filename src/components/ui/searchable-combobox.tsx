@@ -15,14 +15,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface ComboboxItem {
   id: string;
@@ -52,7 +44,6 @@ export function SearchableCombobox({
   className,
 }: SearchableComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const isMobile = useIsMobile();
 
   const availableItems = items.filter(item => !selectedIds.includes(item.id));
 
@@ -61,61 +52,6 @@ export function SearchableCombobox({
     setOpen(false);
   };
 
-  const CommandContent = () => (
-    <Command className="w-full">
-      <CommandInput placeholder={searchPlaceholder} className="h-12" autoComplete="off" />
-      <CommandList className="max-h-[300px]">
-        <CommandEmpty>{emptyMessage}</CommandEmpty>
-        <CommandGroup>
-          {availableItems.map((item) => (
-            <CommandItem
-              key={item.id}
-              value={item.name}
-              onSelect={() => handleSelect(item.id)}
-              className="flex flex-col items-start py-3 min-h-[56px] cursor-pointer aria-selected:bg-accent"
-            >
-              <span className="font-medium aria-selected:text-accent-foreground">{item.name}</span>
-              {item.description && (
-                <span className="text-xs text-muted-foreground aria-selected:text-accent-foreground/90">
-                  {item.description}
-                </span>
-              )}
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      </CommandList>
-    </Command>
-  );
-
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className={cn("w-full sm:w-[200px] min-h-[44px] justify-between", className)}
-          >
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 shrink-0 opacity-50" />
-              <span className="truncate">{placeholder}</span>
-            </div>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </DrawerTrigger>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader className="border-b">
-            <DrawerTitle>{title}</DrawerTitle>
-          </DrawerHeader>
-          <div className="p-2">
-            <CommandContent />
-          </div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -123,17 +59,45 @@ export function SearchableCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full sm:w-[200px] min-h-[44px] justify-between", className)}
+          className={cn("w-full min-h-[44px] justify-between", className)}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <Search className="h-4 w-4 shrink-0 opacity-50" />
             <span className="truncate">{placeholder}</span>
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="end">
-        <CommandContent />
+      <PopoverContent
+        className="p-0"
+        align="start"
+        side="bottom"
+        avoidCollisions
+        style={{ width: "var(--radix-popover-trigger-width)" }}
+      >
+        <Command className="w-full">
+          <CommandInput placeholder={searchPlaceholder} className="h-12" autoComplete="off" />
+          <CommandList className="max-h-[240px]">
+            <CommandEmpty>{emptyMessage}</CommandEmpty>
+            <CommandGroup>
+              {availableItems.map((item) => (
+                <CommandItem
+                  key={item.id}
+                  value={item.name}
+                  onSelect={() => handleSelect(item.id)}
+                  className="flex flex-col items-start py-3 min-h-[44px] cursor-pointer"
+                >
+                  <span className="font-medium">{item.name}</span>
+                  {item.description && (
+                    <span className="text-xs text-muted-foreground">
+                      {item.description}
+                    </span>
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
       </PopoverContent>
     </Popover>
   );
