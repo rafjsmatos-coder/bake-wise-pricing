@@ -113,7 +113,7 @@ export function ProductCostBreakdown({ breakdown }: ProductCostBreakdownProps) {
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <TrendingUp className="h-4 w-4" />
-            <span>Margem de Lucro ({breakdown.profitMarginPercent}%)</span>
+            <span>Seu Lucro ({breakdown.profitMarginPercent}%)</span>
           </div>
           <span className="font-medium text-green-600">
             + {formatCurrency(breakdown.profitAmount)}
