@@ -89,7 +89,7 @@ export function ProductCostBreakdown({ breakdown }: ProductCostBreakdownProps) {
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <HardHat className="h-4 w-4" />
-                  <span>Custo Operacional ({breakdown.indirectOperationalCostPercent}%)</span>
+                  <span>Outros Gastos ({breakdown.indirectOperationalCostPercent}%)</span>
                 </div>
                 <span className="font-medium text-amber-600">
                   + {formatCurrency(breakdown.indirectOperationalCost)}
