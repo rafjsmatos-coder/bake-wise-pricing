@@ -78,24 +78,24 @@
          </div>
          <div className="flex-1 min-w-0">
            <div className="flex items-center gap-2">
-             <h2 className="font-semibold">Custo do Forno (R$/h)</h2>
-             <HoverCard>
-               <HoverCardTrigger asChild>
-                 <button type="button" className="text-muted-foreground hover:text-foreground">
-                   <Info className="h-4 w-4" />
-                 </button>
-               </HoverCardTrigger>
-               <HoverCardContent className="w-80">
-                 <p className="text-sm">
-                   O custo do forno é calculado automaticamente sobre o tempo de forno de cada receita.
-                   Configure de acordo com o tipo de forno que você usa.
-                 </p>
-               </HoverCardContent>
-             </HoverCard>
-           </div>
-           <p className="text-sm text-muted-foreground">
-             Configure o custo por hora do seu forno.
-           </p>
+              <h2 className="font-semibold">Gasto com o Forno</h2>
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <button type="button" className="text-muted-foreground hover:text-foreground">
+                    <Info className="h-4 w-4" />
+                  </button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80">
+                  <p className="text-sm">
+                    Quanto custa usar o seu forno por hora? O sistema calcula automaticamente 
+                    com base no tempo de forno de cada receita.
+                  </p>
+                </HoverCardContent>
+              </HoverCard>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Informe quanto você gasta por hora com o forno ligado.
+            </p>
          </div>
        </div>
  

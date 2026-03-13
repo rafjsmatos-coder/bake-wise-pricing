@@ -424,9 +424,9 @@ export function UserSettings() {
 
             <MarketReference
               items={[
-                { label: 'Produção caseira', range: '5% a 8%' },
-                { label: 'Confeitaria estruturada', range: '8% a 12%' },
-                { label: 'Alta complexidade', range: '12% a 18%' },
+                { label: 'Produção em casa', range: '5% a 8%' },
+                { label: 'Ateliê ou cozinha própria', range: '8% a 12%' },
+                { label: 'Muitos equipamentos e espaço alugado', range: '12% a 18%' },
               ]}
             />
           </div>

@@ -278,7 +278,7 @@ export function ProductForm({ open, onOpenChange, product, recipeCosts = {} }: P
                 name="decoration_time_minutes"
                 render={({ field }) => (
                   <FormItem>
-                    <Label htmlFor="decoration_time_minutes">Tempo de Decoração (min)</Label>
+                    <Label htmlFor="decoration_time_minutes">Tempo de montagem e decoração (min)</Label>
                     <FormControl>
                       <Input type="number" step="1" placeholder="Ex: 30" className="min-h-[44px]" {...field} value={field.value ?? ''} />
                     </FormControl>

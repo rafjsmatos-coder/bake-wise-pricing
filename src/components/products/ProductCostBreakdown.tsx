@@ -52,7 +52,7 @@ export function ProductCostBreakdown({ breakdown }: ProductCostBreakdownProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Detalhamento de Custos</CardTitle>
+        <CardTitle className="text-lg">De onde vem o preço</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Cost breakdown */}
