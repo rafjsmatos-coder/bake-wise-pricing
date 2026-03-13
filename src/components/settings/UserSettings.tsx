@@ -381,7 +381,7 @@ export function UserSettings() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="font-semibold">Custo Operacional Indireto</h2>
+                <h2 className="font-semibold">Outros Gastos do Negócio</h2>
                 <HoverCard>
                   <HoverCardTrigger asChild>
                     <button type="button" className="text-muted-foreground hover:text-foreground">
@@ -390,15 +390,15 @@ export function UserSettings() {
                   </HoverCardTrigger>
                   <HoverCardContent className="w-80">
                     <p className="text-sm">
-                      Aplicado sobre o subtotal do produto para cobrir custos fixos e variáveis 
-                      que não são cadastrados individualmente, como: conta de luz, água, aluguel, 
-                      internet, luvas, toucas, produtos de limpeza e utensílios descartáveis.
+                      São aqueles gastos que você tem todo mês, mas que não entram direto na receita: 
+                      conta de luz, água, aluguel, internet, luvas, toucas, produtos de limpeza, 
+                      papel toalha, gás de cozinha e outros itens do dia a dia.
                     </p>
                   </HoverCardContent>
                 </HoverCard>
               </div>
               <p className="text-sm text-muted-foreground">
-                Percentual para cobrir luz, água, aluguel, EPIs, limpeza e consumíveis.
+                Água, luz, aluguel, internet, limpeza, luvas e outros gastos fixos do dia a dia.
               </p>
             </div>
           </div>
