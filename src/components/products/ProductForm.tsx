@@ -292,7 +292,7 @@ export function ProductForm({ open, onOpenChange, product, recipeCosts = {} }: P
                 name="additional_costs"
                 render={({ field }) => (
                   <FormItem>
-                    <Label htmlFor="additional_costs">Custos Adicionais (R$)</Label>
+                    <Label htmlFor="additional_costs">Outros Custos (R$)</Label>
                     <FormControl>
                       <Input type="number" step="0.01" placeholder="Ex: 5,00" className="min-h-[44px]" {...field} value={field.value ?? ''} />
                     </FormControl>
