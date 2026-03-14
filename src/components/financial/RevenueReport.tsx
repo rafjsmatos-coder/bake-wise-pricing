@@ -431,32 +431,32 @@ export function RevenueReport() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
             <h3 className="text-sm font-semibold">Quanto você lucrou em cada produto</h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full text-sm min-w-[420px]">
               <thead>
                 <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="pb-2 pr-4">Produto</th>
-                  <th className="pb-2 pr-4 text-right">Qtd</th>
-                   <th className="pb-2 pr-4 text-right">Vendeu</th>
-                   <th className="pb-2 pr-4 text-right">Custou</th>
-                   <th className="pb-2 pr-4 text-right">Lucrou</th>
-                   <th className="pb-2 text-right">%</th>
+                  <th className="pb-2 pr-3">Produto</th>
+                  <th className="pb-2 pr-3 text-right">Qtd</th>
+                  <th className="pb-2 pr-3 text-right hidden sm:table-cell">Vendeu</th>
+                  <th className="pb-2 pr-3 text-right hidden sm:table-cell">Custou</th>
+                  <th className="pb-2 pr-3 text-right">Lucrou</th>
+                  <th className="pb-2 text-right">%</th>
                 </tr>
               </thead>
               <tbody>
                 {productMargins.map((p, i) => (
                   <tr key={i} className="border-b border-border/50">
-                    <td className="py-2 pr-4 truncate max-w-[150px]">{p.name}</td>
-                    <td className="py-2 pr-4 text-right text-muted-foreground">{p.qty}x</td>
-                    <td className="py-2 pr-4 text-right">{formatCurrency(p.revenue)}</td>
-                    <td className="py-2 pr-4 text-right text-muted-foreground">{formatCurrency(p.cost)}</td>
-                    <td className="py-2 pr-4 text-right font-medium text-green-600">{formatCurrency(p.profit)}</td>
+                    <td className="py-2 pr-3 truncate max-w-[120px] sm:max-w-[150px]">{p.name}</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground">{p.qty}x</td>
+                    <td className="py-2 pr-3 text-right hidden sm:table-cell">{formatCurrency(p.revenue)}</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground hidden sm:table-cell">{formatCurrency(p.cost)}</td>
+                    <td className="py-2 pr-3 text-right font-medium text-green-600">{formatCurrency(p.profit)}</td>
                     <td className="py-2 text-right">
                       <Badge
                         variant={p.margin >= 50 ? 'default' : p.margin >= 30 ? 'secondary' : 'destructive'}
                         className="text-xs font-normal"
                       >
-                        {p.margin.toFixed(1)}%
+                        {p.margin.toFixed(0)}%
                       </Badge>
                     </td>
                   </tr>
