@@ -298,9 +298,9 @@ export function RevenueReport() {
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <DollarSign className="h-4 w-4" />
-            Lucro Bruto de Vendas
+            Ganho com Vendas
           </div>
-          <p className="text-xs text-muted-foreground -mt-0.5 mb-1">Quanto você ganhou acima do custo dos produtos</p>
+          <p className="text-xs text-muted-foreground -mt-0.5 mb-1">Quanto você ganhou além do que gastou para produzir</p>
           <p className={`text-xl font-bold ${grossProfitData.snapshotProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
             {formatCurrency(grossProfitData.snapshotProfit)}
           </p>
