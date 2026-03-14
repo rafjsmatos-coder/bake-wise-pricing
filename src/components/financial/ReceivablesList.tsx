@@ -103,7 +103,7 @@ export function ReceivablesList() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <OrderStatusBadge status={order.status} />
                   <OrderStatusBadge status={order.payment_status} type="payment" />
-                  {isOverdue && <span className="text-xs text-destructive font-medium">Entregue - Pagamento pendente</span>}
+                  {isOverdue && <span className="text-xs text-destructive font-medium">Já entregou, mas ainda não recebeu</span>}
                 </div>
               </div>
             );
