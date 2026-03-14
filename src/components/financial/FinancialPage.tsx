@@ -32,7 +32,7 @@ export function FinancialPage({ initialTab = 'cash-flow' }: FinancialPageProps) 
           </TabsTrigger>
           <TabsTrigger value="receivables" className="gap-1.5 text-xs sm:text-sm">
             <Receipt className="h-3.5 w-3.5 hidden sm:block" />
-            Pendentes
+            A Receber
           </TabsTrigger>
         </TabsList>
 

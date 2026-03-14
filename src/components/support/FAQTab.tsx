@@ -53,12 +53,12 @@ export function FAQTab({ onOpenTicket }: FAQTabProps) {
           </h3>
           <p className="text-muted-foreground text-sm mb-4">
             {searchQuery
-              ? 'Tente buscar com outras palavras ou abra um ticket'
+              ? 'Tente buscar com outras palavras ou fale com a gente'
               : 'Em breve teremos respostas para as dúvidas mais comuns'}
           </p>
           <Button variant="outline" onClick={onOpenTicket}>
             <Headphones className="h-4 w-4 mr-2" />
-            Abrir Ticket de Suporte
+            Falar com o Suporte
           </Button>
         </div>
       ) : (
@@ -112,7 +112,7 @@ export function FAQTab({ onOpenTicket }: FAQTabProps) {
             </p>
             <Button variant="outline" onClick={onOpenTicket}>
               <Headphones className="h-4 w-4 mr-2" />
-              Abrir Ticket de Suporte
+              Falar com o Suporte
             </Button>
           </div>
         </>

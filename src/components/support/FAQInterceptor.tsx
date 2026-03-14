@@ -34,9 +34,9 @@ export function FAQInterceptor({ onProceedToTicket, onCancel }: FAQInterceptorPr
           <ArrowLeft className="h-4 w-4 mr-1" />
           Voltar
         </Button>
-        <h2 className="text-xl font-bold">Antes de abrir um ticket</h2>
+        <h2 className="text-xl font-bold">Antes de falar com a gente</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Veja se sua dúvida já foi respondida no nosso FAQ
+          Veja se sua dúvida já foi respondida aqui 😊
         </p>
       </div>
 
@@ -84,7 +84,7 @@ export function FAQInterceptor({ onProceedToTicket, onCancel }: FAQInterceptorPr
 
       <div className="border-t pt-4">
         <Button onClick={onProceedToTicket} className="w-full">
-          Minha dúvida não está aqui
+          Não encontrei minha resposta
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </div>

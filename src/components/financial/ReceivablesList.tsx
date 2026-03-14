@@ -49,7 +49,7 @@ export function ReceivablesList() {
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">
       <div className="min-w-0">
-        <h1 className="text-2xl font-bold text-foreground">Quem ainda deve</h1>
+        <h1 className="text-2xl font-bold text-foreground">Valores a Receber</h1>
         <p className="text-muted-foreground">
           {receivables.length} pedido{receivables.length !== 1 ? 's' : ''} com pagamento pendente
         </p>
@@ -103,7 +103,7 @@ export function ReceivablesList() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <OrderStatusBadge status={order.status} />
                   <OrderStatusBadge status={order.payment_status} type="payment" />
-                  {isOverdue && <span className="text-xs text-destructive font-medium">Já entregou, mas ainda não recebeu</span>}
+                  {isOverdue && <span className="text-xs text-destructive font-medium">Entregue, aguardando pagamento</span>}
                 </div>
               </div>
             );
