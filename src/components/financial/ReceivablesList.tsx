@@ -69,7 +69,7 @@ export function ReceivablesList() {
       <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
           <DollarSign className="h-4 w-4" />
-          Total a receber
+          Ainda falta receber
         </div>
         <p className="text-2xl font-bold text-primary">{formatCurrency(totalReceivable)}</p>
       </div>
