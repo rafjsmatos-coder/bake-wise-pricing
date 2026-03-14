@@ -246,8 +246,8 @@ export function RevenueReport() {
     <div className="space-y-6 max-w-full overflow-x-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
-          <p className="text-muted-foreground">Visão geral do faturamento</p>
+          <h1 className="text-2xl font-bold text-foreground">Como vai seu negócio</h1>
+          <p className="text-muted-foreground">Resumo do que entrou e saiu no período</p>
         </div>
         <Input
           type="month"
@@ -286,21 +286,21 @@ export function RevenueReport() {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <DollarSign className="h-4 w-4" />
-              Lucro Líquido
+              Sobrou no final
             </div>
             <VariationBadge current={profit} previous={prevProfit} />
           </div>
           <p className={`text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
             {formatCurrency(profit)}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">Quanto sobrou: faturamento menos despesas</p>
+          <p className="text-xs text-muted-foreground mt-1">O que entrou menos o que saiu</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <DollarSign className="h-4 w-4" />
-            Lucro Bruto de Vendas
+            Ganho com Vendas
           </div>
-          <p className="text-xs text-muted-foreground -mt-0.5 mb-1">Quanto você ganhou acima do custo dos produtos</p>
+          <p className="text-xs text-muted-foreground -mt-0.5 mb-1">Quanto você ganhou além do que gastou para produzir</p>
           <p className={`text-xl font-bold ${grossProfitData.snapshotProfit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
             {formatCurrency(grossProfitData.snapshotProfit)}
           </p>
@@ -313,7 +313,7 @@ export function RevenueReport() {
             </div>
           )}
           {!grossProfitData.hasEstimated && grossProfitData.snapshotRevenue > 0 && (
-            <p className="text-xs text-muted-foreground mt-1">Calculado com base no custo registrado na venda</p>
+            <p className="text-xs text-muted-foreground mt-1">Baseado no custo de cada produto na hora da venda</p>
           )}
         </div>
       </div>
@@ -324,21 +324,21 @@ export function RevenueReport() {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Receipt className="h-4 w-4" />
-              Ticket Médio
+              Valor Médio por Pedido
             </div>
             <VariationBadge current={avgTicket} previous={prevAvgTicket} />
           </div>
           <p className="text-xl font-bold text-foreground">{formatCurrency(avgTicket)}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Valor médio por pedido ({confirmedOrders.length} pedido{confirmedOrders.length !== 1 ? 's' : ''})
+            Em média, cada pedido rendeu esse valor ({confirmedOrders.length} pedido{confirmedOrders.length !== 1 ? 's' : ''})
           </p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <Target className="h-4 w-4" />
-            Conversão Orçamento → Pedido
+            Orçamentos que Viraram Pedido
           </div>
-          <p className="text-xs text-muted-foreground -mt-0.5 mb-1">De cada orçamento, quantos viraram pedido</p>
+          <p className="text-xs text-muted-foreground -mt-0.5 mb-1">De cada orçamento enviado, quantos foram confirmados</p>
           <p className="text-xl font-bold text-foreground">
             {conversionData.rate.toFixed(0)}%
           </p>
@@ -349,7 +349,7 @@ export function RevenueReport() {
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <BarChart3 className="h-4 w-4" />
-            Margem Média
+            Lucro Médio por Venda
           </div>
           {productMargins.length > 0 ? (
             <>
@@ -357,7 +357,7 @@ export function RevenueReport() {
                 {(productMargins.reduce((s, p) => s + p.margin, 0) / productMargins.length).toFixed(1)}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Quanto do valor de venda é lucro ({productMargins.length} produto{productMargins.length !== 1 ? 's' : ''})
+                De cada venda, esse % ficou de lucro ({productMargins.length} produto{productMargins.length !== 1 ? 's' : ''})
               </p>
             </>
           ) : (
@@ -372,7 +372,7 @@ export function RevenueReport() {
       {/* Charts row: Bar chart + Pie chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-card border border-border rounded-lg p-4">
-          <h3 className="text-sm font-semibold mb-4">Últimos 6 meses</h3>
+          <h3 className="text-sm font-semibold mb-4">Comparativo dos últimos 6 meses</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -389,25 +389,31 @@ export function RevenueReport() {
         </div>
 
         <div className="bg-card border border-border rounded-lg p-4">
-          <h3 className="text-sm font-semibold mb-4">Receita por Produto</h3>
+          <h3 className="text-sm font-semibold mb-4">O que mais vendeu</h3>
           {categoryRevenue.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
                   data={categoryRevenue}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label={({ name, percent }) => `${name.length > 12 ? name.slice(0, 12) + '…' : name} ${(percent * 100).toFixed(0)}%`}
-                  labelLine={false}
+                  cy="45%"
+                  outerRadius={70}
+                  label={false}
                 >
                   {categoryRevenue.map((_, index) => (
                     <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Legend
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
+                  wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                  formatter={(value: string) => value.length > 16 ? value.slice(0, 16) + '…' : value}
+                />
               </PieChart>
             </ResponsiveContainer>
           ) : (
@@ -423,34 +429,34 @@ export function RevenueReport() {
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Margem de Lucro por Produto</h3>
+            <h3 className="text-sm font-semibold">Quanto você lucrou em cada produto</h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full text-sm min-w-[420px]">
               <thead>
                 <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="pb-2 pr-4">Produto</th>
-                  <th className="pb-2 pr-4 text-right">Qtd</th>
-                  <th className="pb-2 pr-4 text-right">Receita</th>
-                  <th className="pb-2 pr-4 text-right">Custo</th>
-                  <th className="pb-2 pr-4 text-right">Lucro</th>
-                  <th className="pb-2 text-right">Margem</th>
+                  <th className="pb-2 pr-3">Produto</th>
+                  <th className="pb-2 pr-3 text-right">Qtd</th>
+                  <th className="pb-2 pr-3 text-right hidden sm:table-cell">Vendeu</th>
+                  <th className="pb-2 pr-3 text-right hidden sm:table-cell">Custou</th>
+                  <th className="pb-2 pr-3 text-right">Lucrou</th>
+                  <th className="pb-2 text-right">%</th>
                 </tr>
               </thead>
               <tbody>
                 {productMargins.map((p, i) => (
                   <tr key={i} className="border-b border-border/50">
-                    <td className="py-2 pr-4 truncate max-w-[150px]">{p.name}</td>
-                    <td className="py-2 pr-4 text-right text-muted-foreground">{p.qty}x</td>
-                    <td className="py-2 pr-4 text-right">{formatCurrency(p.revenue)}</td>
-                    <td className="py-2 pr-4 text-right text-muted-foreground">{formatCurrency(p.cost)}</td>
-                    <td className="py-2 pr-4 text-right font-medium text-green-600">{formatCurrency(p.profit)}</td>
+                    <td className="py-2 pr-3 truncate max-w-[120px] sm:max-w-[150px]">{p.name}</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground">{p.qty}x</td>
+                    <td className="py-2 pr-3 text-right hidden sm:table-cell">{formatCurrency(p.revenue)}</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground hidden sm:table-cell">{formatCurrency(p.cost)}</td>
+                    <td className="py-2 pr-3 text-right font-medium text-green-600">{formatCurrency(p.profit)}</td>
                     <td className="py-2 text-right">
                       <Badge
                         variant={p.margin >= 50 ? 'default' : p.margin >= 30 ? 'secondary' : 'destructive'}
                         className="text-xs font-normal"
                       >
-                        {p.margin.toFixed(1)}%
+                        {p.margin.toFixed(0)}%
                       </Badge>
                     </td>
                   </tr>
@@ -466,7 +472,7 @@ export function RevenueReport() {
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Top 5 Produtos</h3>
+            <h3 className="text-sm font-semibold">Produtos que mais venderam</h3>
           </div>
           {categoryRevenue.length > 0 ? (
             <div className="space-y-2">
@@ -485,7 +491,7 @@ export function RevenueReport() {
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
             <Users className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Top 5 Clientes</h3>
+            <h3 className="text-sm font-semibold">Clientes que mais compraram</h3>
           </div>
           {topClients.length > 0 ? (
             <div className="space-y-2">

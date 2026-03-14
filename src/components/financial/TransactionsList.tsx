@@ -101,8 +101,8 @@ export function TransactionsList() {
     <div className="space-y-6 max-w-full overflow-x-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-foreground truncate">Fluxo de Caixa</h1>
-          <p className="text-muted-foreground">Registre o dinheiro que entra e sai do seu negócio</p>
+          <h1 className="text-2xl font-bold text-foreground truncate">Entradas e Saídas</h1>
+          <p className="text-muted-foreground">Controle o dinheiro que entra e sai do seu negócio</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => handleNew('income')} className="gap-2 bg-green-600 hover:bg-green-700">
@@ -223,8 +223,8 @@ export function TransactionsList() {
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
             <Wallet className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">Nenhuma transação</h3>
-          <p className="text-muted-foreground">Registre suas entradas e saídas para controlar seu fluxo de caixa.</p>
+          <h3 className="text-lg font-semibold mb-2">Nenhum registro ainda</h3>
+          <p className="text-muted-foreground">Anote o que entra e o que sai para saber como está seu caixa.</p>
         </div>
       )}
 
@@ -240,8 +240,8 @@ export function TransactionsList() {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir transação</AlertDialogTitle>
-            <AlertDialogDescription>Tem certeza? Esta ação não pode ser desfeita.</AlertDialogDescription>
+            <AlertDialogTitle>Excluir registro</AlertDialogTitle>
+            <AlertDialogDescription>Tem certeza? Essa ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>

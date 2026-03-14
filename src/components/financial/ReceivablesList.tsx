@@ -49,9 +49,9 @@ export function ReceivablesList() {
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">
       <div className="min-w-0">
-        <h1 className="text-2xl font-bold text-foreground">Contas a Receber</h1>
+        <h1 className="text-2xl font-bold text-foreground">Quem ainda deve</h1>
         <p className="text-muted-foreground">
-          {receivables.length} pedido{receivables.length !== 1 ? 's' : ''} com saldo pendente
+          {receivables.length} pedido{receivables.length !== 1 ? 's' : ''} com pagamento pendente
         </p>
       </div>
 
@@ -69,7 +69,7 @@ export function ReceivablesList() {
       <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
           <DollarSign className="h-4 w-4" />
-          Total a receber
+          Ainda falta receber
         </div>
         <p className="text-2xl font-bold text-primary">{formatCurrency(totalReceivable)}</p>
       </div>
@@ -96,14 +96,14 @@ export function ReceivablesList() {
                     )}
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-destructive">{formatCurrency(remaining)}</p>
-                    <p className="text-xs text-muted-foreground">de {formatCurrency(effectiveTotal)}</p>
+                    <p className="text-sm font-bold text-destructive whitespace-nowrap">{formatCurrency(remaining)}</p>
+                    <p className="text-xs text-muted-foreground whitespace-nowrap">de {formatCurrency(effectiveTotal)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <OrderStatusBadge status={order.status} />
                   <OrderStatusBadge status={order.payment_status} type="payment" />
-                  {isOverdue && <span className="text-xs text-destructive font-medium">Entregue - Pagamento pendente</span>}
+                  {isOverdue && <span className="text-xs text-destructive font-medium">Já entregou, mas ainda não recebeu</span>}
                 </div>
               </div>
             );
@@ -114,8 +114,8 @@ export function ReceivablesList() {
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
             <DollarSign className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">Tudo em dia! 🎉</h3>
-          <p className="text-muted-foreground">Não há pedidos com saldo pendente.</p>
+          <h3 className="text-lg font-semibold mb-2">Tudo recebido! 🎉</h3>
+          <p className="text-muted-foreground">Ninguém está devendo no momento.</p>
         </div>
       )}
     </div>
