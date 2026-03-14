@@ -389,7 +389,7 @@ export function RevenueReport() {
         </div>
 
         <div className="bg-card border border-border rounded-lg p-4">
-          <h3 className="text-sm font-semibold mb-4">Receita por Produto</h3>
+          <h3 className="text-sm font-semibold mb-4">O que mais vendeu</h3>
           {categoryRevenue.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
