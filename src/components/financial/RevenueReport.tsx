@@ -324,7 +324,7 @@ export function RevenueReport() {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Receipt className="h-4 w-4" />
-              Ticket Médio
+              Valor Médio por Pedido
             </div>
             <VariationBadge current={avgTicket} previous={prevAvgTicket} />
           </div>
