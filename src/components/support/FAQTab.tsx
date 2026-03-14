@@ -112,7 +112,7 @@ export function FAQTab({ onOpenTicket }: FAQTabProps) {
             </p>
             <Button variant="outline" onClick={onOpenTicket}>
               <Headphones className="h-4 w-4 mr-2" />
-              Abrir Ticket de Suporte
+              Falar com o Suporte
             </Button>
           </div>
         </>

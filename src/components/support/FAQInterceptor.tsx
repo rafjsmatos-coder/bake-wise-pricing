@@ -84,7 +84,7 @@ export function FAQInterceptor({ onProceedToTicket, onCancel }: FAQInterceptorPr
 
       <div className="border-t pt-4">
         <Button onClick={onProceedToTicket} className="w-full">
-          Minha dúvida não está aqui
+          Não encontrei minha resposta
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </div>
