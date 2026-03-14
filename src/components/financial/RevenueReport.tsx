@@ -372,7 +372,7 @@ export function RevenueReport() {
       {/* Charts row: Bar chart + Pie chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-card border border-border rounded-lg p-4">
-          <h3 className="text-sm font-semibold mb-4">Últimos 6 meses</h3>
+          <h3 className="text-sm font-semibold mb-4">Comparativo dos últimos 6 meses</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
