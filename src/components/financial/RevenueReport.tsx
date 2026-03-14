@@ -391,23 +391,29 @@ export function RevenueReport() {
         <div className="bg-card border border-border rounded-lg p-4">
           <h3 className="text-sm font-semibold mb-4">O que mais vendeu</h3>
           {categoryRevenue.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
                   data={categoryRevenue}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label={({ name, percent }) => `${name.length > 12 ? name.slice(0, 12) + '…' : name} ${(percent * 100).toFixed(0)}%`}
-                  labelLine={false}
+                  cy="45%"
+                  outerRadius={70}
+                  label={false}
                 >
                   {categoryRevenue.map((_, index) => (
                     <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Legend
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
+                  wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                  formatter={(value: string) => value.length > 16 ? value.slice(0, 16) + '…' : value}
+                />
               </PieChart>
             </ResponsiveContainer>
           ) : (
