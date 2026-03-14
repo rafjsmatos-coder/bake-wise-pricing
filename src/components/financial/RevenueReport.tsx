@@ -431,10 +431,10 @@ export function RevenueReport() {
                 <tr className="border-b border-border text-left text-muted-foreground">
                   <th className="pb-2 pr-4">Produto</th>
                   <th className="pb-2 pr-4 text-right">Qtd</th>
-                  <th className="pb-2 pr-4 text-right">Receita</th>
-                  <th className="pb-2 pr-4 text-right">Custo</th>
-                  <th className="pb-2 pr-4 text-right">Lucro</th>
-                  <th className="pb-2 text-right">Margem</th>
+                   <th className="pb-2 pr-4 text-right">Vendeu</th>
+                   <th className="pb-2 pr-4 text-right">Custou</th>
+                   <th className="pb-2 pr-4 text-right">Lucrou</th>
+                   <th className="pb-2 text-right">%</th>
                 </tr>
               </thead>
               <tbody>
