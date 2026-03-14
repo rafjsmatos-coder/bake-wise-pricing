@@ -466,7 +466,7 @@ export function RevenueReport() {
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Top 5 Produtos</h3>
+            <h3 className="text-sm font-semibold">Produtos que mais venderam</h3>
           </div>
           {categoryRevenue.length > 0 ? (
             <div className="space-y-2">
