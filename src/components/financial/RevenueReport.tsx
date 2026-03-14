@@ -330,7 +330,7 @@ export function RevenueReport() {
           </div>
           <p className="text-xl font-bold text-foreground">{formatCurrency(avgTicket)}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Valor médio por pedido ({confirmedOrders.length} pedido{confirmedOrders.length !== 1 ? 's' : ''})
+            Em média, cada pedido rendeu esse valor ({confirmedOrders.length} pedido{confirmedOrders.length !== 1 ? 's' : ''})
           </p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
