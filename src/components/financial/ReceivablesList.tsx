@@ -114,8 +114,8 @@ export function ReceivablesList() {
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
             <DollarSign className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">Tudo em dia! 🎉</h3>
-          <p className="text-muted-foreground">Não há pedidos com saldo pendente.</p>
+          <h3 className="text-lg font-semibold mb-2">Tudo recebido! 🎉</h3>
+          <p className="text-muted-foreground">Ninguém está devendo no momento.</p>
         </div>
       )}
     </div>

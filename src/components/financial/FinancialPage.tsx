@@ -24,15 +24,15 @@ export function FinancialPage({ initialTab = 'cash-flow' }: FinancialPageProps) 
         <TabsList className="w-full grid grid-cols-3">
           <TabsTrigger value="cash-flow" className="gap-1.5 text-xs sm:text-sm">
             <DollarSign className="h-3.5 w-3.5 hidden sm:block" />
-            Fluxo de Caixa
+            Caixa
           </TabsTrigger>
           <TabsTrigger value="reports" className="gap-1.5 text-xs sm:text-sm">
             <BarChart3 className="h-3.5 w-3.5 hidden sm:block" />
-            Relatórios
+            Resumo
           </TabsTrigger>
           <TabsTrigger value="receivables" className="gap-1.5 text-xs sm:text-sm">
             <Receipt className="h-3.5 w-3.5 hidden sm:block" />
-            A Receber
+            Pendentes
           </TabsTrigger>
         </TabsList>
 

@@ -92,11 +92,11 @@ export function TransactionForm({ open, onOpenChange, transaction, defaultType, 
           </div>
 
           <div className="space-y-2">
-            <Label>Descrição</Label>
+            <Label>O que foi?</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva a transação..."
+              placeholder="Ex: compra de farinha, pagamento de cliente..."
               rows={2}
             />
           </div>
