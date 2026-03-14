@@ -246,8 +246,8 @@ export function RevenueReport() {
     <div className="space-y-6 max-w-full overflow-x-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
-          <p className="text-muted-foreground">Visão geral do faturamento</p>
+          <h1 className="text-2xl font-bold text-foreground">Como vai seu negócio</h1>
+          <p className="text-muted-foreground">Resumo do que entrou e saiu no período</p>
         </div>
         <Input
           type="month"
