@@ -286,7 +286,7 @@ export function RevenueReport() {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <DollarSign className="h-4 w-4" />
-              Lucro Líquido
+              Sobrou no final
             </div>
             <VariationBadge current={profit} previous={prevProfit} />
           </div>
