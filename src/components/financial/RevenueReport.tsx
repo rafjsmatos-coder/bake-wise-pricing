@@ -336,9 +336,9 @@ export function RevenueReport() {
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <Target className="h-4 w-4" />
-            Conversão Orçamento → Pedido
+            Orçamentos que Viraram Pedido
           </div>
-          <p className="text-xs text-muted-foreground -mt-0.5 mb-1">De cada orçamento, quantos viraram pedido</p>
+          <p className="text-xs text-muted-foreground -mt-0.5 mb-1">De cada orçamento enviado, quantos foram confirmados</p>
           <p className="text-xl font-bold text-foreground">
             {conversionData.rate.toFixed(0)}%
           </p>
