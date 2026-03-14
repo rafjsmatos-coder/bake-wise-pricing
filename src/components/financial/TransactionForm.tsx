@@ -64,7 +64,7 @@ export function TransactionForm({ open, onOpenChange, transaction, defaultType, 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[100dvh] overflow-y-auto overflow-x-hidden sm:max-h-[85vh]" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
         <DialogHeader>
-          <DialogTitle>{transaction ? 'Editar Transação' : 'Nova Transação'}</DialogTitle>
+          <DialogTitle>{transaction ? 'Editar Registro' : 'Novo Registro'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
