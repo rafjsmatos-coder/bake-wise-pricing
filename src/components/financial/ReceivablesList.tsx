@@ -96,8 +96,8 @@ export function ReceivablesList() {
                     )}
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-destructive">{formatCurrency(remaining)}</p>
-                    <p className="text-xs text-muted-foreground">de {formatCurrency(effectiveTotal)}</p>
+                    <p className="text-sm font-bold text-destructive whitespace-nowrap">{formatCurrency(remaining)}</p>
+                    <p className="text-xs text-muted-foreground whitespace-nowrap">de {formatCurrency(effectiveTotal)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
