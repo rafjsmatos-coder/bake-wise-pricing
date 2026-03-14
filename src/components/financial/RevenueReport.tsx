@@ -357,7 +357,7 @@ export function RevenueReport() {
                 {(productMargins.reduce((s, p) => s + p.margin, 0) / productMargins.length).toFixed(1)}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Quanto do valor de venda é lucro ({productMargins.length} produto{productMargins.length !== 1 ? 's' : ''})
+                De cada venda, esse % ficou de lucro ({productMargins.length} produto{productMargins.length !== 1 ? 's' : ''})
               </p>
             </>
           ) : (
