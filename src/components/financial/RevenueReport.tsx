@@ -349,7 +349,7 @@ export function RevenueReport() {
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <BarChart3 className="h-4 w-4" />
-            Margem Média
+            Lucro Médio por Venda
           </div>
           {productMargins.length > 0 ? (
             <>
