@@ -423,7 +423,7 @@ export function RevenueReport() {
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Margem de Lucro por Produto</h3>
+            <h3 className="text-sm font-semibold">Quanto você lucrou em cada produto</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
