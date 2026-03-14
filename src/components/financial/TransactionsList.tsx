@@ -223,8 +223,8 @@ export function TransactionsList() {
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
             <Wallet className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">Nenhuma transação</h3>
-          <p className="text-muted-foreground">Registre suas entradas e saídas para controlar seu fluxo de caixa.</p>
+          <h3 className="text-lg font-semibold mb-2">Nenhum registro ainda</h3>
+          <p className="text-muted-foreground">Anote o que entra e o que sai para saber como está seu caixa.</p>
         </div>
       )}
 
